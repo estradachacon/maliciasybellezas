@@ -224,6 +224,24 @@ class PackageController extends BaseController
             $estatusInicial = 'en_casillero';
         }
 
+        $pagoParcial = $this->request->getPost('pago_parcial');
+        $fleteTotal = floatval($this->request->getPost('flete_total'));
+        $fletePagadoInput = floatval($this->request->getPost('flete_pagado'));
+
+        if ($pagoParcial == 1) {
+            // 🔵 PAGO PARCIAL
+            $fletePagado = $fletePagadoInput;
+            $fletePendiente = $fleteTotal - $fletePagado;
+
+            if ($fletePendiente < 0) {
+                $fletePendiente = 0;
+            }
+        } else {
+            // 🟢 PAGO TOTAL
+            $fletePagado = $fleteTotal;
+            $fletePendiente = 0;
+        }
+
         $dataToSave = [
             'vendedor' => $this->request->getPost('seller_id'),
             'cliente' => $this->request->getPost('cliente'),
@@ -236,10 +254,10 @@ class PackageController extends BaseController
             'fecha_entrega_personalizado' => $this->request->getPost('fecha_entrega'),
             'fecha_entrega_puntofijo' => $this->request->getPost('fecha_entrega_puntofijo'),
 
-            'flete_total' => $this->request->getPost('flete_total'),
-            'toggle_pago_parcial' => $this->request->getPost('pago_parcial'),
-            'flete_pagado' => $this->request->getPost('flete_pagado'),
-            'flete_pendiente' => $this->request->getPost('flete_pendiente'),
+            'flete_total' => $fleteTotal,
+            'toggle_pago_parcial' => $pagoParcial,
+            'flete_pagado' => $fletePagado,
+            'flete_pendiente' => $fletePendiente,
             'colonia_id' => $this->request->getPost('colonia_id'),
 
             'nocobrar_pack_cancelado' => $this->request->getPost('toggleCobro'),
@@ -269,7 +287,7 @@ class PackageController extends BaseController
                 if ($fletePagado > 0) {
                     $db->table('accounts')
                         ->where('id', $accountId)
-                        ->set('balance', 'balance + ' . $fleteTotal, false)
+                        ->set('balance', 'balance + ' . $fletePagado, false)
                         ->update();
                     registrarEntrada(
                         $accountId,
