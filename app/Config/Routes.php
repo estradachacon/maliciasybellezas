@@ -118,9 +118,19 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     // Módulo de mantenimiento de rutas
     $routes->presenter('routes', ['controller' => 'RouteController', 'only' => ['index', 'new', 'create', 'edit', 'update']]);
     $routes->post('routes/delete', 'RouteController::delete');
-    
+
     // Select2 Colonias
     $routes->get('ajax/colonias/search', 'UbicacionesController::searchColonias');
+
+    // Mantenimiento de colonias
+    $routes->get('/colonias', 'Colonias::index');
+    $routes->get('/colonias/municipios/(:num)', 'Colonias::municipios/$1');
+    $routes->get('/colonias/listar', 'Colonias::listar');
+    $routes->get('/colonias/filtrar/(:num)/(:num)', 'Colonias::filtrar/$1/$2');
+    $routes->get('/colonias/get/(:num)', 'Colonias::get/$1');
+    $routes->post('/colonias/update/(:num)', 'Colonias::update/$1');
+    $routes->delete('/colonias/delete/(:num)', 'Colonias::delete/$1');
+    $routes->post('/colonias/create', 'Colonias::create');
 
 
     // Módulo de mantenimiento de paquetes

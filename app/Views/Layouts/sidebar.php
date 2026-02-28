@@ -199,6 +199,10 @@
                             <?php if (tienePermiso('ver_rutas')): ?>
                                 <a class="nav-link" href="/routes">Rutas</a>
                             <?php endif; ?>
+                            <?php if (tienePermiso('ver_colonias')): ?>
+                                <div class="sb-sidenav-menu-heading">Mantenimiento de colonias </div>
+                                <a class="nav-link" href="/colonias">Colonias</a>
+                            <?php endif; ?>
                         </nav>
                     </div>
                 <?php endif; ?>

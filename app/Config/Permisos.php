@@ -51,6 +51,10 @@ class Permisos extends BaseConfig
             'crear_ruta',
             'editar_ruta',
             'eliminar_ruta',
+            'ver_colonias',
+            'crear_colonia',
+            'editar_colonia',
+            'eliminar_colonia',
         ],
 
         'Solicitudes' => [
