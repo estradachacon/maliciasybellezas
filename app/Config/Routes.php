@@ -12,6 +12,7 @@ $routes->get('/quienes-somos', 'Home::quienes_somos');
 
 $routes->post('/login', 'AuthController::login');
 $routes->get('/logout', 'AuthController::logout');
+$routes->get('api/backup/estrada', 'Api\BackupController::index');
 
 // 🔐 Recuperación de contraseña (SIN AUTH)
 $routes->group('auth', function ($routes) {
