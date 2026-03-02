@@ -70,6 +70,7 @@ class PackageModel extends Model
             ->where('estatus', 'entregado')
             ->groupStart()
             ->where('monto >', 0)
+            
             ->orWhere('flete_pendiente >', 0)
             ->groupEnd()
             ->orderBy('fecha_ingreso', 'ASC')
@@ -92,18 +93,18 @@ class PackageModel extends Model
     public function getFletesPendientesModal(int $sellerId)
     {
         return $this->select([
-            'id',
-            'cliente',
-            'flete_pendiente',
-            'foto',
-            'estatus',
-            'fecha_ingreso',
-            'monto'
-        ])
+                'id',
+                'cliente',
+                'COALESCE(flete_pendiente,0) AS flete_pendiente',
+                'foto',
+                'estatus',
+                'fecha_ingreso',
+                'COALESCE(monto,0) AS monto'
+            ])
             ->where('vendedor', $sellerId)
-            ->where('flete_pendiente >', 0)
             ->where('flete_rendido', 0)
-            ->where('monto', 0)
+            ->where('COALESCE(flete_pendiente,0) >', 0)
+            ->where('COALESCE(monto,0) =', 0)
             ->orderBy('fecha_ingreso', 'ASC')
             ->findAll();
     }

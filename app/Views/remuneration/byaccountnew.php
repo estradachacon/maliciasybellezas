@@ -484,9 +484,11 @@
             return;
         }
 
-        packages.forEach(pkg => {
+        packages
+            .filter(pkg => parseFloat(pkg.monto || 0) > 0)
+            .forEach(pkg => {
 
-            const monto = parseFloat(pkg.monto);
+            const monto = parseFloat(pkg.monto || 0);
             const pendiente = parseFloat(pkg.flete_pendiente || 0);
             const netAmount = monto - pendiente;
 
@@ -579,7 +581,6 @@
                     card.classList.remove('package-added');
                 }, 600);
 
-                // Animar carrito
                 // Iluminar carrito
                 const cartBox = document.getElementById('payment-cart');
                 cartBox.classList.add('cart-glow');
@@ -601,7 +602,6 @@
 
         const sellerId = $(this).val();
         document.getElementById('packages-container').innerHTML = '';
-        document.getElementById('btnVerFletes').classList.add('d-none');
 
         if (!sellerId) return;
 
@@ -612,11 +612,11 @@
         fetch(`<?= site_url('payments/packages-by-seller') ?>/${sellerId}`)
             .then(res => res.json())
             .then(data => {
-
-                const normales = data.filter(pkg => parseFloat(pkg.monto) > 0);
-
-                renderPackages(normales);
+                renderPackages(data);
                 initLazyLoad();
+            })
+            .catch(() => {
+                Swal.fire('Error', 'No se pudieron cargar los paquetes', 'error');
             });
 
         /* ===============================
@@ -629,19 +629,20 @@
 
                 if (!fletes.length) return;
 
-                // 🔥 AQUÍ guardamos la nueva data
                 fletesPendientesGlobal = fletes;
 
+                // Mostrar botón
                 document.getElementById('btnVerFletes')
                     .classList.remove('d-none');
 
+                // 🔥 Sweet automático
                 Swal.fire({
                     title: 'Fletes pendientes detectados',
                     html: `
-                    Se encontraron <strong>${fletes.length}</strong> 
-                    paquete(s) con flete pendiente.<br><br>
-                    ¿Desea revisarlos ahora?
-                `,
+                Se encontraron <strong>${fletes.length}</strong> 
+                paquete(s) con flete pendiente.<br><br>
+                ¿Desea revisarlos ahora?
+            `,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, revisarlos',
@@ -911,6 +912,40 @@
         images.forEach(img => observer.observe(img));
     }
 
+    // Cargar fletes pendientes al seleccionar vendedor
+    function loadFletesPendientes(sellerId, abrirModal = false) {
+
+        if (!sellerId) return;
+
+        fetch(`<?= site_url('payments/fletes-pendientes') ?>/${sellerId}`)
+            .then(res => res.json())
+            .then(fletes => {
+
+                fletesPendientesGlobal = fletes;
+
+                if (!fletes.length) {
+                    document.getElementById('fletes-container').innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                No hay fletes pendientes.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderFletesModal();
+                activarSeleccionVisualFletes();
+
+                if (abrirModal) {
+                    $('#modalFletes').modal('show');
+                }
+            })
+            .catch(() => {
+                Swal.fire('Error', 'No se pudieron cargar los fletes', 'error');
+            });
+    }
+
     /* ==========================================================
      *  DOM READY
      * ========================================================== */
@@ -954,9 +989,8 @@
 
         $('#btnVerFletes').on('click', function() {
 
-            renderFletesModal();
-            $('#modalFletes').modal('show');
-            activarSeleccionVisualFletes();
+            const sellerId = $('#seller_id').val();
+            loadFletesPendientes(sellerId, true);
 
         });
 

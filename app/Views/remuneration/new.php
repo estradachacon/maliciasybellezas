@@ -133,10 +133,12 @@
             box-shadow: 0 0 0px rgba(25, 135, 84, 0);
             transform: scale(1);
         }
+
         40% {
             box-shadow: 0 0 25px rgba(25, 135, 84, 0.8);
             transform: scale(1.03);
         }
+
         100% {
             box-shadow: 0 0 0px rgba(25, 135, 84, 0);
             transform: scale(1);
@@ -152,14 +154,65 @@
         0% {
             box-shadow: 0 0 0 rgba(25, 135, 84, 0);
         }
+
         40% {
             box-shadow: 0 0 35px rgba(25, 135, 84, 0.9);
         }
+
         100% {
             box-shadow: 0 0 0 rgba(25, 135, 84, 0);
         }
     }
 
+    /* Modal de paquetes solo flete */
+    .modal {
+        z-index: 1050;
+    }
+
+    .modal-backdrop {
+        z-index: 1040;
+    }
+
+    .modal {
+        z-index: 3000 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 2999 !important;
+    }
+
+    #modalFletes .card {
+        transition: all .2s ease;
+    }
+
+    #modalFletes .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, .2);
+    }
+
+    /* ===== EFECTO SELECCIÓN SUAVE PRO ===== */
+
+    #modalFletes .package-selectable {
+        cursor: pointer;
+        border: 1px solid #dee2e6;
+        transition:
+            border-color .25s ease,
+            box-shadow .25s ease,
+            background-color .25s ease;
+    }
+
+    /* Hover sutil */
+    #modalFletes .package-selectable:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+    }
+
+    /* Seleccionado elegante */
+    #modalFletes .package-selectable.selected {
+        border-color: #28a745 !important;
+        background-color: rgba(40, 167, 69, 0.04);
+        box-shadow:
+            0 0 0 3px rgba(40, 167, 69, 0.15);
+    }
 </style>
 <link rel="stylesheet" href="<?= base_url('backend/assets/css/newpackage.css') ?>">
 
@@ -192,7 +245,15 @@
 
                         <div class="col-md-12">
                             <input type="hidden" name="user_id" value="<?= session('id') ?>">
+                            <input type="hidden" id="payment-type" value="cash">
                         </div>
+                    </div>
+                    <div class="col-md-12 mt-2">
+                        <button type="button"
+                            id="btnVerFletes"
+                            class="btn btn-outline-warning btn-sm d-none">
+                            Ver fletes pendientes
+                        </button>
                     </div>
                     <div class="d-flex justify-content-end mb-3">
                         <div class="btn-group" role="group">
@@ -240,7 +301,41 @@
         </div>
     </div>
 </div>
+<!-- Modal Fletes Pendientes -->
+<div class="modal fade" id="modalFletes" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
 
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Fletes pendientes</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <button class="btn btn-sm btn-outline-secondary" id="selectAllFletes">
+                        Seleccionar todos
+                    </button>
+                </div>
+
+                <div class="row g-3" id="fletes-container">
+                    <!-- Aquí se renderizan cards -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">
+                    Cerrar
+                </button>
+                <button class="btn btn-warning" id="agregarFletes">
+                    Agregar seleccionados
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -350,6 +445,8 @@
         total: 0
     };
 
+    let fletesPendientesGlobal = [];
+
     function formatFechaSV(fecha) {
         if (!fecha) return '—';
 
@@ -370,18 +467,19 @@
 
         if (!packages.length) {
             container.innerHTML = `
-            <div class="col-12">
-                <div class="alert alert-info">
-                    No hay paquetes pendientes para este vendedor.
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        No hay paquetes pendientes para este vendedor.
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
             return;
         }
 
-        packages.forEach(pkg => {
-
-            const monto = parseFloat(pkg.monto);
+            packages
+                .filter(pkg => parseFloat(pkg.monto || 0) > 0)
+                .forEach(pkg => {
+            const monto = parseFloat(pkg.monto || 0);
             const pendiente = parseFloat(pkg.flete_pendiente || 0);
             const netAmount = monto - pendiente;
 
@@ -390,57 +488,57 @@
                 `/upload/no-image.png`;
 
             const col = document.createElement('div');
-            col.className = currentView === 'grid'
-                ? 'col-md-3 mb-3'
-                : 'col-12 mb-2';
+            col.className = currentView === 'grid' ?
+                'col-md-3 mb-3' :
+                'col-12 mb-2';
             if (currentView === 'grid') {
                 col.innerHTML = `
-                <div class="card package-card h-100 shadow-sm">
-                    <div class="package-image-wrapper">
-                        <img 
-                            src="/upload/placeholder.png"
-                            data-src="${imageUrl}"
-                            class="card-img-top lazy-img"
-                            loading="lazy"
-                            alt="Paquete ${pkg.id}">
-                    </div>
-                    <div class="card-body">
-                        <h6 class="mb-1">Paquete #${pkg.id}</h6>
-                        <h6 class="mb-1">Cliente: ${pkg.cliente}</h6>
-                        <h6 class="mb-1">
-                            Fecha actualizada de entrega: ${formatFechaSV(pkg.updated_at)}
-                        </h6>
+                    <div class="card package-card h-100 shadow-sm">
+                        <div class="package-image-wrapper">
+                            <img 
+                                src="/upload/placeholder.png"
+                                data-src="${imageUrl}"
+                                class="card-img-top lazy-img"
+                                loading="lazy"
+                                alt="Paquete ${pkg.id}">
+                        </div>
+                        <div class="card-body">
+                            <h6 class="mb-1">Paquete #${pkg.id}</h6>
+                            <h6 class="mb-1">Cliente: ${pkg.cliente}</h6>
+                            <h6 class="mb-1">
+                                Fecha actualizada de entrega: ${formatFechaSV(pkg.updated_at)}
+                            </h6>
 
 
-                        <hr>
+                            <hr>
 
-                        <div>Valor Paq: $</div>
-                        <div class="package-amount fw-bold">
-                            ${monto.toFixed(2)}
+                            <div>Valor Paq: $</div>
+                            <div class="package-amount fw-bold">
+                                ${monto.toFixed(2)}
+                            </div>
+
+                            ${
+                                pendiente > 0
+                                ? `<div class="text-danger small">
+                                    Descuento pendiente: -$${pendiente.toFixed(2)}
+                                </div>`
+                                : ''
+                            }
                         </div>
 
-                        ${
-                            pendiente > 0
-                            ? `<div class="text-danger small">
-                                Descuento pendiente: -$${pendiente.toFixed(2)}
-                            </div>`
-                            : ''
-                        }
-                    </div>
+                        <div class="package-footer d-flex justify-content-between align-items-center px-3 py-2 bg-light">
+                            <strong>Total a pagar:</strong>
+                            <span class="fw-bold text-success">
+                                $${netAmount.toFixed(2)}
+                            </span>
+                        </div>
 
-                    <div class="package-footer d-flex justify-content-between align-items-center px-3 py-2 bg-light">
-                        <strong>Total a pagar:</strong>
-                        <span class="fw-bold text-success">
-                            $${netAmount.toFixed(2)}
-                        </span>
+                        <div class="p-2">
+                            <button type="button" class="btn btn-outline-success w-100 btn-add">
+                                Agregar al pago
+                            </button>
                     </div>
-
-                    <div class="p-2">
-                        <button type="button" class="btn btn-outline-success w-100 btn-add">
-                            Agregar al pago
-                        </button>
-                </div>
-            `;
+                `;
             } else {
                 col.innerHTML = `
                     <div class="card shadow-sm p-3 d-flex flex-row justify-content-between">
@@ -467,34 +565,24 @@
                 });
 
                 // Iluminar carrito
+                const card = e.target.closest('.card');
+                card.classList.add('package-added');
+
+                setTimeout(() => {
+                    card.classList.remove('package-added');
+                }, 600);
+                
+                // Iluminar carrito
                 const cartBox = document.getElementById('payment-cart');
                 cartBox.classList.add('cart-glow');
 
                 setTimeout(() => {
                     cartBox.classList.remove('cart-glow');
-                }, 800);
-
+                }, 500);
             });
 
             container.appendChild(col);
         });
-    }
-
-    function initLazyLoad() {
-        const images = document.querySelectorAll('.lazy-img');
-
-        const observer = new IntersectionObserver((entries, obs) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    img.classList.remove('lazy-img');
-                    obs.unobserve(img);
-                }
-            });
-        });
-
-        images.forEach(img => observer.observe(img));
     }
 
     /* ==========================================================
@@ -507,6 +595,10 @@
 
         if (!sellerId) return;
 
+        /* ===============================
+           1️⃣ CARGAR PAQUETES NORMALES
+        =============================== */
+
         fetch(`<?= site_url('payments/packages-by-seller') ?>/${sellerId}`)
             .then(res => res.json())
             .then(data => {
@@ -516,7 +608,146 @@
             .catch(() => {
                 Swal.fire('Error', 'No se pudieron cargar los paquetes', 'error');
             });
+
+        /* ===============================
+           2️⃣ CARGAR FLETES PENDIENTES
+        =============================== */
+
+        fetch(`<?= site_url('payments/fletes-pendientes') ?>/${sellerId}`)
+            .then(res => res.json())
+            .then(fletes => {
+
+                if (!fletes.length) return;
+
+                fletesPendientesGlobal = fletes;
+
+                // Mostrar botón
+                document.getElementById('btnVerFletes')
+                    .classList.remove('d-none');
+
+                // 🔥 Sweet automático
+                Swal.fire({
+                    title: 'Fletes pendientes detectados',
+                    html: `
+                Se encontraron <strong>${fletes.length}</strong> 
+                paquete(s) con flete pendiente.<br><br>
+                ¿Desea revisarlos ahora?
+            `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, revisarlos',
+                    cancelButtonText: 'Después'
+                }).then(result => {
+
+                    if (!result.isConfirmed) return;
+
+                    renderFletesModal();
+                    $('#modalFletes').modal('show');
+                    activarSeleccionVisualFletes();
+                });
+
+            });
+
     });
+
+    function renderFletesModal() {
+
+        const container = document.getElementById('fletes-container');
+        container.innerHTML = '';
+
+        fletesPendientesGlobal.forEach(pkg => {
+
+            const imageUrl = pkg.foto ?
+                `/upload/paquetes/${pkg.foto}` :
+                `/upload/no-image.png`;
+
+            const monto = parseFloat(pkg.monto ?? 0);
+            const fletePendiente = parseFloat(pkg.flete_pendiente || 0);
+
+            const col = document.createElement('div');
+            col.className = 'col-md-4 mb-3';
+
+            col.innerHTML = `
+            <div class="card shadow-sm h-100 border-warning package-card package-selectable">
+
+                <!-- FOTO -->
+                <div style="
+                    height:180px;
+                    overflow:hidden;
+                    border-top-left-radius:.25rem;
+                    border-top-right-radius:.25rem;
+                ">
+                    <img src="${imageUrl}"
+                        style="width:100%; height:100%; object-fit:cover;">
+                </div>
+
+                <div class="card-body position-relative">
+
+                    <!-- CHECK -->
+                    <div class="form-check position-absolute"
+                        style="top:10px; right:10px;">
+                        <input class="form-check-input chk-flete-card"
+                            type="checkbox"
+                            value="${pkg.id}"
+                            data-monto="${fletePendiente}">
+                    </div>
+
+                    <h6 class="mb-1">Paquete #${pkg.id}</h6>
+                    <p class="mb-1 text-muted">${pkg.cliente}</p>
+
+                    <!-- ESTADO -->
+                    <div class="mb-2">
+                        <span class="badge badge-info">
+                            ${pkg.estatus || 'Sin estado'}
+                        </span>
+                    </div>
+
+                    <!-- TOTAL PAQUETE -->
+                    <div class="small text-muted">
+                        Total del paquete:
+                    </div>
+                    <div class="font-weight-bold">
+                        $${monto.toFixed(2)}
+                    </div>
+
+                    <!-- FLETE -->
+                    <div class="text-danger font-weight-bold mt-2">
+                        Flete pendiente: $${fletePendiente.toFixed(2)}
+                    </div>
+
+                </div>
+            </div>
+            `;
+
+            container.appendChild(col);
+        });
+    }
+
+    function activarSeleccionVisualFletes() {
+
+        document.querySelectorAll('#modalFletes .package-selectable')
+            .forEach(card => {
+
+                const checkbox = card.querySelector('.chk-flete-card');
+
+                // Click en toda la card
+                card.addEventListener('click', function(e) {
+
+                    // evitar doble toggle si clickea directo el checkbox
+                    if (e.target.type !== 'checkbox') {
+                        checkbox.checked = !checkbox.checked;
+                    }
+
+                    card.classList.toggle('selected', checkbox.checked);
+                });
+
+                // Cambio directo del checkbox
+                checkbox.addEventListener('change', function() {
+                    card.classList.toggle('selected', this.checked);
+                });
+
+            });
+    }
 
     /* ==========================================================
      *  CART FUNCTIONS
@@ -603,6 +834,56 @@
         recalcCart();
     }
 
+    function initLazyLoad() {
+        const images = document.querySelectorAll('.lazy-img');
+
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy-img');
+                    obs.unobserve(img);
+                }
+            });
+        });
+
+        images.forEach(img => observer.observe(img));
+    }
+
+    // Cargar fletes pendientes al iniciar si ya hay un vendedor seleccionado (ej. recarga de página)
+    function loadFletesPendientes(sellerId, abrirModal = false) {
+
+        if (!sellerId) return;
+
+        fetch(`<?= site_url('payments/fletes-pendientes') ?>/${sellerId}`)
+            .then(res => res.json())
+            .then(fletes => {
+
+                fletesPendientesGlobal = fletes;
+
+                if (!fletes.length) {
+                    document.getElementById('fletes-container').innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                No hay fletes pendientes.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderFletesModal();
+                activarSeleccionVisualFletes();
+
+                if (abrirModal) {
+                    $('#modalFletes').modal('show');
+                }
+            })
+            .catch(() => {
+                Swal.fire('Error', 'No se pudieron cargar los fletes', 'error');
+            });
+    }
     /* ==========================================================
      *  DOM READY
      * ========================================================== */
@@ -649,9 +930,35 @@
         }
 
         /* ------------------------------------------------------
+         *  AGREGAR FLETES PENDIENTES AL CARRITO
+         * ------------------------------------------------------ */
+
+        const btnAgregarFletes = document.getElementById('agregarFletes');
+
+        if (btnAgregarFletes) {
+            btnAgregarFletes.addEventListener('click', () => {
+
+                document.querySelectorAll('.chk-flete-card:checked')
+                    .forEach(chk => {
+
+                        addToCart({
+                            id: 'flete-' + chk.value,
+                            code: `FLETE-PK-${chk.value}`,
+                            amount: -parseFloat(chk.dataset.monto),
+                            photo: '/upload/no-image.png',
+                            type: 'flete'
+                        });
+
+                    });
+
+                $('#modalFletes').modal('hide');
+            });
+        }
+
+        /* ------------------------------------------------------
          *  VIEW TOGGLE
          * ------------------------------------------------------ */
-        
+
         document.getElementById('viewGrid').addEventListener('click', () => {
             currentView = 'grid';
             localStorage.setItem('packageView', 'grid');
@@ -665,13 +972,28 @@
         });
 
         /* ------------------------------------------------------
+         *  MODAL FLETES PENDIENTES
+         * ------------------------------------------------------ */
+
+        if ($('#btnVerFletes').length) {
+            $('#btnVerFletes').on('click', function() {
+
+                const sellerId = $('#seller_id').val();
+                loadFletesPendientes(sellerId, true);
+
+            });
+        }
+
+        /* ------------------------------------------------------
          *  CART TOGGLE
          * ------------------------------------------------------ */
-        document.getElementById('cartToggle')
-            .addEventListener('click', () => {
+        const cartToggle = document.getElementById('cartToggle');
+        if (cartToggle) {
+            cartToggle.addEventListener('click', () => {
                 document.getElementById('payment-cart')
                     .classList.toggle('minimized');
             });
+        }
 
         /* ------------------------------------------------------
          *  PAY BUTTON
@@ -692,9 +1014,9 @@
                 Swal.fire({
                     title: 'Confirmar pago',
                     html: `
-                    <strong>Total:</strong> $${cart.total.toFixed(2)}<br>
-                    <strong>Paquetes:</strong> ${cart.items.length}
-                `,
+                <strong>Total:</strong> $${cart.total.toFixed(2)}<br>
+                <strong>Paquetes:</strong> ${cart.items.length}
+            `,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: 'Pagar'
@@ -702,42 +1024,57 @@
 
                     if (!result.isConfirmed) return;
 
-                    fetch('<?= site_url("payments/pay-seller") ?>', {
+                    const paymentType = document.getElementById('payment-type').value;
+
+                    let endpoint = '';
+                    let payload = {
+                        seller_id: $('#seller_id').val(),
+                        packages: cart.items
+                    };
+
+                    if (paymentType === 'account') {
+                        endpoint = '<?= site_url("payments/pay-seller-byaccount") ?>';
+                        payload.cuenta_id = $('.select2-account').val();
+                    } else {
+                        endpoint = '<?= site_url("payments/pay-seller") ?>';
+                    }
+console.log("Endpoint usado:", endpoint);
+                    fetch(endpoint, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
                             },
-                            body: JSON.stringify({
-                                seller_id: $('#seller_id').val(),
-                                packages: cart.items
-                            })
+                            body: JSON.stringify(payload)
                         })
                         .then(res => res.json())
                         .then(data => {
-                            if (data.success) {
 
-                                Swal.fire('Pago realizado', '', 'success');
-
-                                // Limpiar carrito
-                                cart = {
-                                    items: [],
-                                    total: 0
-                                };
-                                recalcCart();
-
-                                // Recargar paquetes del vendedor actual
-                                const sellerId = $('#seller_id').val();
-
-                                fetch(`<?= site_url('payments/packages-by-seller') ?>/${sellerId}`)
-                                    .then(res => res.json())
-                                    .then(packages => {
-                                        renderPackages(packages);
-                                        updateAvailableAmount();
-                                    });
-                            } else {
+                            if (!data.success) {
                                 Swal.fire('Error', data.message, 'error');
+                                return;
                             }
+
+                            Swal.fire('Pago realizado', '', 'success');
+
+                            cart = {
+                                items: [],
+                                total: 0
+                            };
+                            recalcCart();
+
+                            const sellerId = $('#seller_id').val();
+
+                            fetch(`<?= site_url('payments/packages-by-seller') ?>/${sellerId}`)
+                                .then(res => res.json())
+                                .then(packages => {
+                                    renderPackages(packages);
+                                });
+
+                            if (typeof updateAvailableAmount === 'function') {
+                                updateAvailableAmount();
+                            }
+
                         });
                 });
             });
