@@ -172,4 +172,13 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     //Rutas para reportería
     $routes->get('reports', 'ReportController::index');
+
+    // Módulo de mantenimiento de ubicaciones externas
+    $routes->get('external-locations', 'ExternalLocations::index');
+    $routes->get('external-locations/create', 'ExternalLocations::create');
+    $routes->post('external-locations/store', 'ExternalLocations::store');
+    $routes->get('external-locations/edit/(:num)', 'ExternalLocations::edit/$1');
+    $routes->post('external-locations/update/(:num)', 'ExternalLocations::update/$1');
+    $routes->get('external-locations/delete/(:num)', 'ExternalLocations::delete/$1');
+    $routes->get('external-locations/get/(:num)', 'ExternalLocations::get/$1');
 });

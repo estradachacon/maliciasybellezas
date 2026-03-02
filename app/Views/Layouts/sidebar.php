@@ -183,7 +183,8 @@
 
                 <?php if (
                     tienePermiso('ver_puntosfijos') ||
-                    tienePermiso('ver_rutas')
+                    tienePermiso('ver_rutas') ||
+                    tienePermiso('ver_colonias')
                 ): ?>
                     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#settledpoint"
                         aria-expanded="false" aria-controls="settledpoint">
@@ -199,9 +200,17 @@
                             <?php if (tienePermiso('ver_rutas')): ?>
                                 <a class="nav-link" href="/routes">Rutas</a>
                             <?php endif; ?>
-                            <?php if (tienePermiso('ver_colonias')): ?>
-                                <div class="sb-sidenav-menu-heading">Mantenimiento de colonias </div>
-                                <a class="nav-link" href="/colonias">Colonias</a>
+                            <?php if (
+                                tienePermiso('ver_colonias') ||
+                                tienePermiso('ver_casilleros_externos')
+                            ): ?>
+                                <div class="sb-sidenav-menu-heading">Mantenimientos</div>
+                                <?php if (tienePermiso('ver_colonias')): ?>
+                                    <a class="nav-link" href="/colonias">Colonias</a>
+                                <?php endif; ?>
+                                <?php if (tienePermiso('ver_casilleros_externos')): ?>
+                                    <a class="nav-link" href="/external-locations">Casilleros externos</a>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </nav>
                     </div>

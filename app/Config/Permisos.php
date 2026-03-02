@@ -52,6 +52,10 @@ class Permisos extends BaseConfig
             'editar_ruta',
             'eliminar_ruta',
             'ver_colonias',
+            'ver_casilleros_externos',
+            'crear_casilleros_externos',
+            'editar_casilleros_externos',
+            'eliminar_casilleros_externos',
         ],
 
         'Solicitudes' => [

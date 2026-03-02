@@ -1,5 +1,8 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
+<script>
+    let currentView = localStorage.getItem('packageView') || 'grid';
+</script>
 <style>
     .toast-container {
         position: fixed;
@@ -119,6 +122,44 @@
     #cart-items .list-group-item:hover {
         background-color: #f8f9fa;
     }
+
+    /*Animaci'on de carrito*/
+    .package-added {
+        animation: packageGlow 0.6s ease;
+    }
+
+    @keyframes packageGlow {
+        0% {
+            box-shadow: 0 0 0px rgba(25, 135, 84, 0);
+            transform: scale(1);
+        }
+        40% {
+            box-shadow: 0 0 25px rgba(25, 135, 84, 0.8);
+            transform: scale(1.03);
+        }
+        100% {
+            box-shadow: 0 0 0px rgba(25, 135, 84, 0);
+            transform: scale(1);
+        }
+    }
+
+    /* Iluminación suave carrito */
+    .cart-glow {
+        animation: cartGlow 0.8s ease;
+    }
+
+    @keyframes cartGlow {
+        0% {
+            box-shadow: 0 0 0 rgba(25, 135, 84, 0);
+        }
+        40% {
+            box-shadow: 0 0 35px rgba(25, 135, 84, 0.9);
+        }
+        100% {
+            box-shadow: 0 0 0 rgba(25, 135, 84, 0);
+        }
+    }
+
 </style>
 <link rel="stylesheet" href="<?= base_url('backend/assets/css/newpackage.css') ?>">
 
@@ -153,7 +194,16 @@
                             <input type="hidden" name="user_id" value="<?= session('id') ?>">
                         </div>
                     </div>
-
+                    <div class="d-flex justify-content-end mb-3">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="viewGrid">
+                                Vista Fotos
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="viewList">
+                                Vista Lista
+                            </button>
+                        </div>
+                    </div>
                     <div class="text-end">
                         <div id="packages-container" class="row g-3">
                             <!-- Aquí se renderizan las tarjetas -->
@@ -340,54 +390,74 @@
                 `/upload/no-image.png`;
 
             const col = document.createElement('div');
-            col.className = 'col-md-3 mb-3';
+            col.className = currentView === 'grid'
+                ? 'col-md-3 mb-3'
+                : 'col-12 mb-2';
+            if (currentView === 'grid') {
+                col.innerHTML = `
+                <div class="card package-card h-100 shadow-sm">
+                    <div class="package-image-wrapper">
+                        <img 
+                            src="/upload/placeholder.png"
+                            data-src="${imageUrl}"
+                            class="card-img-top lazy-img"
+                            loading="lazy"
+                            alt="Paquete ${pkg.id}">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-1">Paquete #${pkg.id}</h6>
+                        <h6 class="mb-1">Cliente: ${pkg.cliente}</h6>
+                        <h6 class="mb-1">
+                            Fecha entregado: ${formatFechaSV(pkg.fecha_pack_entregado)}
+                        </h6>
 
-            col.innerHTML = `
-            <div class="card package-card h-100 shadow-sm">
-                <div class="package-image-wrapper">
-                    <img src="${imageUrl}" 
-                        class="card-img-top"
-                        alt="Paquete ${pkg.id}">
-                </div>
-                <div class="card-body">
-                    <h6 class="mb-1">Paquete #${pkg.id}</h6>
-                    <h6 class="mb-1">Cliente: ${pkg.cliente}</h6>
-                    <h6 class="mb-1">
-                        Fecha entregado: ${formatFechaSV(pkg.fecha_pack_entregado)}
-                    </h6>
 
+                        <hr>
 
-                    <hr>
+                        <div>Valor Paq: $</div>
+                        <div class="package-amount fw-bold">
+                            ${monto.toFixed(2)}
+                        </div>
 
-                    <div>Valor Paq: $</div>
-                    <div class="package-amount fw-bold">
-                        ${monto.toFixed(2)}
+                        ${
+                            pendiente > 0
+                            ? `<div class="text-danger small">
+                                Descuento pendiente: -$${pendiente.toFixed(2)}
+                            </div>`
+                            : ''
+                        }
                     </div>
 
-                    ${
-                        pendiente > 0
-                        ? `<div class="text-danger small">
-                            Descuento pendiente: -$${pendiente.toFixed(2)}
-                           </div>`
-                        : ''
-                    }
+                    <div class="package-footer d-flex justify-content-between align-items-center px-3 py-2 bg-light">
+                        <strong>Total a pagar:</strong>
+                        <span class="fw-bold text-success">
+                            $${netAmount.toFixed(2)}
+                        </span>
+                    </div>
+
+                    <div class="p-2">
+                        <button type="button" class="btn btn-outline-success w-100 btn-add">
+                            Agregar al pago
+                        </button>
                 </div>
+            `;
+            } else {
+                col.innerHTML = `
+                    <div class="card shadow-sm p-3 d-flex flex-row justify-content-between">
+                        <div>
+                            <strong>PK-${pkg.id}</strong><br>
+                            <small>${pkg.cliente}</small><br>
+                            <small>$${monto.toFixed(2)}</small>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm btn-add">
+                            Agregar
+                        </button>
+                    </div>
+                `;
+            }
 
-                <div class="package-footer d-flex justify-content-between align-items-center px-3 py-2 bg-light">
-                    <strong>Total a pagar:</strong>
-                    <span class="fw-bold text-success">
-                        $${netAmount.toFixed(2)}
-                    </span>
-                </div>
+            col.querySelector('.btn-add').addEventListener('click', (e) => {
 
-                <div class="p-2">
-                    <button type="button" class="btn btn-outline-success w-100 btn-add">
-                        Agregar al pago
-                    </button>
-            </div>
-        `;
-
-            col.querySelector('.btn-add').addEventListener('click', () => {
                 addToCart({
                     id: pkg.id,
                     code: `PK-${pkg.id}`,
@@ -395,12 +465,37 @@
                     photo: pkg.foto ?
                         `/upload/paquetes/${pkg.foto}` : `/upload/no-image.png`
                 });
+
+                // Iluminar carrito
+                const cartBox = document.getElementById('payment-cart');
+                cartBox.classList.add('cart-glow');
+
+                setTimeout(() => {
+                    cartBox.classList.remove('cart-glow');
+                }, 800);
+
             });
 
             container.appendChild(col);
         });
     }
 
+    function initLazyLoad() {
+        const images = document.querySelectorAll('.lazy-img');
+
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy-img');
+                    obs.unobserve(img);
+                }
+            });
+        });
+
+        images.forEach(img => observer.observe(img));
+    }
 
     /* ==========================================================
      *  LOAD PACKAGES BY SELLER
@@ -416,6 +511,7 @@
             .then(res => res.json())
             .then(data => {
                 renderPackages(data);
+                initLazyLoad();
             })
             .catch(() => {
                 Swal.fire('Error', 'No se pudieron cargar los paquetes', 'error');
@@ -551,6 +647,22 @@
 
             return;
         }
+
+        /* ------------------------------------------------------
+         *  VIEW TOGGLE
+         * ------------------------------------------------------ */
+        
+        document.getElementById('viewGrid').addEventListener('click', () => {
+            currentView = 'grid';
+            localStorage.setItem('packageView', 'grid');
+            $('#seller_id').trigger('change');
+        });
+
+        document.getElementById('viewList').addEventListener('click', () => {
+            currentView = 'list';
+            localStorage.setItem('packageView', 'list');
+            $('#seller_id').trigger('change');
+        });
 
         /* ------------------------------------------------------
          *  CART TOGGLE
