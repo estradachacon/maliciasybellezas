@@ -125,7 +125,7 @@
 
     /* Aminacion en carrito*/
     .package-added {
-    animation: packageGlow 0.6s ease;
+        animation: packageGlow 0.6s ease;
     }
 
     @keyframes packageGlow {
@@ -133,10 +133,12 @@
             box-shadow: 0 0 0px rgba(25, 135, 84, 0);
             transform: scale(1);
         }
+
         40% {
             box-shadow: 0 0 25px rgba(25, 135, 84, 0.8);
             transform: scale(1.03);
         }
+
         100% {
             box-shadow: 0 0 0px rgba(25, 135, 84, 0);
             transform: scale(1);
@@ -144,22 +146,73 @@
     }
 
     /* Animación carrito */
-.cart-glow {
-    animation: cartGlow 0.8s ease;
-}
+    .cart-glow {
+        animation: cartGlow 0.8s ease;
+    }
 
-@keyframes cartGlow {
-    0% {
-        box-shadow: 0 0 0 rgba(25, 135, 84, 0);
-    }
-    40% {
-        box-shadow: 0 0 35px rgba(25, 135, 84, 0.9);
-    }
-    100% {
-        box-shadow: 0 0 0 rgba(25, 135, 84, 0);
-    }
-}
+    @keyframes cartGlow {
+        0% {
+            box-shadow: 0 0 0 rgba(25, 135, 84, 0);
+        }
 
+        40% {
+            box-shadow: 0 0 35px rgba(25, 135, 84, 0.9);
+        }
+
+        100% {
+            box-shadow: 0 0 0 rgba(25, 135, 84, 0);
+        }
+    }
+
+    /* Modal de paquetes solo flete */
+    .modal {
+        z-index: 1050;
+    }
+
+    .modal-backdrop {
+        z-index: 1040;
+    }
+
+    .modal {
+        z-index: 3000 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 2999 !important;
+    }
+
+    #modalFletes .card {
+        transition: all .2s ease;
+    }
+
+    #modalFletes .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, .2);
+    }
+
+    /* ===== EFECTO SELECCIÓN SUAVE PRO ===== */
+
+    #modalFletes .package-selectable {
+        cursor: pointer;
+        border: 1px solid #dee2e6;
+        transition:
+            border-color .25s ease,
+            box-shadow .25s ease,
+            background-color .25s ease;
+    }
+
+    /* Hover sutil */
+    #modalFletes .package-selectable:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+    }
+
+    /* Seleccionado elegante */
+    #modalFletes .package-selectable.selected {
+        border-color: #28a745 !important;
+        background-color: rgba(40, 167, 69, 0.04);
+        box-shadow:
+            0 0 0 3px rgba(40, 167, 69, 0.15);
+    }
 </style>
 <link rel="stylesheet" href="<?= base_url('backend/assets/css/newpackage.css') ?>">
 
@@ -201,6 +254,13 @@
                             <input type="hidden" name="user_id" value="<?= session('id') ?>">
                             <input type="hidden" id="payment-type" value="account">
                         </div>
+                    </div>
+                    <div class="col-md-12 mt-2">
+                        <button type="button"
+                            id="btnVerFletes"
+                            class="btn btn-outline-warning btn-sm d-none">
+                            Ver fletes pendientes
+                        </button>
                     </div>
                     <div class="d-flex justify-content-end mb-3">
                         <div class="btn-group" role="group">
@@ -248,7 +308,42 @@
         </div>
     </div>
 </div>
+<!-- Modal Fletes Pendientes -->
+<div class="modal fade" id="modalFletes" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
 
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Fletes pendientes</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <button class="btn btn-sm btn-outline-secondary" id="selectAllFletes">
+                        Seleccionar todos
+                    </button>
+                </div>
+
+                <div class="row g-3" id="fletes-container">
+                    <!-- Aquí se renderizan cards -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">
+                    Cerrar
+                </button>
+                <button class="btn btn-warning" id="agregarFletes">
+                    Agregar seleccionados
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -315,7 +410,7 @@
          * ----------------------------------------------------------- */
         $('#seller_id').select2({
             theme: 'bootstrap4',
-            dropdownParent: $('#formPaquete'), // 👈 CLAVE
+            dropdownParent: $('#formPaquete'),
             placeholder: '🔍 Buscar vendedor...',
             allowClear: true,
             minimumInputLength: 2,
@@ -358,6 +453,7 @@
         items: [],
         total: 0
     };
+    let fletesPendientesGlobal = [];
 
     function formatFechaSV(fecha) {
         if (!fecha) return '—';
@@ -451,7 +547,7 @@
                     </div>
                 `;
             } else {
-                    col.innerHTML = `
+                col.innerHTML = `
                     <div class="card shadow-sm p-3 d-flex flex-row justify-content-between">
                         <div>
                             <strong>PK-${pkg.id}</strong><br>
@@ -475,7 +571,7 @@
                         `/upload/paquetes/${pkg.foto}` : `/upload/no-image.png`
                 });
 
-                // 🔥 Efecto glow
+                // Efecto glow
                 const card = e.target.closest('.card');
                 card.classList.add('package-added');
 
@@ -505,20 +601,226 @@
 
         const sellerId = $(this).val();
         document.getElementById('packages-container').innerHTML = '';
+        document.getElementById('btnVerFletes').classList.add('d-none');
 
         if (!sellerId) return;
+
+        /* ===============================
+           1️⃣ CARGAR PAQUETES NORMALES
+        =============================== */
 
         fetch(`<?= site_url('payments/packages-by-seller') ?>/${sellerId}`)
             .then(res => res.json())
             .then(data => {
-                renderPackages(data);
+
+                const normales = data.filter(pkg => parseFloat(pkg.monto) > 0);
+
+                renderPackages(normales);
                 initLazyLoad();
-            })
-            .catch(() => {
-                Swal.fire('Error', 'No se pudieron cargar los paquetes', 'error');
             });
+
+        /* ===============================
+           2️⃣ CARGAR FLETES PENDIENTES
+        =============================== */
+
+        fetch(`<?= site_url('payments/fletes-pendientes') ?>/${sellerId}`)
+            .then(res => res.json())
+            .then(fletes => {
+
+                if (!fletes.length) return;
+
+                // 🔥 AQUÍ guardamos la nueva data
+                fletesPendientesGlobal = fletes;
+
+                document.getElementById('btnVerFletes')
+                    .classList.remove('d-none');
+
+                Swal.fire({
+                    title: 'Fletes pendientes detectados',
+                    html: `
+                    Se encontraron <strong>${fletes.length}</strong> 
+                    paquete(s) con flete pendiente.<br><br>
+                    ¿Desea revisarlos ahora?
+                `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, revisarlos',
+                    cancelButtonText: 'Después'
+                }).then(result => {
+
+                    if (!result.isConfirmed) return;
+
+                    renderFletesModal();
+                    $('#modalFletes').modal('show');
+                    activarSeleccionVisualFletes();
+                });
+
+            });
+
     });
 
+    function renderFletesModal() {
+
+        const container = document.getElementById('fletes-container');
+        container.innerHTML = '';
+
+        fletesPendientesGlobal.forEach(pkg => {
+
+            const imageUrl = pkg.foto ?
+                `/upload/paquetes/${pkg.foto}` :
+                `/upload/no-image.png`;
+
+            const monto = parseFloat(pkg.monto || 0);
+            const fletePendiente = parseFloat(pkg.flete_pendiente || 0);
+
+            const col = document.createElement('div');
+            col.className = 'col-md-4 mb-3';
+
+            col.innerHTML = `
+            <div class="card shadow-sm h-100 border-warning package-card package-selectable">
+
+                <!-- FOTO -->
+                <div style="
+                    height:180px;
+                    overflow:hidden;
+                    border-top-left-radius:.25rem;
+                    border-top-right-radius:.25rem;
+                ">
+                    <img src="${imageUrl}"
+                        style="width:100%; height:100%; object-fit:cover;">
+                </div>
+
+                <div class="card-body position-relative">
+
+                    <!-- CHECK -->
+                    <div class="form-check position-absolute"
+                        style="top:10px; right:10px;">
+                        <input class="form-check-input chk-flete-card"
+                            type="checkbox"
+                            value="${pkg.id}"
+                            data-monto="${fletePendiente}">
+                    </div>
+
+                    <h6 class="mb-1">Paquete #${pkg.id}</h6>
+                    <p class="mb-1 text-muted">${pkg.cliente}</p>
+
+                    <!-- ESTADO -->
+                    <div class="mb-2">
+                        <span class="badge badge-info">
+                            ${pkg.estatus || 'Sin estado'}
+                        </span>
+                    </div>
+
+                    <!-- TOTAL PAQUETE -->
+                    <div class="small text-muted">
+                        Total del paquete:
+                    </div>
+                    <div class="font-weight-bold">
+                        $${monto.toFixed(2)}
+                    </div>
+
+                    <!-- FLETE -->
+                    <div class="text-danger font-weight-bold mt-2">
+                        Flete pendiente: $${fletePendiente.toFixed(2)}
+                    </div>
+
+                </div>
+            </div>
+            `;
+
+            container.appendChild(col);
+        });
+    }
+
+    function activarSeleccionVisualFletes() {
+
+        document.querySelectorAll('#modalFletes .package-selectable')
+            .forEach(card => {
+
+                const checkbox = card.querySelector('.chk-flete-card');
+
+                // Click en toda la card
+                card.addEventListener('click', function(e) {
+
+                    // evitar doble toggle si clickea directo el checkbox
+                    if (e.target.type !== 'checkbox') {
+                        checkbox.checked = !checkbox.checked;
+                    }
+
+                    card.classList.toggle('selected', checkbox.checked);
+                });
+
+                // Cambio directo del checkbox
+                checkbox.addEventListener('change', function() {
+                    card.classList.toggle('selected', this.checked);
+                });
+
+            });
+    }
+    // Mostrar paquetes con solo flete pendiente
+    function mostrarFletesPendientes(fletes) {
+
+        Swal.fire({
+            title: 'Fletes pendientes detectados',
+            text: `Este vendedor tiene ${fletes.length} paquete(s) con flete pendiente.`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Ver paquetes'
+        }).then(result => {
+
+            if (!result.isConfirmed) return;
+
+            let html = '<div class="text-start">';
+
+            fletes.forEach(pkg => {
+                html += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input chk-flete" 
+                           type="checkbox" 
+                           value="${pkg.id}"
+                           data-monto="${pkg.flete_pendiente}">
+                    <label class="form-check-label">
+                        Paquete #${pkg.id} — 
+                        Flete: $${parseFloat(pkg.flete_pendiente).toFixed(2)}
+                    </label>
+                </div>
+            `;
+            });
+
+            html += '</div>';
+
+            Swal.fire({
+                title: 'Seleccionar fletes a descontar',
+                html: html,
+                showCancelButton: true,
+                confirmButtonText: 'Agregar al carrito',
+                preConfirm: () => {
+
+                    const seleccionados = [];
+
+                    document.querySelectorAll('.chk-flete:checked')
+                        .forEach(chk => {
+
+                            seleccionados.push({
+                                id: 'flete-' + chk.value,
+                                code: `FLETE-PK-${chk.value}`,
+                                amount: -parseFloat(chk.dataset.monto),
+                                photo: '/upload/no-image.png',
+                                type: 'flete'
+                            });
+
+                        });
+
+                    return seleccionados;
+                }
+            }).then(result => {
+
+                if (!result.isConfirmed) return;
+
+                result.value.forEach(item => addToCart(item));
+            });
+        });
+    }
     /* ==========================================================
      *  CART FUNCTIONS
      * ========================================================== */
@@ -634,6 +936,51 @@
             .addEventListener('click', () => {
                 document.getElementById('payment-cart')
                     .classList.toggle('minimized');
+            });
+
+        /* ------------------------------------------------------
+         *  SELECT ALL FLETES
+         * ------------------------------------------------------ */
+        document.getElementById('selectAllFletes')
+            .addEventListener('click', () => {
+
+                document.querySelectorAll('.chk-flete-card')
+                    .forEach(chk => chk.checked = true);
+            });
+
+        /* ------------------------------------------------------
+         *  MOSTRAR MODAL FLETES PENDIENTES
+         * ------------------------------------------------------ */
+
+        $('#btnVerFletes').on('click', function() {
+
+            renderFletesModal();
+            $('#modalFletes').modal('show');
+            activarSeleccionVisualFletes();
+
+        });
+
+        /* ------------------------------------------------------
+         *  AGREGAR FLETES SELECCIONADOS
+         * ------------------------------------------------------ */
+
+        document.getElementById('agregarFletes')
+            .addEventListener('click', () => {
+
+                document.querySelectorAll('.chk-flete-card:checked')
+                    .forEach(chk => {
+
+                        addToCart({
+                            id: 'flete-' + chk.value,
+                            code: `FLETE-PK-${chk.value}`,
+                            amount: -parseFloat(chk.dataset.monto),
+                            photo: '/upload/no-image.png',
+                            type: 'flete'
+                        });
+
+                    });
+
+                $('#modalFletes').modal('hide');
             });
 
         /* ------------------------------------------------------

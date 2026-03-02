@@ -68,21 +68,43 @@ class PackageModel extends Model
         ])
             ->where('vendedor', $sellerId)
             ->where('estatus', 'entregado')
+            ->groupStart()
             ->where('monto >', 0)
+            ->orWhere('flete_pendiente >', 0)
+            ->groupEnd()
             ->orderBy('fecha_ingreso', 'ASC')
             ->findAll();
     }
-    public function getMunicipiosConPaquetesPersonalizados()
-{
-    return $this->db->table('packages p')
-        ->select('m.id, m.nombre')
-        ->join('colonias c', 'p.colonia_id = c.id')
-        ->join('municipios m', 'c.municipio_id = m.id')
-        ->where('p.destino_personalizado IS NOT NULL')
-        ->groupBy('m.id, m.nombre')
-        ->orderBy('m.nombre', 'ASC')
-        ->get()
-        ->getResultArray();
-}
 
+    public function getMunicipiosConPaquetesPersonalizados()
+    {
+        return $this->db->table('packages p')
+            ->select('m.id, m.nombre')
+            ->join('colonias c', 'p.colonia_id = c.id')
+            ->join('municipios m', 'c.municipio_id = m.id')
+            ->where('p.destino_personalizado IS NOT NULL')
+            ->groupBy('m.id, m.nombre')
+            ->orderBy('m.nombre', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getFletesPendientesModal(int $sellerId)
+    {
+        return $this->select([
+            'id',
+            'cliente',
+            'flete_pendiente',
+            'foto',
+            'estatus',
+            'fecha_ingreso',
+            'monto'
+        ])
+            ->where('vendedor', $sellerId)
+            ->where('flete_pendiente >', 0)
+            ->where('flete_rendido', 0)
+            ->where('monto', 0)
+            ->orderBy('fecha_ingreso', 'ASC')
+            ->findAll();
+    }
 }

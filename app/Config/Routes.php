@@ -67,6 +67,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->get('remu/create', 'RemunerationController::create');
     $routes->post('payments/pay-seller', 'PaymentController::paySeller');
     $routes->get('payments/packages-by-seller/(:num)', 'PaymentController::packagesBySeller/$1');
+    $routes->get('payments/fletes-pendientes/(:num)', 'PaymentController::fletesPendientesBySeller/$1');
 
     // Remuneraciones de paquetes por cuenta
     $routes->get('remuaccount/create', 'RemunerationController::byAccountCreate');

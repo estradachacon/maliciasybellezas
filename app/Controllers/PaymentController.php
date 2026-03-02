@@ -194,6 +194,7 @@ class PaymentController extends BaseController
             'new_balance' => $newBalance
         ]);
     }
+    
     public function paySellerbyAccount()
     {
         helper(['form']);
@@ -313,5 +314,14 @@ class PaymentController extends BaseController
             'success'    => true,
             'total_paid' => $totalPay
         ]);
+    }
+
+    public function fletesPendientesBySeller($sellerId)
+    {
+        $packageModel = new PackageModel();
+
+        $data = $packageModel->getFletesPendientesModal((int) $sellerId);
+
+        return $this->response->setJSON($data);
     }
 }
