@@ -146,7 +146,7 @@
 
                         <!-- Flete total -->
                         <div class="col-md-3" id="flete_total_container">
-                            <label class="form-label" id="label_flete_total">Total de envío a cobrar ($)</label>
+                            <label class="form-label" id="label_flete_total">Total de envío pagado ($)</label>
                             <input type="number" step="0.01" name="flete_total" id="flete_total" class="form-control"
                                 required>
                         </div>
@@ -167,7 +167,7 @@
 
                         <!-- Flete pendiente -->
                         <div class="col-md-3" id="flete_pendiente_container" style="display: none;">
-                            <label class="form-label">Envío pendiente ($)</label>
+                            <label class="form-label">Envío pendiente (descontar en remu) ($)</label>
                             <input type="number" step="0.01" name="flete_pendiente" id="flete_pendiente"
                                 class="form-control" readonly>
                         </div>

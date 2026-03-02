@@ -109,13 +109,12 @@ class PaymentController extends BaseController
 
             $db->table('packages')
                 ->where('id', $packageId)
-                ->update([
-                    'amount_paid'     => $monto,
-                    'flete_pagado'    => $pendiente,
-                    'flete_pendiente' => 0,
-                    'estatus'         => 'finalizado',
-                    'estatus2'        => 'remunerado',
-                ]);
+                ->set('amount_paid', $monto)
+                ->set('flete_pagado', 'flete_pagado + ' . $pendiente, false)
+                ->set('flete_pendiente', 0)
+                ->set('estatus', 'finalizado')
+                ->set('estatus2', 'remunerado')
+                ->update();
         }
 
         // VALIDAR CONTRA SALIDA BRUTA
@@ -263,12 +262,12 @@ class PaymentController extends BaseController
 
             $db->table('packages')
                 ->where('id', $packageId)
-                ->update([
-                    'amount_paid'     => $monto,
-                    'flete_pendiente' => 0,
-                    'estatus'         => 'finalizado',
-                    'estatus2'        => 'remunerado',
-                ]);
+                ->set('amount_paid', $monto)
+                ->set('flete_pagado', "COALESCE(flete_pagado,0) + {$pendiente}", false)
+                ->set('flete_pendiente', 0)
+                ->set('estatus', 'finalizado')
+                ->set('estatus2', 'remunerado')
+                ->update();
         }
 
         // 🔹 Validar cuenta
@@ -316,7 +315,7 @@ class PaymentController extends BaseController
             registrarEntrada(
                 $accountId,
                 $totalEntrada,
-                "Cobro fletes vendedor ID {$sellerId}",
+                "Cobro fletes vendedor ID {$sellerId}, paquetes: ID " . implode(', ', array_column($packages, 'id')),
                 "Descuento por flete pendiente",
                 '-'
             );
