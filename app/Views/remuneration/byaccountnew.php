@@ -417,7 +417,7 @@
                             <h6 class="mb-1">Paquete #${pkg.id}</h6>
                             <h6 class="mb-1">Cliente: ${pkg.cliente}</h6>
                             <h6 class="mb-1">
-                                Fecha entregado: ${formatFechaSV(pkg.fecha_pack_entregado)}
+                                Fecha actualizada de entrega: ${formatFechaSV(pkg.updated_at)}
                             </h6>
 
 

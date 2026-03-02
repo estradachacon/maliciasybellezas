@@ -14,7 +14,7 @@
                     <tbody style="line-height: 18px;">
                         <?php if (!empty($packages)): ?>
                             <?php foreach ($packages as $pkg): ?>
-                                
+
                                 <tr>
                                     <td><?= esc($pkg['id']) ?></td>
                                     <td><?= esc($pkg['seller_name']) ?></td>
@@ -40,52 +40,35 @@
                                             </span>
                                         <?php endif; ?>
 
+
                                         <!-- SOLO para tipo_servicio = 3 → mostrar destino -->
                                         <?php if ($pkg['tipo_servicio'] == 3): ?>
                                             <br>
 
                                             <?php
-                                            // Lógica para determinar el destino final
+                                            $destino = '';
+                                            $pendiente = true;
+
                                             if (!empty($pkg['point_name'])) {
                                                 $destino = esc($pkg['point_name']);
                                                 $pendiente = false;
-                                            } elseif (!empty($pkg['destino_personalizado'])) {
+                                            } elseif (!empty($pkg['destino_personalizado']) && strtolower($pkg['destino_personalizado']) !== 'casillero') {
+
                                                 $destino = esc($pkg['destino_personalizado']);
                                                 $pendiente = false;
+                                            } elseif (!empty($pkg['branch_name'])) {
+
+                                                $destino = 'Casillero → ' . esc($pkg['branch_name']);
+                                                $pendiente = false;
                                             } else {
+
                                                 $destino = 'Destino pendiente';
                                                 $pendiente = true;
                                             }
                                             ?>
 
-                                            <!-- Mostrar destino final -->
                                             <small>
                                                 <strong>Destino final:</strong>
-
-                                                <?php
-                                                $destino = '';
-                                                $pendiente = true;
-
-                                                if (!empty($pkg['point_name'])) {
-
-                                                    $destino = esc($pkg['point_name']);
-                                                    $pendiente = false;
-                                                } elseif (!empty($pkg['destino_personalizado']) && strtolower($pkg['destino_personalizado']) !== 'casillero') {
-
-                                                    // Usar destino_personalizado SOLO si NO dice "Casillero"
-                                                    $destino = esc($pkg['destino_personalizado']);
-                                                    $pendiente = false;
-                                                } elseif (!empty($pkg['branch_name'])) {
-
-                                                    // Si es casillero en tipo 3, usar la sucursal
-                                                    $destino = 'Casillero → ' . esc($pkg['branch_name']);
-                                                    $pendiente = false;
-                                                } else {
-
-                                                    $destino = 'Destino pendiente';
-                                                    $pendiente = true;
-                                                }
-                                                ?>
 
                                                 <?php if ($pendiente): ?>
                                                     <span class="badge bg-warning text-dark"><?= $destino ?></span>
@@ -94,11 +77,26 @@
                                                 <?php endif; ?>
                                             </small>
                                         <?php endif; ?>
+
+
                                         <?php if ($pkg['tipo_servicio'] == 4 && !empty($pkg['branch_name'])): ?>
                                             <span class="text-muted ml-2">
                                                 <?= esc($pkg['branch_name']) ?>
                                             </span>
                                         <?php endif; ?>
+
+
+                                        <!-- CASILLERO EXTERNO (SI EXISTE) -->
+                                        <?php if (!empty($pkg['external_location_nombre'])): ?>
+                                            <br>
+                                            <small>
+                                                <strong>Casillero externo:</strong>
+                                                <span class="text-info">
+                                                    <?= esc($pkg['external_location_nombre']) ?>
+                                                </span>
+                                            </small>
+                                        <?php endif; ?>
+
                                     </td>
 
                                     <td>
@@ -237,7 +235,8 @@
                                                 <!-- ENTREGAR PAQUETE DEL CASILLERO -->
                                                 <?php if ($pkg['estatus2'] != 'devuelto'): ?>
                                                     <?php if (
-                                                        $pkg['estatus'] == 'en_casillero'
+                                                        $pkg['estatus'] == 'en_casillero' ||
+                                                        $pkg['estatus'] == 'en_casillero_externo'
                                                     ): ?>
                                                         <li>
                                                             <a class="dropdown-item btn-entregar-casillero"
@@ -248,7 +247,6 @@
 
                                                                 <i class="fa-solid fa-box-open"></i> Entrega de paquete
                                                             </a>
-
                                                         </li>
                                                     <?php endif; ?>
                                                 <?php endif; ?>

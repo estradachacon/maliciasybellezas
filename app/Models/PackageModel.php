@@ -38,7 +38,8 @@ class PackageModel extends Model
         'reenvios',
         'branch',
         'colonia_id',
-        'user_id'
+        'user_id',
+        'external_location_id'
     ];
     protected $updatedField = 'updated_at';
     protected $createdField = 'created_at';
@@ -62,6 +63,7 @@ class PackageModel extends Model
             'flete_pendiente',
             'foto',
             'fecha_pack_entregado',
+            'updated_at',
             'fecha_ingreso'
         ])
             ->where('vendedor', $sellerId)

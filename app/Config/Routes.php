@@ -181,4 +181,5 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('external-locations/update/(:num)', 'ExternalLocations::update/$1');
     $routes->get('external-locations/delete/(:num)', 'ExternalLocations::delete/$1');
     $routes->get('external-locations/get/(:num)', 'ExternalLocations::get/$1');
+    $routes->get('external-locations-list', 'ExternalLocations::listAjax');
 });

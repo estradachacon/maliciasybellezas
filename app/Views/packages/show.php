@@ -200,7 +200,16 @@ function formatDateDMY($fecha)
                                 <td><?= esc($package['destino_personalizado'] ?? 'N/A') ?></td>
                             </tr>
                         <?php endif; ?>
-
+                        <?php if (!empty($package['external_location_nombre'])): ?>
+                            <tr>
+                                <th>Casillero Externo</th>
+                                <td>
+                                    <span class="badge badge-info">
+                                        <?= esc($package['external_location_nombre']) ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
 

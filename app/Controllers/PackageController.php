@@ -39,10 +39,17 @@ class PackageController extends BaseController
         $filter_date_to = $this->request->getGet('fecha_hasta');
 
         $builder = $this->packageModel
-            ->select('packages.*, sellers.seller AS seller_name, settled_points.point_name, branches.branch_name AS branch_name')
+            ->select('
+                packages.*,
+                sellers.seller AS seller_name,
+                settled_points.point_name,
+                branches.branch_name AS branch_name,
+                external_locations.nombre AS external_location_nombre
+            ')
             ->join('sellers', 'sellers.id = packages.vendedor', 'left')
             ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
             ->join('branches', 'branches.id = packages.branch', 'left')
+            ->join('external_locations', 'external_locations.id = packages.external_location_id', 'left')
             ->orderBy('packages.id', 'DESC');
 
         if (!empty($filter_vendedor_id)) {
@@ -88,7 +95,6 @@ class PackageController extends BaseController
             'packages' => $packages,
             'pager' => $pager,
             'sellers' => $sellers,
-
             'filter_vendedor_id' => $filter_vendedor_id,
             'filter_status' => $filter_status,
             'filter_status2' => $filter_status2,
@@ -109,15 +115,14 @@ class PackageController extends BaseController
         $package = $this->packageModel
             ->select(
                 'packages.*,
-         users.user_name as creador_nombre,
-         settled_points.point_name as point_name,
-         sellers.seller as seller_name,
-         accounts.name as pago_cuenta_nombre,
-         colonias.nombre AS colonia_nombre,
-         municipios.nombre AS municipio_nombre,
-         departamentos.nombre AS departamento_nombre'
-
-
+                users.user_name as creador_nombre,
+                settled_points.point_name as point_name,
+                sellers.seller as seller_name,
+                accounts.name as pago_cuenta_nombre,
+                colonias.nombre AS colonia_nombre,
+                municipios.nombre AS municipio_nombre,
+                departamentos.nombre AS departamento_nombre,
+                external_locations.nombre AS external_location_nombre' // 🔥 AGREGAR ESTA LÍNEA
             )
             ->join('users', 'users.id = packages.user_id', 'left')
             ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
@@ -127,6 +132,7 @@ class PackageController extends BaseController
             ->join('colonias', 'colonias.id = packages.colonia_id', 'left')
             ->join('municipios', 'municipios.id = colonias.municipio_id', 'left')
             ->join('departamentos', 'departamentos.id = municipios.departamento_id', 'left')
+            ->join('external_locations', 'external_locations.id = packages.external_location_id', 'left')
 
             ->where('packages.id', $id)
             ->first();
@@ -729,76 +735,91 @@ class PackageController extends BaseController
 
         return $this->response->setJSON(['status' => 'ok']);
     }
-    public function entregar($id)
-    {
-        helper(['form', 'transaction']);
-        $session = session();
-        $userId = $session->get('user_id');
+public function entregar($id)
+{
+    helper(['form', 'transaction']);
+    $session = session();
+    $userId = $session->get('user_id');
 
-        // 🔹 Leer JSON enviado desde SweetAlert
-        $data = $this->request->getJSON(true);
+    $data = $this->request->getJSON(true);
 
-        if (
-            !$data ||
-            empty($data['cuenta_id']) ||
-            !isset($data['valor']) ||
-            $data['valor'] <= 0
-        ) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'msg' => 'Datos incompletos para registrar la entrega'
-            ]);
-        }
-
-        $cuentaId = (int)$data['cuenta_id'];
-        $valor    = (float)$data['valor'];
-
-        $db = db_connect();
-        $db->transStart();
-
-        try {
-
-            // 1️⃣ Actualizar estatus del paquete
-            $this->packages->update($id, [
-                'estatus' => 'entregado',
-            ]);
-
-            // 2️⃣ Registrar entrada contable (MISMO MÉTODO QUE store())
-            registrarEntrada(
-                $cuentaId,
-                $valor,
-                'Pago recibido por entrega de paquete a cliente',
-                'Paquete ID ' . $id,
-                $id
-            );
-
-            // 3️⃣ Bitácora
-            registrar_bitacora(
-                'Entrega de paquete ID ' . esc($id),
-                'Paquetería',
-                'Entrega registrada con pago de $' . number_format($valor, 2) .
-                    ' en cuenta ID ' . $cuentaId .
-                    ' por el usuario ' . $userId,
-                $userId
-            );
-
-            $db->transComplete();
-
-            if ($db->transStatus() === false) {
-                throw new \Exception('Error en transacción');
-            }
-
-            return $this->response->setJSON(['status' => 'ok']);
-        } catch (\Throwable $e) {
-
-            $db->transRollback();
-
-            return $this->response->setJSON([
-                'status' => 'error',
-                'msg' => 'No se pudo completar la entrega'
-            ]);
-        }
+    if (
+        !$data ||
+        empty($data['cuenta_id']) ||
+        !isset($data['valor']) ||
+        $data['valor'] <= 0
+    ) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'msg' => 'Datos incompletos para registrar la entrega'
+        ]);
     }
+
+    $cuentaId = (int)$data['cuenta_id'];
+    $valor    = (float)$data['valor'];
+
+    $db = db_connect();
+
+    // 🔥 MISMA LÓGICA QUE SAVE()
+    $sumarSaldo = function ($accountId, $monto) use ($db) {
+        if ($monto <= 0) return;
+
+        $db->table('accounts')
+            ->where('id', $accountId)
+            ->set('balance', 'balance + ' . $monto, false)
+            ->update();
+    };
+
+    $db->transStart();
+
+    try {
+
+        // 1️⃣ Actualizar paquete
+        $this->packages->update($id, [
+            'estatus' => 'entregado',
+            'pago_cuenta' => $cuentaId,
+            'fecha_pack_entregado' => date('Y-m-d')
+        ]);
+
+        // 2️⃣ 🔥 SUMAR SALDO (LO QUE TE FALTABA)
+        $sumarSaldo($cuentaId, $valor);
+
+        // 3️⃣ Registrar movimiento
+        registrarEntrada(
+            $cuentaId,
+            $valor,
+            'Pago recibido por entrega de paquete a cliente',
+            'Paquete ID ' . $id,
+            $id
+        );
+
+        registrar_bitacora(
+            'Entrega de paquete ID ' . esc($id),
+            'Paquetería',
+            'Entrega registrada con pago de $' . number_format($valor, 2) .
+                ' en cuenta ID ' . $cuentaId .
+                ' por el usuario ' . $userId,
+            $userId
+        );
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            throw new \Exception('Error en transacción');
+        }
+
+        return $this->response->setJSON(['status' => 'ok']);
+
+    } catch (\Throwable $e) {
+
+        $db->transRollback();
+
+        return $this->response->setJSON([
+            'status' => 'error',
+            'msg' => 'No se pudo completar la entrega'
+        ]);
+    }
+}
 
     public function showReturnPackages()
     {

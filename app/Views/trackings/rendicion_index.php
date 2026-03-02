@@ -36,6 +36,18 @@
     .bg-info-light {
         background-color: #cce5ff !important;
     }
+
+    /* Este es para el selector de casillero externo */
+    .casillero-container {
+        max-height: 0;
+        overflow: hidden;
+        transition: all .3s ease;
+        margin-top: 5px;
+    }
+
+    .casillero-container.active {
+        max-height: 60px;
+    }
 </style>
 <div class="row">
     <div class="col-md-12">
@@ -60,9 +72,8 @@
                         <thead class="thead">
                             <tr class="col-md-12">
                                 <th class="col-md-1">No exitoso</th>
-
                                 <th class="col-md-1 text-center">Solo Recolectado</th>
-
+                                <th class="col-md-2 text-center">Casillero externo</th>
                                 <th class="col-md-1">ID Paquete</th>
                                 <th class="col-md-3">Vendedor → Cliente</th>
                                 <th class="col-md-3">Destino / Tipo</th>
@@ -168,8 +179,19 @@
                                                 <?= ($p->status == 'recolectado' ? 'checked' : '') ?>>
                                         <?php endif; ?>
                                     </td>
+                                    <td class="text-center casillero-cell">
+                                        <div class="casillero-wrapper">
+                                            <input type="checkbox"
+                                                class="casillero-checkbox"
+                                                data-id="<?= $p->package_id ?>">
 
-
+                                            <div class="casillero-container">
+                                                <select name="external_location[<?= $p->package_id ?>]"
+                                                    class="form-control select2-location casillero-select">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td><?= $p->package_id ?></td>
                                     <td><?= esc($p->vendedor . ' → ' . $p->cliente) ?></td>
                                     <td>
@@ -240,22 +262,36 @@
 <script>
     function confirmarRendicion(e) {
 
-        e.preventDefault(); // 🚫 detenemos envío automático
+        e.preventDefault();
 
-        // 🔎 Tomar los totales actuales
         const totalEfectivo = document.getElementById('total-entregar').innerText;
         const totalOtras = document.getElementById('total-otras').innerText;
+
+        // 📦 Contar paquetes dejados en casillero externo
+        let totalCasilleros = 0;
+
+        document.querySelectorAll('.casillero-checkbox').forEach(cb => {
+            if (cb.checked) {
+                totalCasilleros++;
+            }
+        });
+
+        // Solo mostrar si hay al menos uno
+        const lineaCasillero = totalCasilleros > 0 ?
+            `<p><strong>Paquetes en casilleros externos:</strong> ${totalCasilleros}</p>` :
+            '';
 
         Swal.fire({
             title: 'Confirmar rendición',
             html: `
-            <div style="text-align:left; font-size:15px;">
-                <p><strong>Total en efectivo:</strong> ${totalEfectivo}</p>
-                <p><strong>Total otras cuentas:</strong> ${totalOtras}</p>
-                <hr>
-                <p>¿Deseas continuar con la rendición?</p>
-            </div>
-        `,
+                <div style="text-align:left; font-size:15px;">
+                    <p><strong>Total en efectivo:</strong> ${totalEfectivo}</p>
+                    <p><strong>Total otras cuentas:</strong> ${totalOtras}</p>
+                    ${lineaCasillero}
+                    <hr>
+                    <p>¿Deseas continuar con la rendición?</p>
+                </div>
+            `,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#28a745',
@@ -283,11 +319,10 @@
                 const limpioEfectivo = totalEfectivo.replace('$', '');
                 const limpioOtras = totalOtras.replace('$', '');
 
-                // Asignar a los hidden
                 document.getElementById('input-total-efectivo').value = limpioEfectivo;
                 document.getElementById('input-total-otras').value = limpioOtras;
 
-                e.target.submit(); 
+                e.target.submit();
             }
         });
 
@@ -298,6 +333,31 @@
 
 <script>
     $(document).ready(function() {
+        $('.select2-location').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: 'Seleccionar casillero',
+            minimumInputLength: 0,
+            ajax: {
+                url: "<?= base_url('external-locations-list') ?>",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(item => ({
+                            id: item.id,
+                            text: item.nombre +
+                                (item.descripcion ? ' - ' + item.descripcion : '')
+                        }))
+                    };
+                }
+            }
+        });
 
         // Inicializar Select2 para selección de cuentas
         $('.select2-account').select2({
@@ -370,6 +430,8 @@
                 const cbRecolectadoSolo = row.querySelector('.recolectado-solo-checkbox');
                 const strongMonto = row.querySelector('.paquete-monto-total');
                 const selectCuenta = row.querySelector('.select2-account');
+                const cbCasillero = row.querySelector('.casillero-checkbox');
+                const selectCasillero = row.querySelector('.casillero-select');
 
                 const cuentaSeleccionada = parseInt(selectCuenta?.value) || 0;
 
@@ -399,6 +461,41 @@
                 }
 
                 row.classList.remove('bg-warning', 'bg-danger-light', 'bg-success-light', 'bg-info-light');
+
+                // =========================
+                // EN CASILLERO EXTERNO
+                // =========================
+                if (cbCasillero && cbCasillero.checked) {
+
+                    row.classList.add('bg-info-light');
+
+                    if (selectCasillero) {
+                        const container = selectCasillero.closest('.casillero-container');
+                        container.classList.add('active');
+                    }
+
+                    if (cbRegresado) {
+                        cbRegresado.checked = false;
+                        cbRegresado.disabled = true;
+                    }
+
+                    if (cbRecolectadoSolo) {
+                        cbRecolectadoSolo.checked = false;
+                        cbRecolectadoSolo.disabled = true;
+                    }
+
+                    return;
+
+                } else {
+
+                    if (selectCasillero) {
+                        const container = selectCasillero.closest('.casillero-container');
+                        container.classList.remove('active');
+                    }
+
+                    if (cbRegresado) cbRegresado.disabled = false;
+                    if (cbRecolectadoSolo) cbRecolectadoSolo.disabled = false;
+                }
 
                 // ❌ REGRESADO → NO SUMA
                 if (cbRegresado.checked) {
@@ -448,9 +545,7 @@
                     row.classList.add('bg-success-light');
                 }
 
-                // =========================
                 // 🔥 AQUÍ HACEMOS LA SEPARACIÓN POR CUENTA
-                // =========================
                 if (cuentaSeleccionada === 1) {
                     totalEfectivo += subtotal;
                 } else if (cuentaSeleccionada > 1) {
@@ -475,6 +570,10 @@
         });
 
         document.querySelectorAll('.recolectado-solo-checkbox').forEach(cb => {
+            cb.addEventListener('change', actualizarEstadoYTotal);
+        });
+
+        document.querySelectorAll('.casillero-checkbox').forEach(cb => {
             cb.addEventListener('change', actualizarEstadoYTotal);
         });
     });

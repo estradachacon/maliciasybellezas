@@ -89,4 +89,29 @@ class ExternalLocations extends BaseController
 
         return $this->response->setJSON($location);
     }
+    public function listAjax()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(403);
+        }
+
+        $term = $this->request->getGet('q');
+
+        $builder = $this->locationModel
+            ->select('id, nombre')
+            ->where('activo', 1);
+
+        if (!empty($term)) {
+            $builder->groupStart()
+                ->like('nombre', $term)
+                ->orLike('descripcion', $term)
+                ->groupEnd();
+        }
+
+        $locations = $builder
+            ->orderBy('nombre', 'ASC')
+            ->findAll(20); // limit opcional
+
+        return $this->response->setJSON($locations);
+    }
 }

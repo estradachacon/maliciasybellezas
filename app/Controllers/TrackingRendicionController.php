@@ -83,6 +83,7 @@ class TrackingRendicionController extends BaseController
         $cuentasAsignadas = $this->request->getPost('cuenta_asignada') ?? [];
         $total_efectivo = $this->request->getPost('total_efectivo') ?? 0;
         $total_otras_cuentas = $this->request->getPost('total_otras_cuentas') ?? 0;
+        $externalLocations = $this->request->getPost('external_location') ?? [];
 
         // 2) DATA BASE
         $paquetes     = $this->detailModel->getDetailsWithPackages($trackingId);
@@ -107,6 +108,28 @@ class TrackingRendicionController extends BaseController
 
             // A) CONTAR DESTINOS (solo servicio 3)
             $destinoCount = 1;
+
+            // CASILLERO EXTERNO
+            if (isset($externalLocations[$p->package_id]) && !empty($externalLocations[$p->package_id])) {
+
+                $locationId = (int)$externalLocations[$p->package_id];
+
+                // Actualizar paquete
+                $packageModel->update($p->package_id, [
+                    'estatus' => 'en_casillero_externo',
+                    'external_location_id' => $locationId
+                ]);
+
+                // Actualizar tracking_details
+                $this->detailModel->update($p->id, [
+                    'status' => 'en_casillero_externo'
+                ]);
+
+                $paquetesModificados[] = "ID {$p->package_id} → en_casillero_externo";
+
+                continue; // MUY IMPORTANTE: no sigue flujo financiero
+            }
+
             if ($p->tipo_servicio == 3) {
                 if (!empty($p->destino_personalizado)) $destinoCount++;
                 if (!empty($p->puntofijo_nombre)) $destinoCount++;
@@ -145,7 +168,7 @@ class TrackingRendicionController extends BaseController
                 $updateData['fecha_pack_entregado'] = $today;
             }
 
-            // 👉 Bandera financiera SOLO se setea, no se decide dinero aquí
+            //Bandera financiera SOLO se setea, no se decide dinero aquí
             if ($p->tipo_servicio == 3 && in_array($newStatus, ['recolectado', 'entregado'])) {
                 $updateData['flete_rendido'] = 1;
             }
@@ -179,7 +202,7 @@ class TrackingRendicionController extends BaseController
             // G) LÓGICA FINANCIERA REAL
             if ($p->tipo_servicio == 3) {
 
-                // 🟡 SOLO RECOLECTA (primer evento)
+                // SOLO RECOLECTA (primer evento)
                 if ($newStatus === 'recolectado' && !$fleteYaRendido) {
 
                     $sumarSaldo($cuentaDeIngreso, $montoVendedor);
@@ -198,7 +221,7 @@ class TrackingRendicionController extends BaseController
                 // ENTREGA FINAL
                 if ($newStatus === 'entregado') {
 
-                    // ✔ Siempre paquete
+                    // Siempre paquete
                     $sumarSaldo($cuentaDeIngreso, $montoPaquete);
 
                     registrarEntrada(

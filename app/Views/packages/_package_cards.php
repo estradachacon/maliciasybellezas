@@ -75,7 +75,8 @@
                             <!-- ENTREGAR PAQUETE DEL CASILLERO -->
                             <?php if ($pkg['estatus2'] != 'devuelto'): ?>
                                 <?php if (
-                                    $pkg['estatus'] == 'en_casillero'
+                                    $pkg['estatus'] == 'en_casillero' ||
+                                    $pkg['estatus'] == 'en_casillero_externo'
                                 ): ?>
                                     <li>
                                         <a class="dropdown-item btn-entregar-casillero"
@@ -86,7 +87,6 @@
 
                                             <i class="fa-solid fa-box-open"></i> Entrega de paquete
                                         </a>
-
                                     </li>
                                 <?php endif; ?>
                             <?php endif; ?>
