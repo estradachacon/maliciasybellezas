@@ -194,7 +194,7 @@ class PaymentController extends BaseController
             'new_balance' => $newBalance
         ]);
     }
-    
+
     public function paySellerbyAccount()
     {
         helper(['form']);
@@ -221,12 +221,22 @@ class PaymentController extends BaseController
 
         $db->transStart();
 
-        // 🔹 Calcular total a pagar sumando los paquetes
-        $totalPay = 0;
+        $totalSalida  = 0; // Total que sale
+        $totalEntrada = 0; // Total que entra (fletes)
 
         foreach ($packages as $pkg) {
+
+            $rawId = $pkg['id'];
+
+            // 🔹 Limpiar si viene como flete-123
+            if (strpos($rawId, 'flete-') === 0) {
+                $rawId = str_replace('flete-', '', $rawId);
+            }
+
+            $packageId = (int) $rawId;
+
             $package = $db->table('packages')
-                ->where('id', $pkg['id'])
+                ->where('id', $packageId)
                 ->where('vendedor', $sellerId)
                 ->get()
                 ->getRowArray();
@@ -239,31 +249,23 @@ class PaymentController extends BaseController
                 ]);
             }
 
-            $monto = (float) $package['monto'];
+            $monto     = (float) $package['monto'];
             $pendiente = (float) ($package['flete_pendiente'] ?? 0);
-            $netAmount = $monto - $pendiente;
 
-            if ($netAmount < 0) {
-                $db->transRollback();
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Monto inválido en paquete #' . $package['id']
-                ]);
-            }
-
-            $totalPay += $netAmount;
+            $totalSalida  += $monto;
+            $totalEntrada += $pendiente;
 
             $db->table('packages')
-                ->where('id', $package['id'])
+                ->where('id', $packageId)
                 ->update([
-                    'amount_paid'     => $netAmount,
+                    'amount_paid'     => $monto,
                     'flete_pendiente' => 0,
                     'estatus'         => 'finalizado',
                     'estatus2'        => 'remunerado',
                 ]);
         }
 
-        // 🔹 Obtener cuenta efectivo (ID = 1)
+        // 🔹 Validar cuenta
         $account = $db->table('accounts')
             ->where('id', $accountId)
             ->get()
@@ -276,9 +278,11 @@ class PaymentController extends BaseController
                 'message' => 'Cuenta seleccionada no encontrada'
             ]);
         }
+
+        // 🔹 Actualizar balance correctamente
         $db->table('accounts')
             ->where('id', $accountId)
-            ->set('balance', 'balance - ' . $totalPay, false)
+            ->set('balance', "balance - {$totalSalida} + {$totalEntrada}", false)
             ->update();
 
         $db->transComplete();
@@ -290,29 +294,42 @@ class PaymentController extends BaseController
             ]);
         }
 
-        registrarSalida(
-        $account['id'],
-        $totalPay,
-        "Remuneración por cuentas",
-        "Paquetes con ID: " . implode(
-            ', ',
-            array_map(function ($pkg) {
-                return $pkg['id'];
-            }, $packages)
-        ),
-        '-',
-        );
+        // 🔹 Registrar movimientos separados
+
+        if ($totalSalida > 0) {
+            registrarSalida(
+                $accountId,
+                $totalSalida,
+                "Remuneración vendedor ID {$sellerId}",
+                "Pago de paquetes: ID " . implode(', ', array_column($packages, 'id')),
+                '-'
+            );
+        }
+
+        if ($totalEntrada > 0) {
+            registrarEntrada(
+                $accountId,
+                $totalEntrada,
+                "Cobro fletes vendedor ID {$sellerId}",
+                "Descuento por flete pendiente",
+                '-'
+            );
+        }
+
+        $totalNeto = $totalSalida - $totalEntrada;
 
         registrar_bitacora(
             'Pago a vendedor ID ' . esc($sellerId),
-            'Remuneraciones',
-            'Se pagó un total de $' . number_format($totalPay, 2) . ' al vendedor con ID ' . esc($sellerId) . '.' . ' Usando cuenta ID ' . esc($data['cuenta_id']),
+            'Remuneraciones por cuenta',
+            'Salida: $' . number_format($totalSalida, 2) .
+                ' | Entrada por fletes: $' . number_format($totalEntrada, 2) .
+                ' | Neto: $' . number_format($totalNeto, 2),
             $session->get('id')
         );
 
         return $this->response->setJSON([
             'success'    => true,
-            'total_paid' => $totalPay
+            'total_paid' => $totalNeto
         ]);
     }
 

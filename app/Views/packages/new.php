@@ -526,6 +526,42 @@
         });
 
         /* -----------------------------------------------------------
+        PAQUETE YA CANCELADO – Apagar monto declarado
+        ----------------------------------------------------------- */
+
+        const radiosCancelado = document.querySelectorAll('input[name="toggleCobro"]');
+        const montoInput = document.getElementById('monto_declarado');
+
+        let montoOriginal = null;
+
+        radiosCancelado.forEach(radio => {
+            radio.addEventListener('change', function () {
+
+                if (this.value === "1") {
+
+                    // Guardar monto original solo la primera vez
+                    if (montoOriginal === null) {
+                        montoOriginal = montoInput.value;
+                    }
+
+                    montoInput.value = "0.00";
+                    montoInput.readOnly = true;
+                    montoInput.classList.add('bg-light');
+
+                } else {
+
+                    montoInput.readOnly = false;
+                    montoInput.classList.remove('bg-light');
+
+                    if (montoOriginal !== null) {
+                        montoInput.value = montoOriginal;
+                    }
+                }
+
+            });
+        });
+        
+        /* -----------------------------------------------------------
          * AJAX – Envío del formulario con barra de progreso
          * ----------------------------------------------------------- */
 
