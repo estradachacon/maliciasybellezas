@@ -487,12 +487,60 @@
         });
 
         function mostrarPreview(file) {
-            if (!file?.type.startsWith("image/")) return;
+            if (!file || !file.type.startsWith("image/")) return;
+
+            const img = new Image();
             const reader = new FileReader();
-            reader.onload = e => {
-                preview.src = e.target.result;
-                preview.style.display = "block";
+
+            reader.onload = function(e) {
+                img.src = e.target.result;
             };
+
+            img.onload = function() {
+
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                const MAX_SIZE = 1024; // 🔥 más agresivo
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // 🔥 WebP + calidad 0.5
+                canvas.toBlob(function(blob) {
+
+                    const compressedFile = new File([blob], file.name.replace(/\.\w+$/, '.webp'), {
+                        type: "image/webp",
+                        lastModified: Date.now()
+                    });
+
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(compressedFile);
+                    fileInput.files = dataTransfer.files;
+
+                    preview.src = URL.createObjectURL(blob);
+                    preview.style.display = "block";
+
+                }, "image/webp", 0.5);
+            };
+
             reader.readAsDataURL(file);
         }
 
@@ -535,7 +583,7 @@
         let montoOriginal = null;
 
         radiosCancelado.forEach(radio => {
-            radio.addEventListener('change', function () {
+            radio.addEventListener('change', function() {
 
                 if (this.value === "1") {
 
@@ -560,7 +608,7 @@
 
             });
         });
-        
+
         /* -----------------------------------------------------------
          * AJAX – Envío del formulario con barra de progreso
          * ----------------------------------------------------------- */
