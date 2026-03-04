@@ -566,7 +566,7 @@
 
                 container.appendChild(col);
             });
-            syncSelectedPackagesVisual();
+        syncSelectedPackagesVisual();
     }
 
     function syncSelectedPackagesVisual() {
@@ -663,6 +663,15 @@
         container.innerHTML = '';
 
         fletesPendientesGlobal.forEach(pkg => {
+            const estado = pkg.estatus || 'Sin estado';
+
+            let badgeClass = 'badge-info';
+
+            if (estado === 'no_retirado') {
+                badgeClass = 'badge-danger';
+            }
+
+            const yaEnCarrito = cart.items.some(i => i.id === 'flete-' + pkg.id);
 
             const imageUrl = pkg.foto ?
                 `/upload/paquetes/${pkg.foto}` :
@@ -675,58 +684,58 @@
             col.className = 'col-md-4 mb-3';
 
             col.innerHTML = `
-            <div class="card shadow-sm h-100 border-warning package-card package-selectable">
+        <div class="card shadow-sm h-100 border-warning package-card package-selectable">
 
-                <!-- FOTO -->
-                <div style="
-                    height:180px;
-                    overflow:hidden;
-                    border-top-left-radius:.25rem;
-                    border-top-right-radius:.25rem;
-                ">
-                    <img src="${imageUrl}"
-                        style="width:100%; height:100%; object-fit:cover;">
-                </div>
-
-                <div class="card-body position-relative">
-
-                    <!-- CHECK -->
-                    <div class="form-check position-absolute"
-                        style="top:10px; right:10px;">
-                        <input class="form-check-input chk-flete-card"
-                            type="checkbox"
-                            value="${pkg.id}"
-                            data-monto="${fletePendiente}">
-                    </div>
-
-                    <h6 class="mb-1">Paquete #${pkg.id}</h6>
-                    <p class="mb-1 text-muted">${pkg.cliente}</p>
-
-                    <!-- ESTADO -->
-                    <div class="mb-2">
-                        <span class="badge badge-info">
-                            ${pkg.estatus || 'Sin estado'}
-                        </span>
-                    </div>
-
-                    <!-- TOTAL PAQUETE -->
-                    <div class="small text-muted">
-                        Total del paquete:
-                    </div>
-                    <div class="font-weight-bold">
-                        $${monto.toFixed(2)}
-                    </div>
-
-                    <!-- FLETE -->
-                    <div class="text-danger font-weight-bold mt-2">
-                        Flete pendiente: $${fletePendiente.toFixed(2)}
-                    </div>
-
-                </div>
+            <div style="
+                height:180px;
+                overflow:hidden;
+                border-top-left-radius:.25rem;
+                border-top-right-radius:.25rem;
+            ">
+                <img src="${imageUrl}"
+                    style="width:100%; height:100%; object-fit:cover;">
             </div>
-            `;
+
+            <div class="card-body position-relative">
+
+                <div class="form-check position-absolute"
+                    style="top:10px; right:10px;">
+                    <input class="form-check-input chk-flete-card"
+                        type="checkbox"
+                        value="${pkg.id}"
+                        data-monto="${fletePendiente}"
+                        ${yaEnCarrito ? 'checked' : ''}>
+                </div>
+
+                <h6 class="mb-1">Paquete #${pkg.id}</h6>
+                <p class="mb-1 text-muted">${pkg.cliente}</p>
+
+                <div class="mb-2">
+                    <span class="badge ${badgeClass}">
+                        ${estado}
+                    </span>
+                </div>
+
+                <div class="small text-muted">
+                    Total del paquete:
+                </div>
+                <div class="font-weight-bold">
+                    $${monto.toFixed(2)}
+                </div>
+
+                <div class="text-danger font-weight-bold mt-2">
+                    Flete pendiente: $${fletePendiente.toFixed(2)}
+                </div>
+
+            </div>
+        </div>
+        `;
 
             container.appendChild(col);
+
+            if (yaEnCarrito) {
+                col.querySelector('.package-selectable').classList.add('selected');
+            }
         });
     }
 
@@ -887,16 +896,26 @@
         recalcCart();
 
         const cleanId = id.toString().replace('flete-', '');
-
         const card = document.querySelector(`[data-package-id="${cleanId}"]`);
-        if (card) {
-            card.classList.remove('package-selected');
-            const btn = card.querySelector('.btn-add');
-            if (btn) {
-                btn.innerText = currentView === 'grid' ? 'Agregar al pago' : 'Agregar';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-outline-success');
-            }
+
+        if (!card) return;
+
+        card.classList.remove('package-selected');
+
+        const btn = card.querySelector('.btn-add');
+
+        if (!btn) return;
+
+        // Limpiar clases de estado seleccionado
+        btn.classList.remove('btn-success', 'btn-outline-success');
+
+        // Restaurar según vista actual
+        if (currentView === 'grid') {
+            btn.classList.add('btn-outline-success');
+            btn.innerText = 'Agregar al pago';
+        } else {
+            btn.classList.add('btn-success');
+            btn.innerText = 'Agregar';
         }
     }
 
@@ -1024,6 +1043,42 @@
             loadFletesPendientes(sellerId, true);
 
         });
+        
+        /*
+        * Botón de seleccionar todos los fletes pendientes en el modal
+        */
+        const btnSelectAll = document.getElementById('selectAllFletes');
+
+        if (btnSelectAll) {
+
+            btnSelectAll.addEventListener('click', () => {
+
+                const checkboxes = document.querySelectorAll('#modalFletes .chk-flete-card');
+
+                if (!checkboxes.length) return;
+
+                // Verificar si todos están seleccionados
+                const todosSeleccionados = [...checkboxes].every(chk => chk.checked);
+
+                checkboxes.forEach(chk => {
+
+                    const card = chk.closest('.package-selectable');
+
+                    if (todosSeleccionados) {
+                        // 🔻 Deseleccionar todos
+                        chk.checked = false;
+                        card.classList.remove('selected');
+                    } else {
+                        // 🔺 Seleccionar todos
+                        chk.checked = true;
+                        card.classList.add('selected');
+                    }
+
+                });
+
+            });
+
+        }
 
         /* ------------------------------------------------------
          *  AGREGAR FLETES SELECCIONADOS
