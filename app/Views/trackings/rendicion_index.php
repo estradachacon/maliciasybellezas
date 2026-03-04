@@ -560,13 +560,22 @@
                 cbCasillero,
                 selectCasillero,
                 cbRegresado,
-                cbRecolectadoSolo
+                cbRecolectadoSolo,
+                selectCuenta
             } = refs;
 
             if (!cbCasillero.checked) {
+
                 if (selectCasillero) {
                     selectCasillero.closest('.casillero-container').classList.remove('active');
                 }
+
+                // restaurar cuenta
+                if (selectCuenta) {
+                    selectCuenta.disabled = false;
+                    selectCuenta.classList.remove('select-muteado');
+                }
+
                 return false;
             }
 
@@ -584,6 +593,13 @@
             if (cbRecolectadoSolo) {
                 cbRecolectadoSolo.checked = false;
                 cbRecolectadoSolo.disabled = true;
+            }
+
+            // MUTEAR CUENTA
+            if (selectCuenta) {
+                selectCuenta.disabled = true;
+                selectCuenta.classList.add('select-muteado');
+                selectCuenta.value = '';
             }
 
             return true;
