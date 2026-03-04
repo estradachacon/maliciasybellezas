@@ -213,6 +213,29 @@
         box-shadow:
             0 0 0 3px rgba(40, 167, 69, 0.15);
     }
+
+    /* ===== PAQUETE YA AGREGADO ===== */
+    .package-selected {
+        border: 2px solid #198754 !important;
+        background-color: rgba(25, 135, 84, 0.08);
+    }
+
+    .package-selected .package-amount,
+    .package-selected strong {
+        color: #198754 !important;
+    }
+
+    .package-selected::after {
+        content: "✓ Agregado";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #198754;
+        color: #fff;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
 </style>
 <link rel="stylesheet" href="<?= base_url('backend/assets/css/newpackage.css') ?>">
 
@@ -339,57 +362,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-        function renderCartItems() {
-            const list = document.getElementById('cart-items');
-            list.innerHTML = '';
-
-            cart.items.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between';
-
-                li.innerHTML = `
-                <div>
-                    <strong>${item.code}</strong><br>
-                    <small>$${parseFloat(item.amount).toFixed(2)}</small>
-                </div>
-                <button class="btn btn-sm btn-danger">
-                    &times;
-                </button>
-            `;
-
-                li.querySelector('button')
-                    .addEventListener('click', () => removeFromCart(item.id));
-
-                list.appendChild(li);
-            });
-        }
-
-        function recalcCart() {
-            cart.total = cart.items.reduce((sum, i) => sum + parseFloat(i.amount), 0);
-
-            document.querySelector('.cart-total').innerText =
-                `$${cart.total.toFixed(2)}`;
-
-            document.querySelector('.cart-count').innerText =
-                cart.items.length;
-
-            renderCartItems();
-        }
-
-        function removeFromCart(id) {
-            cart.items = cart.items.filter(i => i.id !== id);
-            recalcCart();
-        }
-
-        function addToCart(pkg) {
-
-            // evitar duplicados
-            if (cart.items.find(i => i.id === pkg.id)) return;
-
-            cart.items.push(pkg);
-            recalcCart();
-        }
-
         // Evitar que scroll cambie los números
         document.querySelectorAll('input[type=number]').forEach(input => {
             input.addEventListener('wheel', function(e) {
@@ -476,24 +448,25 @@
             return;
         }
 
-            packages
-                .filter(pkg => parseFloat(pkg.monto || 0) > 0)
-                .forEach(pkg => {
-            const monto = parseFloat(pkg.monto || 0);
-            const pendiente = parseFloat(pkg.flete_pendiente || 0);
-            const netAmount = monto - pendiente;
+        packages
+            .filter(pkg => parseFloat(pkg.monto || 0) > 0)
+            .forEach(pkg => {
+                const monto = parseFloat(pkg.monto || 0);
+                const pendiente = parseFloat(pkg.flete_pendiente || 0);
+                const netAmount = monto - pendiente;
 
-            const imageUrl = pkg.foto ?
-                `/upload/paquetes/${pkg.foto}` :
-                `/upload/no-image.png`;
+                const imageUrl = pkg.foto ?
+                    `/upload/paquetes/${pkg.foto}` :
+                    `/upload/no-image.png`;
 
-            const col = document.createElement('div');
-            col.className = currentView === 'grid' ?
-                'col-md-3 mb-3' :
-                'col-12 mb-2';
-            if (currentView === 'grid') {
-                col.innerHTML = `
-                    <div class="card package-card h-100 shadow-sm">
+                const col = document.createElement('div');
+                col.className = currentView === 'grid' ?
+                    'col-md-3 mb-3' :
+                    'col-12 mb-2';
+                if (currentView === 'grid') {
+                    col.innerHTML = `
+                    <div class="card package-card h-100 shadow-sm position-relative"
+                        data-package-id="${pkg.id}">
                         <div class="package-image-wrapper">
                             <img 
                                 src="/upload/placeholder.png"
@@ -539,9 +512,10 @@
                             </button>
                     </div>
                 `;
-            } else {
-                col.innerHTML = `
-                    <div class="card shadow-sm p-3 d-flex flex-row justify-content-between">
+                } else {
+                    col.innerHTML = `
+                    <div class="card shadow-sm p-3 d-flex flex-row justify-content-between position-relative"
+                        data-package-id="${pkg.id}">
                         <div>
                             <strong>PK-${pkg.id}</strong><br>
                             <small>${pkg.cliente}</small><br>
@@ -552,37 +526,60 @@
                         </button>
                     </div>
                 `;
-            }
+                }
 
-            col.querySelector('.btn-add').addEventListener('click', (e) => {
+                col.querySelector('.btn-add').addEventListener('click', (e) => {
 
-                addToCart({
-                    id: pkg.id,
-                    code: `PK-${pkg.id}`,
-                    amount: netAmount,
-                    photo: pkg.foto ?
-                        `/upload/paquetes/${pkg.foto}` : `/upload/no-image.png`
+                    addToCart({
+                        id: pkg.id,
+                        code: `PK-${pkg.id}`,
+                        amount: netAmount,
+                        photo: pkg.foto ?
+                            `/upload/paquetes/${pkg.foto}` : `/upload/no-image.png`
+                    });
+
+                    // Iluminar carrito
+                    const card = e.target.closest('.card');
+                    card.classList.add('package-added');
+
+                    setTimeout(() => {
+                        card.classList.remove('package-added');
+                    }, 600);
+
+                    // Iluminar carrito
+                    const cartBox = document.getElementById('payment-cart');
+                    cartBox.classList.add('cart-glow');
+
+                    setTimeout(() => {
+                        cartBox.classList.remove('cart-glow');
+                    }, 500);
                 });
 
-                // Iluminar carrito
-                const card = e.target.closest('.card');
-                card.classList.add('package-added');
-
-                setTimeout(() => {
-                    card.classList.remove('package-added');
-                }, 600);
-                
-                // Iluminar carrito
-                const cartBox = document.getElementById('payment-cart');
-                cartBox.classList.add('cart-glow');
-
-                setTimeout(() => {
-                    cartBox.classList.remove('cart-glow');
-                }, 500);
+                container.appendChild(col);
             });
+            syncSelectedPackagesVisual();
+    }
 
-            container.appendChild(col);
+    function syncSelectedPackagesVisual() {
+
+        cart.items.forEach(item => {
+
+            const cleanId = item.id.toString().replace('flete-', '');
+
+            const card = document.querySelector(`[data-package-id="${cleanId}"]`);
+
+            if (card) {
+                card.classList.add('package-selected');
+
+                const btn = card.querySelector('.btn-add');
+                if (btn) {
+                    btn.innerText = 'Agregado';
+                    btn.classList.remove('btn-outline-success');
+                    btn.classList.add('btn-success');
+                }
+            }
         });
+
     }
 
     /* ==========================================================
@@ -824,14 +821,39 @@
     }
 
     function removeFromCart(id) {
+
         cart.items = cart.items.filter(i => i.id !== id);
         recalcCart();
+
+        const cleanId = id.toString().replace('flete-', '');
+
+        const card = document.querySelector(`[data-package-id="${cleanId}"]`);
+        if (card) {
+            card.classList.remove('package-selected');
+            const btn = card.querySelector('.btn-add');
+            if (btn) {
+                btn.innerText = currentView === 'grid' ? 'Agregar al pago' : 'Agregar';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            }
+        }
     }
 
     function addToCart(pkg) {
+
         if (cart.items.find(i => i.id === pkg.id)) return;
+
         cart.items.push(pkg);
         recalcCart();
+
+        // 🔥 Marcar visualmente
+        const card = document.querySelector(`[data-package-id="${pkg.id}"]`);
+        if (card) {
+            card.classList.add('package-selected');
+            card.querySelector('.btn-add').innerText = 'Agregado';
+            card.querySelector('.btn-add').classList.remove('btn-outline-success');
+            card.querySelector('.btn-add').classList.add('btn-success');
+        }
     }
 
     function initLazyLoad() {
@@ -1038,7 +1060,7 @@
                     } else {
                         endpoint = '<?= site_url("payments/pay-seller") ?>';
                     }
-console.log("Endpoint usado:", endpoint);
+                    console.log("Endpoint usado:", endpoint);
                     fetch(endpoint, {
                             method: 'POST',
                             headers: {
@@ -1078,10 +1100,6 @@ console.log("Endpoint usado:", endpoint);
                         });
                 });
             });
-
-
     });
 </script>
-
-
 <?= $this->endSection() ?>

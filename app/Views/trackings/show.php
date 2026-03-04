@@ -109,7 +109,13 @@ $tiposServicio = [
                                         <?php endif; ?>
                                     </td>
 
-                                    <td><?= number_format($d->monto, 2) ?></td>
+                                    <td>
+                                        <?php if (empty($d->monto) || $d->monto == 0): ?>
+                                            <span class="text-danger fw-bold">Cancelado</span>
+                                        <?php else: ?>
+                                            $ <?= number_format($d->monto, 2) ?>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="text-muted small">
                                         <?= $d->cuenta_nombre ?? '-' ?>
                                     </td>
