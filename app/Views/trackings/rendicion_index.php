@@ -481,6 +481,53 @@
             }
         }
 
+        function aplicarRegresado(row, refs) {
+
+            const {
+                cbRegresado,
+                cbRecolectadoSolo,
+                cbCasillero,
+                cbPagadoVendedor,
+                strongMonto
+            } = refs;
+
+            if (!cbRegresado) return false;
+
+            if (cbRegresado.checked) {
+
+                row.classList.add('bg-danger-light');
+
+                if (strongMonto) {
+                    strongMonto.classList.add('muteado');
+                }
+
+                // Desactivar opciones incompatibles
+                if (cbRecolectadoSolo) {
+                    cbRecolectadoSolo.checked = false;
+                    cbRecolectadoSolo.disabled = true;
+                }
+
+                if (cbCasillero) {
+                    cbCasillero.checked = false;
+                    cbCasillero.disabled = true;
+                }
+
+                if (cbPagadoVendedor) {
+                    cbPagadoVendedor.checked = false;
+                    cbPagadoVendedor.disabled = true;
+                }
+
+                return true;
+            }
+
+            // Si se desmarca FALLIDO → restaurar
+            if (cbRecolectadoSolo) cbRecolectadoSolo.disabled = false;
+            if (cbCasillero) cbCasillero.disabled = false;
+            if (cbPagadoVendedor) cbPagadoVendedor.disabled = false;
+
+            return false;
+        }
+
         function aplicarPagadoVendedor(row, refs, totales) {
 
             const {
@@ -585,62 +632,75 @@
 
         function actualizarEstadoYTotal() {
 
-    let totales = {
-        efectivo: 0,
-        otras: 0,
-        directo: 0
-    };
+            let totales = {
+                efectivo: 0,
+                otras: 0,
+                directo: 0
+            };
 
-    document.querySelectorAll('.paquete-row').forEach(row => {
+            document.querySelectorAll('.paquete-row').forEach(row => {
 
-        row.classList.remove(
-            'bg-warning',
-            'bg-danger-light',
-            'bg-success-light',
-            'bg-info-light',
-            'bg-pago-directo'
-        );
+                row.classList.remove(
+                    'bg-warning',
+                    'bg-danger-light',
+                    'bg-success-light',
+                    'bg-info-light',
+                    'bg-pago-directo'
+                );
 
-        const refs = {
+                const refs = {
+                    cbRegresado: row.querySelector('.regresado-checkbox'),
+                    cbRecolectadoSolo: row.querySelector('.recolectado-solo-checkbox'),
+                    strongMonto: row.querySelector('.paquete-monto-total'),
+                    selectCuenta: row.querySelector('.select2-account'),
+                    cbCasillero: row.querySelector('.casillero-checkbox'),
+                    selectCasillero: row.querySelector('.casillero-select'),
+                    cbPagadoVendedor: row.querySelector('.pagado-vendedor-checkbox'),
 
-            cbRegresado: row.querySelector('.regresado-checkbox'),
-            cbRecolectadoSolo: row.querySelector('.recolectado-solo-checkbox'),
-            strongMonto: row.querySelector('.paquete-monto-total'),
-            selectCuenta: row.querySelector('.select2-account'),
-            cbCasillero: row.querySelector('.casillero-checkbox'),
-            selectCasillero: row.querySelector('.casillero-select'),
-            cbPagadoVendedor: row.querySelector('.pagado-vendedor-checkbox'),
+                    tipo: parseInt(row.dataset.tipo),
+                    destinos: parseInt(row.dataset.destinos),
+                    montoPaquete: Number(row.dataset.monto) || 0,
 
-            tipo: parseInt(row.dataset.tipo),
-            destinos: parseInt(row.dataset.destinos),
-            montoPaquete: Number(row.dataset.monto) || 0,
+                    togglePago: parseInt(row.dataset.toggle),
+                    fleteTotal: Number(row.dataset.fleteTotal) || 0,
+                    fletePagado: Number(row.dataset.fletePagado) || 0,
+                    fleteRendido: parseInt(row.dataset.fleteRendido) === 1
+                };
 
-            togglePago: parseInt(row.dataset.toggle),
-            fleteTotal: Number(row.dataset.fleteTotal) || 0,
-            fletePagado: Number(row.dataset.fletePagado) || 0,
-            fleteRendido: parseInt(row.dataset.fleteRendido) === 1
-        };
+                refs.montoVendedor =
+                    refs.togglePago === 0 ? refs.fleteTotal : refs.fletePagado;
 
-        refs.montoVendedor =
-            refs.togglePago === 0 ? refs.fleteTotal : refs.fletePagado;
+                // PRIORIDAD 1: FALLIDO
+                if (aplicarRegresado(row, refs)) {
+                    return;
+                }
 
-        const esPagado = aplicarPagadoVendedor(row, refs, totales);
-        const esCasillero = aplicarCasillero(row, refs);
+                // PRIORIDAD 2: PAGADO AL VENDEDOR
+                const esPagado = aplicarPagadoVendedor(row, refs, totales);
 
-        if (!esPagado && !esCasillero) {
-            calcularTotales(row, refs, totales);
+                // PRIORIDAD 3: CASILLERO
+                const esCasillero = aplicarCasillero(row, refs);
+
+                // PRIORIDAD 4: NORMAL
+                if (!esPagado && !esCasillero) {
+                    calcularTotales(row, refs, totales);
+                }
+
+            });
+
+            document.getElementById('total-entregar').innerText = '$' + totales.efectivo.toFixed(2);
+            document.getElementById('total-otras').innerText = '$' + totales.otras.toFixed(2);
+            document.getElementById('total-directo').innerText = '$' + totales.directo.toFixed(2);
         }
-
-    });
-
-    document.getElementById('total-entregar').innerText = '$' + totales.efectivo.toFixed(2);
-    document.getElementById('total-otras').innerText = '$' + totales.otras.toFixed(2);
-    document.getElementById('total-directo').innerText = '$' + totales.directo.toFixed(2);
-}
 
         actualizarEstadoYTotal();
 
-        // 🔥 Recalcular cuando cambie la cuenta (Select2)
+
+        /*
+        *Listeners para recalcular totales y actualizar estados visuales
+        */
+        
+        //Recalcular cuando cambie la cuenta (Select2)
         $(document).on('change', '.select2-account', function() {
             actualizarEstadoYTotal();
         });
