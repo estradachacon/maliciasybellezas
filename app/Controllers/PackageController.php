@@ -122,7 +122,7 @@ class PackageController extends BaseController
                 colonias.nombre AS colonia_nombre,
                 municipios.nombre AS municipio_nombre,
                 departamentos.nombre AS departamento_nombre,
-                external_locations.nombre AS external_location_nombre' // 🔥 AGREGAR ESTA LÍNEA
+                external_locations.nombre AS external_location_nombre' 
             )
             ->join('users', 'users.id = packages.user_id', 'left')
             ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')

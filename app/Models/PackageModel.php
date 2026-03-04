@@ -39,7 +39,10 @@ class PackageModel extends Model
         'branch',
         'colonia_id',
         'user_id',
-        'external_location_id'
+        'external_location_id',
+        'cliente_pago_directo',
+        'fecha_cliente_pago',
+        'motivo_no_cobro'
     ];
     protected $updatedField = 'updated_at';
     protected $createdField = 'created_at';

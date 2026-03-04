@@ -19,10 +19,6 @@ $tiposServicio = [
                 </a>
             </div>
             <div class="card-body">
-                <p><strong>Motorista:</strong> <?= $tracking->motorista_name ?? 'N/A' ?></p>
-                <p><strong>Creación:</strong> <?= date('d/m/Y H:i', strtotime($tracking->created_at)) ?></p>
-                <p><strong>Fecha de entrega:</strong> <?= date('d/m/Y', strtotime($tracking->date)) ?></p>
-
                 <?php
                 $totalEfectivo = $tracking->efectivo ?? null;
                 $totalOtras    = $tracking->otras_cuentas ?? null;
@@ -35,19 +31,27 @@ $tiposServicio = [
                     return '$' . number_format($valor, 2);
                 }
                 ?>
+                <div class="d-flex justify-content-between align-items-start flex-wrap mb-3">
 
-                <div class="mt-2 mb-3 p-2 bg-light border rounded small">
-                    <strong>Totales en Rendición: </strong>
-                    Efectivo:
-                    <span class="text-dark">
-                        <?= formatearMonto($totalEfectivo) ?>
-                    </span>
-                    &nbsp; | &nbsp;
-                    Otras cuentas:
-                    <span class="text-dark">
-                        <?= formatearMonto($totalOtras) ?>
-                    </span>
+                <div>
+                    <p class="mb-1"><strong>Motorista:</strong> <?= $tracking->motorista_name ?? 'N/A' ?></p>
+                    <p class="mb-1"><strong>Creación:</strong> <?= date('d/m/Y H:i', strtotime($tracking->created_at)) ?></p>
+                    <p class="mb-0"><strong>Fecha de entrega:</strong> <?= date('d/m/Y', strtotime($tracking->date)) ?></p>
                 </div>
+
+                <div class="px-3 py-2 bg-light border rounded small text-right">
+                    <div>
+                        <span class="text-muted">Efectivo:</span>
+                        <strong><?= formatearMonto($totalEfectivo) ?></strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Otras cuentas:</span>
+                        <strong><?= formatearMonto($totalOtras) ?></strong>
+                    </div>
+                </div>
+
+            </div>
 
                 <hr>
 
@@ -93,13 +97,11 @@ $tiposServicio = [
                                     $entrega = $d->destino_personalizado ?: 'Pendiente';
                                 }
                                 ?>
-
                                 <tr>
                                     <td><?= esc($d->package_id) ?></td>
                                     <td><?= esc($tipo) ?></td>
                                     <td><?= esc($d->vendedor) ?></td>
                                     <td><?= esc($d->cliente) ?></td>
-
                                     <td>
                                         <?php if ($d->tipo_servicio == 3): ?>
                                             <strong>Recolecta:</strong> <?= esc($recolecta) ?><br>
@@ -116,10 +118,20 @@ $tiposServicio = [
                                             $ <?= number_format($d->monto, 2) ?>
                                         <?php endif; ?>
                                     </td>
+
                                     <td class="text-muted small">
                                         <?= $d->cuenta_nombre ?? '-' ?>
                                     </td>
                                 </tr>
+
+                                <?php if (!empty($d->note)): ?>
+                                <tr>
+                                    <td colspan="7" class="bg-light text-muted small">
+                                        <i class="fa-solid fa-comment-dots"></i>
+                                        <?= esc($d->note) ?>
+                                    </td>
+                                </tr>
+                                <?php endif; ?>
 
                             <?php endforeach; ?>
                         <?php else: ?>

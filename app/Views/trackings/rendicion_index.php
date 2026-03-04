@@ -48,6 +48,16 @@
     .casillero-container.active {
         max-height: 60px;
     }
+
+    .bg-pago-directo {
+        background-color: #eaf7ea !important;
+    }
+
+    .select-muteado {
+        background-color: #e9ecef !important;
+        pointer-events: none;
+        opacity: .7;
+    }
 </style>
 <div class="row">
     <div class="col-md-12">
@@ -64,22 +74,52 @@
                     <input type="hidden" name="tracking_id" value="<?= $tracking->id ?>">
                     <input type="hidden" name="total_efectivo" id="input-total-efectivo">
                     <input type="hidden" name="total_otras_cuentas" id="input-total-otras">
+                    <input type="hidden" name="total_directo" id="input-total-directo">
 
 
                     <h5>Seleccionar estado de los paquetes</h5>
 
                     <table class="table table-bordered table-sm">
-                        <thead class="thead">
-                            <tr class="col-md-12">
-                                <th class="col-md-1">No exitoso</th>
-                                <th class="col-md-1 text-center">Solo Recolectado</th>
-                                <th class="col-md-2 text-center">Casillero externo</th>
-                                <th class="col-md-1">ID Paquete</th>
-                                <th class="col-md-3">Vendedor → Cliente</th>
-                                <th class="col-md-3">Destino / Tipo</th>
-                                <th class="col-md-1">Monto</th>
-                                <th class="col-md-1">Aporte Rendición</th>
-                                <th class="col-md-1">Cuenta</th>
+                        <thead>
+                            <tr>
+
+                                <th style="width:5%" class="text-center">
+                                    Fallido
+                                </th>
+
+                                <th style="width:5%" class="text-center">
+                                    Solo<br>Recolecta
+                                </th>
+
+                                <th style="width:7%" class="text-center">
+                                    Casillero<br>externo
+                                </th>
+                                <th style="width:7%" class="text-center">
+                                    Cliente pagó al vendedor
+                                </th>
+                                <th style="width:6%">
+                                    ID<br>Paquete
+                                </th>
+
+                                <th style="width:22%">
+                                    Vendedor → Cliente
+                                </th>
+
+                                <th style="width:22%">
+                                    Destino / Tipo
+                                </th>
+
+                                <th style="width:8%" class="text-right">
+                                    Monto
+                                </th>
+
+                                <th style="width:10%" class="text-right">
+                                    Aporte<br>Rendición
+                                </th>
+
+                                <th style="width:8%">
+                                    Cuenta
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -192,6 +232,13 @@
                                             </div>
                                         </div>
                                     </td>
+                                    <td class="text-center">
+                                        <input type="checkbox"
+                                            class="pagado-vendedor-checkbox"
+                                            name="pagado_vendedor[]"
+                                            value="<?= $p->package_id ?>"
+                                            data-id="<?= $p->package_id ?>">
+                                    </td>
                                     <td><?= $p->package_id ?></td>
                                     <td><?= esc($p->vendedor . ' → ' . $p->cliente) ?></td>
                                     <td>
@@ -249,6 +296,10 @@
                     <div class="card bg-light p-3 mb-3 shadow-sm">
                         <h5 class="mb-0">Total otras cuentas: <strong id="total-otras">$0.00</strong></h5>
                         <small class="text-muted">Solo paquetes exitosos que NO estén en cuenta efectivo</small>
+                    </div>
+                    <div class="card bg-light p-3 mb-3 shadow-sm">
+                        <h5 class="mb-0">Pagado directo al vendedor: <strong id="total-directo">$0.00</strong></h5>
+                        <small class="text-muted">Paquetes cancelados al delivery porque el cliente pagó directo</small>
                     </div>
 
                     <button type="submit" id="btnRendir" class="btn btn-success">
@@ -318,7 +369,9 @@
 
                 const limpioEfectivo = totalEfectivo.replace('$', '');
                 const limpioOtras = totalOtras.replace('$', '');
+                const totalDirecto = document.getElementById('total-directo').innerText;
 
+                document.getElementById('input-total-directo').value = totalDirecto.replace('$', '');
                 document.getElementById('input-total-efectivo').value = limpioEfectivo;
                 document.getElementById('input-total-otras').value = limpioOtras;
 
@@ -329,7 +382,6 @@
         return false;
     }
 </script>
-
 
 <script>
     $(document).ready(function() {
@@ -419,144 +471,172 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
+        function setMuteMonto(strongMonto, estado) {
+            if (!strongMonto) return;
+
+            if (estado) {
+                strongMonto.classList.add('muteado');
+            } else {
+                strongMonto.classList.remove('muteado');
+            }
+        }
+
+        function aplicarPagadoVendedor(row, refs, totales) {
+
+            const {
+                cbPagadoVendedor,
+                strongMonto,
+                selectCuenta,
+                montoPaquete
+            } = refs;
+
+            if (!cbPagadoVendedor.checked) return false;
+
+            row.classList.add('bg-pago-directo');
+
+            strongMonto.classList.add('muteado');
+
+            if (selectCuenta) {
+                selectCuenta.classList.add('select-muteado');
+                selectCuenta.disabled = true;
+                selectCuenta.value = '';
+            }
+
+            totales.directo += montoPaquete;
+
+            return true;
+        }
+
+        function aplicarCasillero(row, refs) {
+
+            const {
+                cbCasillero,
+                selectCasillero,
+                cbRegresado,
+                cbRecolectadoSolo
+            } = refs;
+
+            if (!cbCasillero.checked) {
+                if (selectCasillero) {
+                    selectCasillero.closest('.casillero-container').classList.remove('active');
+                }
+                return false;
+            }
+
+            row.classList.add('bg-info-light');
+
+            if (selectCasillero) {
+                selectCasillero.closest('.casillero-container').classList.add('active');
+            }
+
+            if (cbRegresado) {
+                cbRegresado.checked = false;
+                cbRegresado.disabled = true;
+            }
+
+            if (cbRecolectadoSolo) {
+                cbRecolectadoSolo.checked = false;
+                cbRecolectadoSolo.disabled = true;
+            }
+
+            return true;
+        }
+
+        function calcularTotales(row, refs, totales) {
+
+            const {
+                strongMonto,
+                selectCuenta,
+                tipo,
+                destinos,
+                montoPaquete,
+                montoVendedor,
+                fleteRendido
+            } = refs;
+
+            let subtotal = 0;
+
+            strongMonto.classList.remove('muteado');
+
+            if (tipo === 3) {
+
+                subtotal += montoPaquete;
+
+                if (!fleteRendido) {
+                    subtotal += montoVendedor;
+                }
+
+            } else {
+
+                subtotal += montoPaquete;
+
+            }
+
+            const cuentaSeleccionada = parseInt(selectCuenta?.value) || 0;
+
+            if (cuentaSeleccionada === 1) {
+                totales.efectivo += subtotal;
+            } else if (cuentaSeleccionada > 1) {
+                totales.otras += subtotal;
+            }
+
+            row.classList.add('bg-success-light');
+        }
+
         function actualizarEstadoYTotal() {
 
-            let totalEfectivo = 0;
-            let totalOtras = 0;
+    let totales = {
+        efectivo: 0,
+        otras: 0,
+        directo: 0
+    };
 
-            document.querySelectorAll('.paquete-row').forEach(row => {
+    document.querySelectorAll('.paquete-row').forEach(row => {
 
-                const cbRegresado = row.querySelector('.regresado-checkbox');
-                const cbRecolectadoSolo = row.querySelector('.recolectado-solo-checkbox');
-                const strongMonto = row.querySelector('.paquete-monto-total');
-                const selectCuenta = row.querySelector('.select2-account');
-                const cbCasillero = row.querySelector('.casillero-checkbox');
-                const selectCasillero = row.querySelector('.casillero-select');
+        row.classList.remove(
+            'bg-warning',
+            'bg-danger-light',
+            'bg-success-light',
+            'bg-info-light',
+            'bg-pago-directo'
+        );
 
-                const cuentaSeleccionada = parseInt(selectCuenta?.value) || 0;
+        const refs = {
 
-                const fleteRendido = parseInt(row.dataset.fleteRendido) === 1;
-                const tipo = parseInt(row.dataset.tipo);
-                const destinos = parseInt(row.dataset.destinos);
+            cbRegresado: row.querySelector('.regresado-checkbox'),
+            cbRecolectadoSolo: row.querySelector('.recolectado-solo-checkbox'),
+            strongMonto: row.querySelector('.paquete-monto-total'),
+            selectCuenta: row.querySelector('.select2-account'),
+            cbCasillero: row.querySelector('.casillero-checkbox'),
+            selectCasillero: row.querySelector('.casillero-select'),
+            cbPagadoVendedor: row.querySelector('.pagado-vendedor-checkbox'),
 
-                const montoPaquete = Number(row.dataset.monto) || 0;
-                const togglePago = parseInt(row.dataset.toggle);
-                const fleteTotal = Number(row.dataset.fleteTotal) || 0;
-                const fletePagado = Number(row.dataset.fletePagado) || 0;
+            tipo: parseInt(row.dataset.tipo),
+            destinos: parseInt(row.dataset.destinos),
+            montoPaquete: Number(row.dataset.monto) || 0,
 
-                const montoVendedor = (togglePago === 0) ? fleteTotal : fletePagado;
+            togglePago: parseInt(row.dataset.toggle),
+            fleteTotal: Number(row.dataset.fleteTotal) || 0,
+            fletePagado: Number(row.dataset.fletePagado) || 0,
+            fleteRendido: parseInt(row.dataset.fleteRendido) === 1
+        };
 
-                let subtotal = 0;
+        refs.montoVendedor =
+            refs.togglePago === 0 ? refs.fleteTotal : refs.fletePagado;
 
-                // =========================
-                // SINCRONIZACIÓN
-                // =========================
-                if (cbRegresado && cbRecolectadoSolo) {
-                    if (cbRegresado.checked) {
-                        cbRecolectadoSolo.disabled = true;
-                        cbRecolectadoSolo.checked = false;
-                    } else {
-                        cbRecolectadoSolo.disabled = false;
-                    }
-                }
+        const esPagado = aplicarPagadoVendedor(row, refs, totales);
+        const esCasillero = aplicarCasillero(row, refs);
 
-                row.classList.remove('bg-warning', 'bg-danger-light', 'bg-success-light', 'bg-info-light');
-
-                // =========================
-                // EN CASILLERO EXTERNO
-                // =========================
-                if (cbCasillero && cbCasillero.checked) {
-
-                    row.classList.add('bg-info-light');
-
-                    if (selectCasillero) {
-                        const container = selectCasillero.closest('.casillero-container');
-                        container.classList.add('active');
-                    }
-
-                    if (cbRegresado) {
-                        cbRegresado.checked = false;
-                        cbRegresado.disabled = true;
-                    }
-
-                    if (cbRecolectadoSolo) {
-                        cbRecolectadoSolo.checked = false;
-                        cbRecolectadoSolo.disabled = true;
-                    }
-
-                    return;
-
-                } else {
-
-                    if (selectCasillero) {
-                        const container = selectCasillero.closest('.casillero-container');
-                        container.classList.remove('active');
-                    }
-
-                    if (cbRegresado) cbRegresado.disabled = false;
-                    if (cbRecolectadoSolo) cbRecolectadoSolo.disabled = false;
-                }
-
-                // ❌ REGRESADO → NO SUMA
-                if (cbRegresado.checked) {
-
-                    if (tipo === 3 && destinos === 1) {
-                        row.classList.add('bg-danger-light');
-                    } else {
-                        row.classList.add('bg-warning');
-                    }
-
-                    return;
-                }
-
-                // =========================
-                // SERVICIO RECOLECCIÓN
-                // =========================
-                if (tipo === 3) {
-
-                    if (cbRecolectadoSolo && cbRecolectadoSolo.checked) {
-
-                        if (strongMonto) strongMonto.classList.add('muteado');
-
-                        if (!fleteRendido) {
-                            subtotal += montoVendedor;
-                        }
-
-                        row.classList.add('bg-info-light');
-
-                    } else {
-
-                        if (strongMonto) strongMonto.classList.remove('muteado');
-
-                        subtotal += montoPaquete;
-
-                        if (!fleteRendido) {
-                            subtotal += montoVendedor;
-                        }
-
-                        row.classList.add('bg-success-light');
-                    }
-
-                } else {
-
-                    if (strongMonto) strongMonto.classList.remove('muteado');
-
-                    subtotal += montoPaquete;
-                    row.classList.add('bg-success-light');
-                }
-
-                // 🔥 AQUÍ HACEMOS LA SEPARACIÓN POR CUENTA
-                if (cuentaSeleccionada === 1) {
-                    totalEfectivo += subtotal;
-                } else if (cuentaSeleccionada > 1) {
-                    totalOtras += subtotal;
-                }
-
-            });
-
-            document.getElementById('total-entregar').innerText = '$' + totalEfectivo.toFixed(2);
-            document.getElementById('total-otras').innerText = '$' + totalOtras.toFixed(2);
+        if (!esPagado && !esCasillero) {
+            calcularTotales(row, refs, totales);
         }
+
+    });
+
+    document.getElementById('total-entregar').innerText = '$' + totales.efectivo.toFixed(2);
+    document.getElementById('total-otras').innerText = '$' + totales.otras.toFixed(2);
+    document.getElementById('total-directo').innerText = '$' + totales.directo.toFixed(2);
+}
 
         actualizarEstadoYTotal();
 
@@ -574,6 +654,10 @@
         });
 
         document.querySelectorAll('.casillero-checkbox').forEach(cb => {
+            cb.addEventListener('change', actualizarEstadoYTotal);
+        });
+
+        document.querySelectorAll('.pagado-vendedor-checkbox').forEach(cb => {
             cb.addEventListener('change', actualizarEstadoYTotal);
         });
     });

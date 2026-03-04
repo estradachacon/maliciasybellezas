@@ -228,16 +228,48 @@ function formatDateDMY($fecha)
                             <td><?= !empty($package['nocobrar_pack_cancelado']) ? '<span class="badge badge-warning">SÍ</span>' : '<span class="badge badge-light">NO</span>' ?>
                             </td>
                         </tr>
+                        <?php if (!empty($package['cliente_pago_directo'])): ?>
+                        <tr>
+                            <th>Pago directo al vendedor</th>
+                            <td>
+                                <span class="badge badge-success">Cliente pagó directamente</span>
+
+                                <?php if (!empty($package['fecha_cliente_pago'])): ?>
+                                    <div class="small text-muted mt-1">
+                                        Registrado el <?= formatDateDMY($package['fecha_cliente_pago']) ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($package['motivo_no_cobro'])): ?>
+                                    <div class="small text-muted">
+                                        <?= esc($package['motivo_no_cobro']) ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                         <tr>
                             <th>Cobro de paquete recibido en cuenta:</th>
                             <td>
-                                <?php if (!empty($package['pago_cuenta_nombre'])): ?>
+
+                                <?php if (!empty($package['cliente_pago_directo'])): ?>
+
+                                    <span class="text-muted small">
+                                        Valor pagado directamente al vendedor por el cliente, posterior a la recepción.
+                                    </span>
+
+                                <?php elseif (!empty($package['pago_cuenta_nombre'])): ?>
+
                                     <span class="badge badge-info">
                                         <?= esc($package['pago_cuenta_nombre']) ?>
                                     </span>
+
                                 <?php else: ?>
+
                                     <span class="badge badge-light">Pendiente</span>
+
                                 <?php endif; ?>
+
                             </td>
                         </tr>
                         <tr>

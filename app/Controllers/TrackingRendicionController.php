@@ -84,6 +84,12 @@ class TrackingRendicionController extends BaseController
         $total_efectivo = $this->request->getPost('total_efectivo') ?? 0;
         $total_otras_cuentas = $this->request->getPost('total_otras_cuentas') ?? 0;
         $externalLocations = $this->request->getPost('external_location') ?? [];
+        $pagadoVendedor = $this->request->getPost('pagado_vendedor') ?? [];
+        if (!is_array($pagadoVendedor)) {
+            $pagadoVendedor = [$pagadoVendedor];
+        }
+
+        $pagadoVendedor = array_map('intval', $pagadoVendedor);
 
         // 2) DATA BASE
         $paquetes     = $this->detailModel->getDetailsWithPackages($trackingId);
@@ -109,8 +115,11 @@ class TrackingRendicionController extends BaseController
             // A) CONTAR DESTINOS (solo servicio 3)
             $destinoCount = 1;
 
+            $esCasillero = isset($externalLocations[$p->package_id]) && !empty($externalLocations[$p->package_id]);
+            $esPagado = in_array($p->package_id, $pagadoVendedor);
+
             // CASILLERO EXTERNO
-            if (isset($externalLocations[$p->package_id]) && !empty($externalLocations[$p->package_id])) {
+            if ($esCasillero) {
 
                 $locationId = (int)$externalLocations[$p->package_id];
 
@@ -121,21 +130,64 @@ class TrackingRendicionController extends BaseController
                 ]);
 
                 // Actualizar tracking_details
-                $this->detailModel->update($p->id, [
+                $this->detailModel->update($p->package_id, [
                     'status' => 'en_casillero_externo'
                 ]);
 
                 $paquetesModificados[] = "ID {$p->package_id} → en_casillero_externo";
 
-                continue; // MUY IMPORTANTE: no sigue flujo financiero
+                if (!$esPagado) {
+                    continue;
+                }
+            } 
+            
+            // CLIENTE PAGÓ DIRECTO AL VENDEDOR
+            if ($esPagado) {
+
+                $montoOriginal = number_format((float)$p->monto, 2);
+                $motivo = "Cliente pagó directo al vendedor posterior al envío. Monto cancelado: $$montoOriginal";
+
+                $updatePago = [
+                    'monto' => 0,
+                    'cliente_pago_directo' => 1,
+                    'fecha_cliente_pago' => date('Y-m-d H:i:s'),
+                    'motivo_no_cobro' => $motivo
+                ];
+
+                // SOLO cambiar estatus si NO está en casillero
+                if (!$esCasillero) {
+                    $updatePago['estatus'] = 'entregado';
+                }
+
+                $packageModel->update($p->package_id, $updatePago);
+
+                $this->detailModel->update($p->id, [
+                    'status' => $esCasillero ? 'en_casillero_externo' : 'entregado',
+                    'note' => $motivo,
+                    'cliente_pago_directo' => 1,
+                    'fecha_cliente_pago' => date('Y-m-d H:i:s'),
+                    'motivo_no_cobro' => $motivo
+                ]);
+
+                registrar_bitacora(
+                    'Pago directo al vendedor',
+                    'Paquete',
+                    "El cliente pagó directamente al vendedor el paquete {$p->package_id} | Tracking {$trackingId}",
+                    $userId
+                );
+
+                $paquetesModificados[] = "ID {$p->package_id} → pagado directo al vendedor";
+
+                continue;
             }
 
+            // Contar destinos personalizados y punto fijo para servicio 3
             if ($p->tipo_servicio == 3) {
                 if (!empty($p->destino_personalizado)) $destinoCount++;
                 if (!empty($p->puntofijo_nombre)) $destinoCount++;
             }
 
-            // B) DETERMINAR ESTATUS
+            // DETERMINAR ESTATUS
             if (in_array($p->id, $regresados)) {
 
                 if ($p->tipo_servicio == 3) {
