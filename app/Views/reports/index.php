@@ -14,7 +14,12 @@
                             <div class="card-footer bg-transparent border-info card-footer-options">Reporte de paquetería por fecha</div>
                         </div>
                     </a>
-
+                    <a href="<?= base_url('reports/packages-drivers') ?>" class="col-md-3 card-options">
+                        <div class="card border-success mb-3 card-option-container">
+                            <div class="card-body text-info icon-card-options"><i class="fa-solid fa-truck-fast"></i></div>
+                            <div class="card-footer bg-transparent border-info card-footer-options">Reporte de paquetería por conductor</div>
+                        </div>
+                    </a>
                     <a href="<?= base_url('reports/trans') ?>" class="col-md-3 card-options">
                         <div class="card border-success mb-3 card-option-container">
                             <div class="card-body text-info icon-card-options"><i class="fa-solid fa-money-bill-transfer"></i></div>

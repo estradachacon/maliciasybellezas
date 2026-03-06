@@ -50,6 +50,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->get('cashiersmovements/pdf', 'ReportController::cashiersmovementsPDF');
         $routes->get('users', 'ReportController::users');
         $routes->post('generate', 'ReportController::generate');
+        $routes->get('packages-drivers', 'ReportController::packagesDrivers');
+        $routes->get('packages-drivers/excel', 'ReportController::packagesDriversExcel');
+        $routes->get('packages-drivers/pdf', 'ReportController::packagesDriversPDF');
     });
 
     //Mantenimiento de multimedia

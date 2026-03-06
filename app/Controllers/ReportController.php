@@ -373,94 +373,94 @@ class ReportController extends BaseController
         ]);
     }
 
-public function cashiersmovementsExcel()
-{
-    $filters = $this->request->getGet();
+    public function cashiersmovementsExcel()
+    {
+        $filters = $this->request->getGet();
 
-    // 🔹 Movimientos SIN paginación
-    $rows = $this->getCashiersForReport($filters);
+        // 🔹 Movimientos SIN paginación
+        $rows = $this->getCashiersForReport($filters);
 
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-    // 🔹 Encabezados
-    $headers = [
-        'ID',
-        'Caja',
-        'Tipo',
-        'Concepto',
-        'Origen',
-        'Referencia',
-        'Fecha',
-        'Monto'
-    ];
+        // 🔹 Encabezados
+        $headers = [
+            'ID',
+            'Caja',
+            'Tipo',
+            'Concepto',
+            'Origen',
+            'Referencia',
+            'Fecha',
+            'Monto'
+        ];
 
-    $col = 'A';
-    foreach ($headers as $header) {
-        $sheet->setCellValue($col . '1', $header);
-        $sheet->getStyle($col . '1')->getFont()->setBold(true);
-        $col++;
-    }
-
-    $row = 2;
-    $totalEntradas = 0;
-    $totalSalidas  = 0;
-
-    foreach ($rows as $r) {
-
-        $tipoTexto = $r['type'] === 'in' ? 'Entrada' : 'Salida';
-
-        $sheet->setCellValue("A{$row}", $r['id']);
-        $sheet->setCellValue("B{$row}", $r['cashier_id']);
-        $sheet->setCellValue("C{$row}", $tipoTexto);
-        $sheet->setCellValue("D{$row}", $r['concept']);
-        $sheet->setCellValue("E{$row}", $r['reference_type'] ?? '-');
-        $sheet->setCellValue(
-            "F{$row}",
-            $r['reference_id'] ? '#' . $r['reference_id'] : '-'
-        );
-        $sheet->setCellValue(
-            "G{$row}",
-            date('d/m/Y H:i', strtotime($r['created_at']))
-        );
-        $sheet->setCellValue("H{$row}", $r['amount']);
-
-        if ($r['type'] === 'in') {
-            $totalEntradas += $r['amount'];
-        } else {
-            $totalSalidas += $r['amount'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $sheet->getStyle($col . '1')->getFont()->setBold(true);
+            $col++;
         }
 
-        $row++;
+        $row = 2;
+        $totalEntradas = 0;
+        $totalSalidas  = 0;
+
+        foreach ($rows as $r) {
+
+            $tipoTexto = $r['type'] === 'in' ? 'Entrada' : 'Salida';
+
+            $sheet->setCellValue("A{$row}", $r['id']);
+            $sheet->setCellValue("B{$row}", $r['cashier_id']);
+            $sheet->setCellValue("C{$row}", $tipoTexto);
+            $sheet->setCellValue("D{$row}", $r['concept']);
+            $sheet->setCellValue("E{$row}", $r['reference_type'] ?? '-');
+            $sheet->setCellValue(
+                "F{$row}",
+                $r['reference_id'] ? '#' . $r['reference_id'] : '-'
+            );
+            $sheet->setCellValue(
+                "G{$row}",
+                date('d/m/Y H:i', strtotime($r['created_at']))
+            );
+            $sheet->setCellValue("H{$row}", $r['amount']);
+
+            if ($r['type'] === 'in') {
+                $totalEntradas += $r['amount'];
+            } else {
+                $totalSalidas += $r['amount'];
+            }
+
+            $row++;
+        }
+
+        // 🔹 Totales
+        $sheet->setCellValue("G{$row}", 'TOTAL ENTRADAS');
+        $sheet->setCellValue("H{$row}", $totalEntradas);
+
+        $sheet->setCellValue("G" . ($row + 1), 'TOTAL SALIDAS');
+        $sheet->setCellValue("H" . ($row + 1), $totalSalidas);
+
+        $sheet->getStyle("G{$row}:H" . ($row + 1))
+            ->getFont()
+            ->setBold(true);
+
+        // 🔹 Autosize
+        foreach (range('A', 'H') as $c) {
+            $sheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        $filename = 'reporte_movimientos_caja_' . date('Ymd_His') . '.xlsx';
+
+        // 🔹 Enviar archivo (FORMA CI4)
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"{$filename}\"");
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
-
-    // 🔹 Totales
-    $sheet->setCellValue("G{$row}", 'TOTAL ENTRADAS');
-    $sheet->setCellValue("H{$row}", $totalEntradas);
-
-    $sheet->setCellValue("G" . ($row + 1), 'TOTAL SALIDAS');
-    $sheet->setCellValue("H" . ($row + 1), $totalSalidas);
-
-    $sheet->getStyle("G{$row}:H" . ($row + 1))
-        ->getFont()
-        ->setBold(true);
-
-    // 🔹 Autosize
-    foreach (range('A', 'H') as $c) {
-        $sheet->getColumnDimension($c)->setAutoSize(true);
-    }
-
-    $filename = 'reporte_movimientos_caja_' . date('Ymd_His') . '.xlsx';
-
-    // 🔹 Enviar archivo (FORMA CI4)
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header("Content-Disposition: attachment; filename=\"{$filename}\"");
-    header('Cache-Control: max-age=0');
-
-    $writer = new Xlsx($spreadsheet);
-    $writer->save('php://output');
-    exit;
-}
 
 
     public function cashiersmovementsPDF()
@@ -529,5 +529,212 @@ public function cashiersmovementsExcel()
         }
 
         return $builder->findAll();
+    }
+    public function packagesDrivers()
+    {
+        $chk = requerirPermiso('ver_reportes');
+        if ($chk !== true) return $chk;
+
+        $filters = [
+            'driver_id'   => $this->request->getGet('driver_id'),
+            'fecha_desde' => $this->request->getGet('fecha_desde'),
+            'fecha_hasta' => $this->request->getGet('fecha_hasta'),
+            'estatus'     => $this->request->getGet('estatus'),
+        ];
+
+        $perPage = (int) ($this->request->getGet('perPage') ?? 25);
+        $allowed = [10, 25, 50, 100];
+
+        if (!in_array($perPage, $allowed)) {
+            $perPage = 25;
+        }
+
+       $builder = $this->packageModel
+            ->select("
+                packages.id,
+                packages.cliente,
+                packages.tipo_servicio,
+                packages.fecha_ingreso,
+                packages.estatus,
+                packages.flete_total,
+                packages.monto,
+                users.user_name AS motorista
+            ")
+            ->join('tracking_details','tracking_details.package_id = packages.id','left')
+            ->join('tracking_header','tracking_header.id = tracking_details.tracking_header_id','left')
+            ->join('users','users.id = tracking_header.user_id','left')
+            ->where('users.role_id',4)
+            ->orderBy('users.user_name','ASC')
+            ->orderBy('tracking_header.date','ASC')
+            ->orderBy('packages.id','ASC');
+
+        if (!empty($filters['driver_id'])) {
+            $builder->where('tracking_header.user_id', $filters['driver_id']);
+        }
+
+        if (!empty($filters['fecha_desde'])) {
+            $builder->where('tracking_header.date >=', $filters['fecha_desde']);
+        }
+
+        if (!empty($filters['fecha_hasta'])) {
+            $builder->where('tracking_header.date <=', $filters['fecha_hasta']);
+        }
+
+        if (!empty($filters['estatus'])) {
+            $builder->where('packages.estatus', $filters['estatus']);
+        }
+
+        $packages = $builder->paginate($perPage, 'packages_drivers');
+        $pager = $builder->pager;
+
+        $drivers = (new \App\Models\UserModel())
+            ->where('role_id', 4)
+            ->findAll();
+
+        return view('reports/packages_drivers', [
+            'packages' => $packages,
+            'pager' => $pager,
+            'filters' => $filters,
+            'perPage' => $perPage,
+            'drivers' => $drivers
+        ]);
+    }
+    private function getPackagesDriversForReport(array $filters)
+    {
+        $builder = $this->packageModel
+            ->select("
+            packages.id,
+            packages.cliente,
+            packages.tipo_servicio,
+            packages.fecha_ingreso,
+            packages.estatus,
+            packages.flete_total,
+            packages.monto,
+            users.user_name AS motorista
+        ")
+            ->join('tracking_details', 'tracking_details.package_id = packages.id', 'left')
+            ->join('tracking_header', 'tracking_header.id = tracking_details.tracking_header_id', 'left')
+            ->join('users', 'users.id = tracking_header.user_id', 'left')
+            ->where('users.role_id', 4)
+            ->orderBy('packages.id', 'DESC');
+
+        if (!empty($filters['driver_id'])) {
+            $builder->where('tracking_header.user_id', $filters['driver_id']);
+        }
+
+        if (!empty($filters['fecha_desde'])) {
+            $builder->where('tracking_header.date >=', $filters['fecha_desde']);
+        }
+
+        if (!empty($filters['fecha_hasta'])) {
+            $builder->where('tracking_header.date <=', $filters['fecha_hasta']);
+        }
+        if (!empty($filters['estatus'])) {
+            $builder->where('packages.estatus', $filters['estatus']);
+        }
+
+        return $builder->get()->getResult();
+    }
+    public function packagesDriversExcel()
+    {
+        $filters = $this->request->getGet();
+        $packages = $this->getPackagesDriversForReport($filters);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'ID',
+            'Cliente',
+            'Motorista',
+            'Servicio',
+            'Fecha Ingreso',
+            'Estatus',
+            'Flete',
+            'Monto'
+        ];
+
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $sheet->getStyle($col . '1')->getFont()->setBold(true);
+            $col++;
+        }
+
+        $row = 2;
+
+        foreach ($packages as $pkg) {
+
+            $sheet->setCellValue("A{$row}", $pkg->id);
+            $sheet->setCellValue("B{$row}", $pkg->cliente);
+            $sheet->setCellValue("C{$row}", $pkg->motorista);
+            $sheet->setCellValue("D{$row}", serviceLabel($pkg->tipo_servicio));
+            $sheet->setCellValue("E{$row}", date('d/m/Y', strtotime($pkg->fecha_ingreso)));
+            $sheet->setCellValue("F{$row}", $pkg->estatus);
+            $sheet->setCellValue("G{$row}", $pkg->flete_total);
+            $sheet->setCellValue("H{$row}", $pkg->monto);
+
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = 'reporte_paquetes_motoristas_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"{$filename}\"");
+
+        (new Xlsx($spreadsheet))->save('php://output');
+        exit;
+    }
+    public function packagesDriversPDF()
+    {
+        $filters = $this->request->getGet();
+        $packages = $this->getPackagesDriversForReport($filters);
+
+        $html = view('reports/packages_drivers_pdf', [
+            'packages' => $packages,
+            'filters'  => $filters
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $canvas = $dompdf->getCanvas();
+        $fontMetrics = $dompdf->getFontMetrics();
+
+        $font = $fontMetrics->getFont("DejaVu Sans", "normal");
+
+        /* Número de página */
+        $canvas->page_text(
+            750,
+            560,
+            "Página {PAGE_NUM} de {PAGE_COUNT}",
+            $font,
+            9,
+            [0,0,0]
+        );
+
+        /* Footer */
+        $canvas->page_text(
+            40,
+            560,
+            "Reporte generado el " . date('d/m/Y H:i'),
+            $font,
+            9,
+            [0,0,0]
+        );
+        $dompdf->stream(
+            'reporte_paquetes_motoristas_' . date('Ymd_His') . '.pdf',
+            ['Attachment' => true]
+        );
     }
 }

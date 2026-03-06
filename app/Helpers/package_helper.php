@@ -25,6 +25,7 @@ function statusBadge($status)
         'asignado'      => 'info',
         'no_retirado'      => 'danger',
         'en_casillero'  => 'info',
+        'en_casillero_externo'  => 'info',
         'recolectado'  => 'info',
         'finalizado'  => 'success',
         'remunerado'  => 'success',

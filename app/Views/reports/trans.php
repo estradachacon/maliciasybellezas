@@ -1,6 +1,26 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+    }
 
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        padding-left: .75rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px !important;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
+    }
+</style>
 <div class="row">
 
     <!-- ALERTA -->
@@ -85,7 +105,7 @@
                         </div>
 
                         <!-- BOTÓN -->
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="col-md-2 align-items-end mt-4">
                             <button type="submit" class="btn btn-success btn-block">
                                 <i class="fa-solid fa-search"></i> Generar
                             </button>
@@ -99,6 +119,7 @@
                             <input type="hidden" name="<?= esc($k) ?>" value="<?= esc($v) ?>">
                         <?php endif; ?>
                     <?php endforeach; ?>
+                    <hr>
 
                     <label class="mr-2">Mostrar</label>
 
@@ -116,7 +137,6 @@
 
                     <span class="ml-2">registros</span>
                 </form>
-                <hr>
 
                 <!-- RESULTADOS -->
                 <?php if (!empty($trans)): ?>
