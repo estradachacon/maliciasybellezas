@@ -45,7 +45,9 @@ class PaymentController extends BaseController
         $sellerId = (int) $data['seller_id'];
         $packages = $data['packages'];
 
-        $db->transStart();
+        // ===============================
+        // 1️⃣ VALIDAR SESIÓN DE CAJA
+        // ===============================
 
         $cashierSession = $db->table('cashier_sessions')
             ->where('status', 'open')
@@ -54,7 +56,6 @@ class PaymentController extends BaseController
             ->getRowArray();
 
         if (!$cashierSession) {
-            $db->transRollback();
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'No hay una sesión de caja abierta'
@@ -67,15 +68,19 @@ class PaymentController extends BaseController
             ->getRowArray();
 
         if (!$cashier) {
-            $db->transRollback();
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Caja no encontrada'
             ]);
         }
 
+        // ===============================
+        // 2️⃣ CALCULAR TOTALES
+        // ===============================
+
         $totalSalida  = 0;
         $totalEntrada = 0;
+        $packagesDB = [];
 
         foreach ($packages as $pkg) {
 
@@ -94,43 +99,71 @@ class PaymentController extends BaseController
                 ->getRowArray();
 
             if (!$package) {
-                $db->transRollback();
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Paquete inválido: #' . $pkg['id']
                 ]);
             }
 
-            $monto = (float) ($package['monto'] ?? 0);
+            $monto     = (float) ($package['monto'] ?? 0);
             $pendiente = (float) ($package['flete_pendiente'] ?? 0);
 
             $totalSalida  += $monto;
             $totalEntrada += $pendiente;
 
-            $db->table('packages')
-                ->where('id', $packageId)
-                ->set('amount_paid', $monto)
-                ->set('flete_pagado', 'flete_pagado + ' . $pendiente, false)
-                ->set('flete_pendiente', 0)
-                ->set('estatus', 'finalizado')
-                ->set('estatus2', 'remunerado')
-                ->update();
+            $packagesDB[] = [
+                'id' => $packageId,
+                'monto' => $monto,
+                'pendiente' => $pendiente
+            ];
         }
 
-        // VALIDAR CONTRA SALIDA BRUTA
-        if ((float)$cashier['current_balance'] < $totalSalida) {
-            $db->transRollback();
+        // ===============================
+        // 3️⃣ VALIDAR CAJA
+        // ===============================
+
+        $totalNeto = $totalSalida - $totalEntrada;
+
+        if ($totalNeto <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'El total de pago no es válido por ser menor o igual a cero'
+            ]);
+        }
+
+        if ($totalNeto > (float)$cashier['current_balance']) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Saldo insuficiente en caja'
             ]);
         }
 
+        // ===============================
+        // 4️⃣ INICIAR TRANSACCIÓN
+        // ===============================
+
+        $db->transStart();
+
+        foreach ($packagesDB as $package) {
+
+            $db->table('packages')
+                ->where('id', $package['id'])
+                ->set('amount_paid', $package['monto'])
+                ->set('flete_pagado', "COALESCE(flete_pagado,0) + {$package['pendiente']}", false)
+                ->set('flete_pendiente', 0)
+                ->set('estatus', 'finalizado')
+                ->set('estatus2', 'remunerado')
+                ->update();
+        }
+
         $cashierMovementModel = new \App\Models\CashierMovementModel();
 
         $currentBalance = (float) $cashier['current_balance'];
 
-        // 1️⃣ SALIDA BRUTA
+        // ===============================
+        // 5️⃣ SALIDA BRUTA
+        // ===============================
+
         $balanceAfterOut = $currentBalance - $totalSalida;
 
         if ($totalSalida > 0) {
@@ -148,7 +181,10 @@ class PaymentController extends BaseController
             ]);
         }
 
-        // 2️⃣ ENTRADA POR FLETES
+        // ===============================
+        // 6️⃣ ENTRADA POR FLETES
+        // ===============================
+
         $balanceAfterIn = $balanceAfterOut + $totalEntrada;
 
         if ($totalEntrada > 0) {
@@ -166,7 +202,10 @@ class PaymentController extends BaseController
             ]);
         }
 
-        // 🔹 ACTUALIZAR SALDO FINAL REAL
+        // ===============================
+        // 7️⃣ ACTUALIZAR SALDO CAJA
+        // ===============================
+
         $db->table('cashier')
             ->where('id', $cashier['id'])
             ->update([
@@ -181,8 +220,6 @@ class PaymentController extends BaseController
                 'message' => 'Error al procesar el pago'
             ]);
         }
-
-        $totalNeto = $totalSalida - $totalEntrada;
 
         registrar_bitacora(
             'Pago a vendedor ID ' . esc($sellerId),
