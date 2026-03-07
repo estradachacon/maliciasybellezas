@@ -112,23 +112,25 @@ class PackageController extends BaseController
     public function show($id = null)
     {
         // Traemos el paquete con joins a usuario, punto fijo y vendedor
-        $package = $this->packageModel
-            ->select(
-                'packages.*,
-                users.user_name as creador_nombre,
-                settled_points.point_name as point_name,
-                sellers.seller as seller_name,
-                accounts.name as pago_cuenta_nombre,
-                colonias.nombre AS colonia_nombre,
-                municipios.nombre AS municipio_nombre,
-                departamentos.nombre AS departamento_nombre,
-                external_locations.nombre AS external_location_nombre' 
-            )
-            ->join('users', 'users.id = packages.user_id', 'left')
-            ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
-            ->join('sellers', 'sellers.id = packages.vendedor', 'left')
-            ->join('accounts', 'accounts.id = packages.pago_cuenta', 'left')
-
+            $package = $this->packageModel
+                ->select(
+                    'packages.*,
+                    users.user_name as creador_nombre,
+                    remu_user.user_name as remu_user_nombre,
+                    settled_points.point_name as point_name,
+                    sellers.seller as seller_name,
+                    accounts.name as pago_cuenta_nombre,
+                    colonias.nombre AS colonia_nombre,
+                    municipios.nombre AS municipio_nombre,
+                    departamentos.nombre AS departamento_nombre,
+                    external_locations.nombre AS external_location_nombre'
+                )
+                ->join('users', 'users.id = packages.user_id', 'left')
+                ->join('users as remu_user', 'remu_user.id = packages.remu_user_id', 'left')
+                ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
+                ->join('sellers', 'sellers.id = packages.vendedor', 'left')
+                ->join('accounts', 'accounts.id = packages.pago_cuenta', 'left')
+            
             ->join('colonias', 'colonias.id = packages.colonia_id', 'left')
             ->join('municipios', 'municipios.id = colonias.municipio_id', 'left')
             ->join('departamentos', 'departamentos.id = municipios.departamento_id', 'left')

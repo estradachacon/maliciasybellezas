@@ -153,6 +153,9 @@ class PaymentController extends BaseController
                 ->set('flete_pendiente', 0)
                 ->set('estatus', 'finalizado')
                 ->set('estatus2', 'remunerado')
+                ->set('fecha_remu', date('Y-m-d H:i:s'))
+                ->set('metodo_remu', 'caja') // o 'cuenta'
+                ->set('remu_user_id', $session->get('id'))
                 ->update();
         }
 
@@ -304,6 +307,9 @@ class PaymentController extends BaseController
                 ->set('flete_pendiente', 0)
                 ->set('estatus', 'finalizado')
                 ->set('estatus2', 'remunerado')
+                ->set('fecha_remu', date('Y-m-d H:i:s'))
+                ->set('metodo_remu', 'caja') // o 'cuenta'
+                ->set('remu_user_id', $session->get('id'))
                 ->update();
         }
 
