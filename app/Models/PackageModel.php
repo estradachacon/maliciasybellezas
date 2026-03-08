@@ -107,7 +107,7 @@ class PackageModel extends Model
             ->where('vendedor', $sellerId)
             ->where('flete_rendido', 0)
             ->where('COALESCE(flete_pendiente,0) >', 0)
-            ->where('COALESCE(monto,0) =', 0)
+            ->where('estatus !=', 'entregado')
             ->orderBy('fecha_ingreso', 'ASC')
             ->findAll();
     }

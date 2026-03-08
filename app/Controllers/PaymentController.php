@@ -114,7 +114,8 @@ class PaymentController extends BaseController
             $packagesDB[] = [
                 'id' => $packageId,
                 'monto' => $monto,
-                'pendiente' => $pendiente
+                'pendiente' => $pendiente,
+                'estatus' => $package['estatus'] ?? null
             ];
         }
 
@@ -146,17 +147,24 @@ class PaymentController extends BaseController
 
         foreach ($packagesDB as $package) {
 
-            $db->table('packages')
+            $builder = $db->table('packages')
                 ->where('id', $package['id'])
                 ->set('amount_paid', $package['monto'])
                 ->set('flete_pagado', "COALESCE(flete_pagado,0) + {$package['pendiente']}", false)
                 ->set('flete_pendiente', 0)
-                ->set('estatus', 'finalizado')
-                ->set('estatus2', 'remunerado')
-                ->set('fecha_remu', date('Y-m-d H:i:s'))
-                ->set('metodo_remu', 'caja') // o 'cuenta'
-                ->set('remu_user_id', $session->get('id'))
-                ->update();
+                ->set('metodo_remu', 'caja')
+                ->set('remu_user_id', $session->get('id'));
+
+            // SOLO FINALIZAR SI YA ESTABA ENTREGADO
+            if ($package['estatus'] === 'entregado') {
+
+                $builder
+                    ->set('estatus', 'finalizado')
+                    ->set('estatus2', 'remunerado')
+                    ->set('fecha_remu', date('Y-m-d H:i:s'));
+            }
+
+            $builder->update();
         }
 
         $cashierMovementModel = new \App\Models\CashierMovementModel();
@@ -294,23 +302,37 @@ class PaymentController extends BaseController
                 ]);
             }
 
-            $monto     = (float) $package['monto'];
+            $monto     = (float) ($package['monto'] ?? 0);
             $pendiente = (float) ($package['flete_pendiente'] ?? 0);
 
             $totalSalida  += $monto;
             $totalEntrada += $pendiente;
 
-            $db->table('packages')
+            $packagesDB[] = [
+                'id' => $packageId,
+                'monto' => $monto,
+                'pendiente' => $pendiente,
+                'estatus' => $package['estatus'] ?? null
+            ];
+
+            $builder = $db->table('packages')
                 ->where('id', $packageId)
                 ->set('amount_paid', $monto)
                 ->set('flete_pagado', "COALESCE(flete_pagado,0) + {$pendiente}", false)
                 ->set('flete_pendiente', 0)
-                ->set('estatus', 'finalizado')
-                ->set('estatus2', 'remunerado')
-                ->set('fecha_remu', date('Y-m-d H:i:s'))
-                ->set('metodo_remu', 'caja') // o 'cuenta'
-                ->set('remu_user_id', $session->get('id'))
-                ->update();
+                ->set('metodo_remu', 'cuenta')
+                ->set('remu_user_id', $session->get('id'));
+
+            // SOLO FINALIZAR SI YA ESTABA ENTREGADO
+            if ($package['estatus'] === 'entregado') {
+
+                $builder
+                    ->set('estatus', 'finalizado')
+                    ->set('estatus2', 'remunerado')
+                    ->set('fecha_remu', date('Y-m-d H:i:s'));
+            }
+
+            $builder->update();
         }
 
         // 🔹 Validar cuenta

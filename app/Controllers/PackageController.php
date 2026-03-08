@@ -112,9 +112,9 @@ class PackageController extends BaseController
     public function show($id = null)
     {
         // Traemos el paquete con joins a usuario, punto fijo y vendedor
-            $package = $this->packageModel
-                ->select(
-                    'packages.*,
+        $package = $this->packageModel
+            ->select(
+                'packages.*,
                     users.user_name as creador_nombre,
                     remu_user.user_name as remu_user_nombre,
                     settled_points.point_name as point_name,
@@ -124,13 +124,13 @@ class PackageController extends BaseController
                     municipios.nombre AS municipio_nombre,
                     departamentos.nombre AS departamento_nombre,
                     external_locations.nombre AS external_location_nombre'
-                )
-                ->join('users', 'users.id = packages.user_id', 'left')
-                ->join('users as remu_user', 'remu_user.id = packages.remu_user_id', 'left')
-                ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
-                ->join('sellers', 'sellers.id = packages.vendedor', 'left')
-                ->join('accounts', 'accounts.id = packages.pago_cuenta', 'left')
-            
+            )
+            ->join('users', 'users.id = packages.user_id', 'left')
+            ->join('users as remu_user', 'remu_user.id = packages.remu_user_id', 'left')
+            ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
+            ->join('sellers', 'sellers.id = packages.vendedor', 'left')
+            ->join('accounts', 'accounts.id = packages.pago_cuenta', 'left')
+
             ->join('colonias', 'colonias.id = packages.colonia_id', 'left')
             ->join('municipios', 'municipios.id = colonias.municipio_id', 'left')
             ->join('departamentos', 'departamentos.id = municipios.departamento_id', 'left')
@@ -737,91 +737,90 @@ class PackageController extends BaseController
 
         return $this->response->setJSON(['status' => 'ok']);
     }
-public function entregar($id)
-{
-    helper(['form', 'transaction']);
-    $session = session();
-    $userId = $session->get('user_id');
+    public function entregar($id)
+    {
+        helper(['form', 'transaction']);
+        $session = session();
+        $userId = $session->get('user_id');
 
-    $data = $this->request->getJSON(true);
+        $data = $this->request->getJSON(true);
 
-    if (
-        !$data ||
-        empty($data['cuenta_id']) ||
-        !isset($data['valor']) ||
-        $data['valor'] <= 0
-    ) {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'msg' => 'Datos incompletos para registrar la entrega'
-        ]);
-    }
-
-    $cuentaId = (int)$data['cuenta_id'];
-    $valor    = (float)$data['valor'];
-
-    $db = db_connect();
-
-    // 🔥 MISMA LÓGICA QUE SAVE()
-    $sumarSaldo = function ($accountId, $monto) use ($db) {
-        if ($monto <= 0) return;
-
-        $db->table('accounts')
-            ->where('id', $accountId)
-            ->set('balance', 'balance + ' . $monto, false)
-            ->update();
-    };
-
-    $db->transStart();
-
-    try {
-
-        // 1️⃣ Actualizar paquete
-        $this->packages->update($id, [
-            'estatus' => 'entregado',
-            'pago_cuenta' => $cuentaId,
-            'fecha_pack_entregado' => date('Y-m-d')
-        ]);
-
-        // 2️⃣ 🔥 SUMAR SALDO (LO QUE TE FALTABA)
-        $sumarSaldo($cuentaId, $valor);
-
-        // 3️⃣ Registrar movimiento
-        registrarEntrada(
-            $cuentaId,
-            $valor,
-            'Pago recibido por entrega de paquete a cliente',
-            'Paquete ID ' . $id,
-            $id
-        );
-
-        registrar_bitacora(
-            'Entrega de paquete ID ' . esc($id),
-            'Paquetería',
-            'Entrega registrada con pago de $' . number_format($valor, 2) .
-                ' en cuenta ID ' . $cuentaId .
-                ' por el usuario ' . $userId,
-            $userId
-        );
-
-        $db->transComplete();
-
-        if ($db->transStatus() === false) {
-            throw new \Exception('Error en transacción');
+        if (
+            !$data ||
+            empty($data['cuenta_id']) ||
+            !isset($data['valor']) ||
+            $data['valor'] <= 0
+        ) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg' => 'Datos incompletos para registrar la entrega'
+            ]);
         }
 
-        return $this->response->setJSON(['status' => 'ok']);
+        $cuentaId = (int)$data['cuenta_id'];
+        $valor    = (float)$data['valor'];
 
-    } catch (\Throwable $e) {
+        $db = db_connect();
 
-        $db->transRollback();
+        // 🔥 MISMA LÓGICA QUE SAVE()
+        $sumarSaldo = function ($accountId, $monto) use ($db) {
+            if ($monto <= 0) return;
 
-        return $this->response->setJSON([
-            'status' => 'error',
-            'msg' => 'No se pudo completar la entrega'
-        ]);
+            $db->table('accounts')
+                ->where('id', $accountId)
+                ->set('balance', 'balance + ' . $monto, false)
+                ->update();
+        };
+
+        $db->transStart();
+
+        try {
+
+            // 1️⃣ Actualizar paquete
+            $this->packages->update($id, [
+                'estatus' => 'entregado',
+                'pago_cuenta' => $cuentaId,
+                'fecha_pack_entregado' => date('Y-m-d')
+            ]);
+
+            // 2️⃣ 🔥 SUMAR SALDO (LO QUE TE FALTABA)
+            $sumarSaldo($cuentaId, $valor);
+
+            // 3️⃣ Registrar movimiento
+            registrarEntrada(
+                $cuentaId,
+                $valor,
+                'Pago recibido por entrega de paquete a cliente',
+                'Paquete ID ' . $id,
+                $id
+            );
+
+            registrar_bitacora(
+                'Entrega de paquete ID ' . esc($id),
+                'Paquetería',
+                'Entrega registrada con pago de $' . number_format($valor, 2) .
+                    ' en cuenta ID ' . $cuentaId .
+                    ' por el usuario ' . $userId,
+                $userId
+            );
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en transacción');
+            }
+
+            return $this->response->setJSON(['status' => 'ok']);
+        } catch (\Throwable $e) {
+
+            $db->transRollback();
+
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg' => 'No se pudo completar la entrega'
+            ]);
+        }
     }
-}
 
     public function showReturnPackages()
     {
@@ -908,6 +907,280 @@ public function entregar($id)
             'puntos_fijos' => $puntos_fijos,
             'filter_seller_id' => $filter_vendedor_id,
             'seller_selected'  => $seller_selected
+        ]);
+    }
+    public function quickLoad()
+    {
+        $chk = requerirPermiso('crear_paquetes');
+        if ($chk !== true) return $chk;
+
+        return view('packages/quickload');
+    }
+    public function quickStore()
+    {
+        helper(['form']);
+
+        $session = session();
+        $userId = $session->get('user_id');
+
+        // 🔹 Foto (misma lógica que store)
+        $foto = $this->request->getFile('foto');
+        $fotoName = null;
+
+        if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+            $fotoName = $foto->getRandomName();
+            $foto->move('upload/paquetes', $fotoName);
+        }
+
+        // 🔹 Servicio
+        $tipoServicio = $this->request->getPost('tipo_servicio');
+        $estatusInicial = 'pendiente';
+
+        if ($tipoServicio == 4) {
+            $estatusInicial = 'en_casillero';
+        }
+
+        $fleteTotal = floatval($this->request->getPost('flete_total'));
+        $monto = floatval($this->request->getPost('monto'));
+
+        $dataToSave = [
+
+            'vendedor' => $this->request->getPost('seller_id'),
+            'cliente' => $this->request->getPost('cliente'),
+            'tipo_servicio' => $tipoServicio,
+
+            'destino_personalizado' => $this->request->getPost('destino'),
+            'lugar_recolecta_paquete' => $this->request->getPost('retiro_paquete'),
+            'id_puntofijo' => $this->request->getPost('id_puntofijo'),
+
+            'fecha_ingreso' => $this->request->getPost('fecha_ingreso'),
+            'fecha_entrega_personalizado' => $this->request->getPost('fecha_entrega'),
+            'fecha_entrega_puntofijo' => $this->request->getPost('fecha_entrega_puntofijo'),
+
+            // 🔹 simplificado
+            'flete_total' => $fleteTotal,
+            'toggle_pago_parcial' => 0,
+            'flete_pagado' => $fleteTotal,
+            'flete_pendiente' => 0,
+
+            'colonia_id' => $this->request->getPost('colonia_id'),
+
+            'nocobrar_pack_cancelado' => 0,
+            'monto' => $monto,
+
+            'foto' => $fotoName,
+            'comentarios' => $this->request->getPost('comentarios'),
+            'fragil' => $this->request->getPost('fragil'),
+
+            'estatus' => $estatusInicial,
+            'branch' => $this->request->getPost('branch_id'),
+            'user_id' => $userId
+        ];
+
+        $this->packageModel->save($dataToSave);
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'Paquete cargado en modo rápido'
+        ]);
+    }
+    public function updateFlete()
+    {
+        helper('transaction');
+
+        $data = $this->request->getJSON(true);
+
+        $id = $data['id'];
+        $field = $data['field'];
+        $value = floatval($data['value']);
+
+        $package = $this->packageModel->find($id);
+
+        if (!$package) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Paquete no encontrado'
+            ]);
+        }
+
+        $total = $package['flete_total'];
+        $pagado = $package['flete_pagado'];
+
+        $update = [];
+
+        // EDITANDO TOTAL
+        if ($field == 'flete_total') {
+
+            if ($value < $pagado) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'El total no puede ser menor al pagado'
+                ]);
+            }
+
+            $update['flete_total'] = $value;
+            $update['flete_pendiente'] = $value - $pagado;
+        }
+
+        // EDITANDO PAGADO
+        if ($field == 'flete_pagado') {
+
+            if ($value > $total) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'El pagado no puede ser mayor al total'
+                ]);
+            }
+
+            $diferencia = $value - $pagado;
+
+            $update['flete_pagado'] = $value;
+            $update['flete_pendiente'] = $total - $value;
+
+            // Registrar movimiento si aumenta el pago
+            if ($diferencia > 0) {
+
+                $accountId = 1; // tu cuenta principal
+
+                $db = db_connect();
+
+                $db->table('accounts')
+                    ->where('id', $accountId)
+                    ->set('balance', 'balance + ' . $diferencia, false)
+                    ->update();
+
+                registrarEntrada(
+                    $accountId,
+                    $diferencia,
+                    'Pago adicional de flete',
+                    'Paquete ID ' . $id,
+                    $id
+                );
+            }
+        }
+
+        $this->packageModel->update($id, $update);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'value' => $value,
+            'flete_pendiente' => $update['flete_pendiente']
+        ]);
+    }
+    public function updatePagoParcial()
+    {
+        $data = $this->request->getJSON(true);
+
+        $id = $data['id'];
+        $toggle = intval($data['toggle']);
+
+        $package = $this->packageModel->find($id);
+
+        if (!$package) {
+            return $this->response->setJSON([
+                'status' => 'error'
+            ]);
+        }
+
+        $total = $package['flete_total'];
+
+        if ($toggle == 0) {
+
+            // Pago completo
+            $pagado = $total;
+            $pendiente = 0;
+        } else {
+
+            // Pago parcial
+            $pagado = $package['flete_pagado'];
+            $pendiente = $total - $pagado;
+
+            if ($pendiente < 0) {
+                $pendiente = 0;
+            }
+        }
+
+        $update = [
+            'toggle_pago_parcial' => $toggle,
+            'flete_pagado' => $pagado,
+            'flete_pendiente' => $pendiente
+        ];
+
+        $this->packageModel->update($id, $update);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'pagado' => $pagado,
+            'pendiente' => $pendiente
+        ]);
+    }
+    public function updateFleteCompleto()
+    {
+
+        helper('transaction');
+
+        $data = $this->request->getJSON(true);
+
+        $id = $data['id'];
+        $total = floatval($data['total']);
+        $pagado = floatval($data['pagado']);
+        $toggle = intval($data['toggle']);
+
+        $package = $this->packageModel->find($id);
+
+        if (!$package) {
+
+            return $this->response->setJSON([
+                'status' => 'error'
+            ]);
+        }
+
+        if ($pagado > $total) {
+
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Pagado mayor al total'
+            ]);
+        }
+
+        $pendiente = $total - $pagado;
+
+        $update = [
+
+            'flete_total' => $total,
+            'flete_pagado' => $pagado,
+            'flete_pendiente' => $pendiente,
+            'toggle_pago_parcial' => $toggle
+
+        ];
+
+        $this->packageModel->update($id, $update);
+
+        // registrar diferencia en cuenta
+        $diferencia = $pagado - $package['flete_pagado'];
+
+        if ($diferencia > 0) {
+
+            $accountId = 1;
+
+            $db = db_connect();
+
+            $db->table('accounts')
+                ->where('id', $accountId)
+                ->set('balance', 'balance + ' . $diferencia, false)
+                ->update();
+
+            registrarEntrada(
+                $accountId,
+                $diferencia,
+                'Pago adicional de flete',
+                'Paquete ID ' . $id,
+                $id
+            );
+        }
+
+        return $this->response->setJSON([
+            'status' => 'ok'
         ]);
     }
 }

@@ -140,6 +140,13 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     // Módulo de mantenimiento de paquetes
     $route['upload-paquete'] = 'PackageController/subirImagen';
     $routes->post('packages/store', 'PackageController::store');
+
+    $routes->get('packages/quickload', 'PackageController::quickLoad');
+    $routes->post('packages/quickstore', 'PackageController::quickStore');
+    $routes->post('packages/updateFlete','PackageController::updateFlete');
+    $routes->post('packages/updatePagoParcial','PackageController::updatePagoParcial');
+    $routes->post('packages/updateFleteCompleto','PackageController::updateFleteCompleto');
+
     $routes->post('packages-setDestino', 'PackageController::setDestino');
     $routes->post('packages-setReenvio', 'PackageController::setReenvio');
     $routes->post('packages-devolver/(:num)', 'PackageController::devolver/$1');

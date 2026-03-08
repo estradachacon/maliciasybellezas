@@ -1,5 +1,55 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
+<style>
+    /* Panel de edición de flete */
+
+    .flete-editor {
+        text-align: left;
+        padding: 10px 5px;
+    }
+
+    .flete-row {
+        margin-bottom: 12px;
+    }
+
+    .flete-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 3px;
+    }
+
+    .flete-input {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        font-size: 0.95rem;
+    }
+
+    .flete-input:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 3px rgba(0, 123, 255, 0.4);
+    }
+
+    .flete-preview {
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 6px;
+        background: #f8f9fa;
+        font-size: 0.95rem;
+    }
+
+    .flete-preview strong {
+        color: #dc3545;
+    }
+
+    .flete-preview span {
+        font-weight: bold;
+        font-size: 1rem;
+    }
+</style>
 <?php
 /**
  * Función auxiliar para formatear la fecha a día/mes/año (d/m/Y).
@@ -153,11 +203,25 @@ function formatDateDMY($fecha)
                             <tbody>
                                 <tr>
                                     <th>Flete Total</th>
-                                    <td><strong>$<?= number_format($package['flete_total'], 2) ?></strong></td>
+                                    <td>
+                                        <span id="fleteTotalEdit"
+                                            class="editable-money"
+                                            data-total="<?= $package['flete_total'] ?>"
+                                            data-pagado="<?= $package['flete_pagado'] ?>"
+                                            data-toggle="<?= $package['toggle_pago_parcial'] ?>"
+                                            data-id="<?= $package['id'] ?>">
+
+                                            <strong>$<?= number_format($package['flete_total'], 2) ?></strong>
+
+                                        </span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Pago Parcial Activo</th>
-                                    <td><?= !empty($package['toggle_pago_parcial']) ? '<span class="badge badge-info">SÍ</span>' : '<span class="badge badge-light">NO</span>' ?>
+                                    <td id="badgePagoParcial">
+                                        <?= !empty($package['toggle_pago_parcial'])
+                                            ? '<span class="badge badge-info">SÍ</span>'
+                                            : '<span class="badge badge-light">NO</span>' ?>
                                     </td>
                                 </tr>
                             </tbody>
@@ -169,13 +233,19 @@ function formatDateDMY($fecha)
                                 <tr>
                                     <th>Flete Pagado</th>
                                     <td class="text-success">
-                                        <strong>$<?= number_format($package['flete_pagado'], 2) ?></strong>
+                                        <span class="editable-money"
+                                            data-field="flete_pagado"
+                                            data-id="<?= $package['id'] ?>">
+                                            $<?= number_format($package['flete_pagado'], 2) ?>
+                                        </span>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Flete Pendiente</th>
                                     <td class="text-danger">
-                                        <strong>$<?= number_format($package['flete_pendiente'], 2) ?></strong>
+                                        <strong id="fletePendiente">
+                                            $<?= number_format($package['flete_pendiente'], 2) ?>
+                                        </strong>
                                     </td>
                                 </tr>
                             </tbody>
@@ -338,5 +408,203 @@ function formatDateDMY($fecha)
         </div>
     </div>
 </div>
+<script>
+    document.getElementById('togglePagoParcial').addEventListener('change', function() {
 
+        const id = this.dataset.id
+        const value = this.value
+
+        Swal.fire({
+            title: 'Confirmar cambio',
+            text: '¿Deseas actualizar la configuración de pago parcial?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar'
+        }).then((result) => {
+
+            if (!result.isConfirmed) {
+                location.reload()
+                return
+            }
+
+            fetch("<?= base_url('packages/updatePagoParcial') ?>", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        toggle: value
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+
+                    if (data.status === 'ok') {
+
+                        document.querySelector('[data-field="flete_pagado"]').innerText = '$' + data.pagado.toFixed(2)
+
+                        document.getElementById('fletePendiente')
+                            .innerText = '$' + data.pendiente.toFixed(2)
+
+                        Swal.fire('Actualizado', '', 'success')
+                    }
+
+                })
+
+        })
+
+    })
+</script>
+<script>
+    document.getElementById('fleteTotalEdit').addEventListener('click', function() {
+
+        const id = this.dataset.id
+        const total = parseFloat(this.dataset.total)
+        const pagado = parseFloat(this.dataset.pagado)
+        const toggle = parseInt(this.dataset.toggle)
+
+        Swal.fire({
+
+            title: 'Editar Flete',
+
+            html: `
+                <div class="flete-editor">
+
+                <div class="flete-row">
+                <div class="flete-label">Total del flete</div>
+                <input id="editTotal" type="number"
+                step="0.01"
+                class="flete-input"
+                value="${total}">
+                </div>
+
+                <div class="flete-row">
+                <div class="flete-label">Pago parcial</div>
+                <select id="editToggle" class="flete-input">
+                <option value="0" ${toggle==0?'selected':''}>Pago completo</option>
+                <option value="1" ${toggle==1?'selected':''}>Pago parcial</option>
+                </select>
+                </div>
+
+                <div class="flete-row">
+                <div class="flete-label">Monto pagado</div>
+                <input id="editPagado" type="number"
+                step="0.01"
+                class="flete-input"
+                value="${pagado}">
+                </div>
+
+                <div class="flete-preview">
+                Pendiente por cobrar:
+                <strong>$<span id="previewPendiente">0.00</span></strong>
+                </div>
+
+                </div>
+                `,
+
+            didOpen: () => {
+
+                const totalInput = document.getElementById('editTotal')
+                const pagadoInput = document.getElementById('editPagado')
+                const toggleInput = document.getElementById('editToggle')
+                const pendientePreview = document.getElementById('previewPendiente')
+
+                function recalcular() {
+
+                    let total = parseFloat(totalInput.value) || 0
+                    let pagado = parseFloat(pagadoInput.value) || 0
+                    let toggle = parseInt(toggleInput.value)
+
+                    if (toggle == 0) {
+
+                        pagadoInput.value = total
+                        pagadoInput.disabled = true
+
+                        pendientePreview.innerText = '$0.00'
+
+                    } else {
+
+                        pagadoInput.disabled = false
+
+                        let pendiente = total - pagado
+                        if (pendiente < 0) pendiente = 0
+
+                        pendientePreview.innerText = '$' + pendiente.toFixed(2)
+
+                    }
+
+                }
+
+                totalInput.addEventListener('input', recalcular)
+                pagadoInput.addEventListener('input', recalcular)
+                toggleInput.addEventListener('change', recalcular)
+
+                recalcular()
+
+            },
+
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+
+            preConfirm: () => {
+
+                const total = parseFloat(document.getElementById('editTotal').value)
+                const toggle = parseInt(document.getElementById('editToggle').value)
+                const pagado = parseFloat(document.getElementById('editPagado').value)
+
+                if (pagado > total) {
+
+                    Swal.showValidationMessage(
+                        'El pagado no puede ser mayor al total'
+                    )
+
+                    return false
+                }
+
+                return {
+                    total,
+                    toggle,
+                    pagado
+                }
+
+            }
+
+        }).then((result) => {
+
+            if (!result.isConfirmed) return
+
+            fetch("<?= base_url('packages/updateFleteCompleto') ?>", {
+
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+
+                        id: id,
+                        total: result.value.total,
+                        toggle: result.value.toggle,
+                        pagado: result.value.pagado
+
+                    })
+
+                })
+                .then(r => r.json())
+                .then(data => {
+
+                    if (data.status == 'ok') {
+
+                        location.reload()
+
+                    }
+
+                })
+
+        })
+
+    })
+</script>
 <?= $this->endSection() ?>
