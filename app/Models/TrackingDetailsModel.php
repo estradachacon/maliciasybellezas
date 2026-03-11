@@ -74,7 +74,7 @@ class TrackingDetailsModel extends Model
             ->join('routes', 'routes.id = tracking_header.route_id', 'left')
             ->where('tracking_details.package_id', $packageId)
             ->where('tracking_details.updated_at >=', $horaLimite)
-            ->orderBy('tracking_header.date', 'DESC')
+            ->orderBy('tracking_header.date', 'ASC')
             ->get()
             ->getResult();
     }
