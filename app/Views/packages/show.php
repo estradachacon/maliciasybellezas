@@ -49,6 +49,15 @@
         font-weight: bold;
         font-size: 1rem;
     }
+
+    .tracking-btn {
+        transition: all .2s ease;
+    }
+
+    .tracking-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
 </style>
 <?php
 /**
@@ -100,10 +109,30 @@ function formatDateDMY($fecha)
                                     <th>Monto</th>
                                     <td><strong>$<?= number_format($package['monto'], 2) ?></strong></td>
                                 </tr>
+
                                 <tr>
                                     <th>Estatus</th>
-                                    <td><?= statusBadge($package['estatus'] ?? 'N/A') ?></td>
+                                    <td>
+
+                                        <div style="display:flex; gap:10px; align-items:center;">
+
+                                            <?php if (!empty($package['estatus'])): ?>
+                                                <div style="border-right:1px solid #ddd; padding-right:10px;">
+                                                    <?= statusBadge($package['estatus']) ?>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($package['estatus2'])): ?>
+                                                <div>
+                                                    <?= statusBadge($package['estatus2']) ?>
+                                                </div>
+                                            <?php endif; ?>
+
+                                        </div>
+
+                                    </td>
                                 </tr>
+
                                 <?php if (!empty($package['fecha_remu'])): ?>
                                     <tr>
                                         <th>Pago al vendedor</th>
@@ -341,7 +370,53 @@ function formatDateDMY($fecha)
                         <?php endif; ?>
                     </tbody>
                 </table>
+                <?php if (!empty($trackingHistory)): ?>
 
+                    <hr class="my-4">
+
+                    <h5 class="text-secondary mb-3 border-bottom pb-1">
+                        Historial de Seguimiento
+                    </h5>
+
+                    <table class="table table-sm table-bordered">
+
+                        <thead>
+                            <tr>
+                                <th>Tracking</th>
+                                <th>Fecha</th>
+                                <th>Motorista</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <?php foreach ($trackingHistory as $t): ?>
+
+                                <tr>
+
+                                    <td>
+                                        <a href="<?= base_url('tracking/' . $t->tracking_id) ?>"
+                                            class="btn btn-sm btn-primary"
+                                            title="Ver seguimiento completo">
+                                            <i class="fa-solid fa-route"></i> #<?= $t->tracking_id ?>
+                                        </a>
+                                    </td>
+
+                                    <td><?= date('d/m/Y', strtotime($t->tracking_date)) ?></td>
+
+                                    <td><?= esc($t->motorista) ?></td>
+
+                                    <td><?= trackingBadge($t->tracking_status) ?></td>
+
+                                </tr>
+
+                            <?php endforeach; ?>
+
+                        </tbody>
+                    </table>
+
+                <?php endif; ?>
                 <hr class="my-4">
 
                 <h5 class="text-secondary mb-3 border-bottom pb-1">Comentarios y Tiempos</h5>

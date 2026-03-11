@@ -1,4 +1,33 @@
 <?php
+function trackingBadge($status)
+{
+    $map = [
+        'pendiente' => 'warning',
+        'reenvio' => 'orange',
+        'devuelto' => 'success',
+        'entregado' => 'success',
+        'asignado_para_entrega' => 'info',
+        'asignado_para_recolecta' => 'info',
+        'recolecta_fallida' => 'warning',
+        'asignado' => 'info',
+        'no_retirado' => 'danger',
+        'en_casillero' => 'info',
+        'en_casillero_externo' => 'info',
+        'recolectado' => 'info',
+        'finalizado' => 'success',
+        'remunerado' => 'success',
+        'Activo' => 'success',
+        'Inactivo' => 'danger',
+        'Efectivo' => 'success',
+        'Banco' => 'info'
+    ];
+
+    $color = $map[$status] ?? 'secondary';
+
+    $label = str_replace('_', ' ', ucfirst($status));
+
+    return '<span class="badge badge-' . $color . '">' . $label . '</span>';
+}
 
 function serviceLabel($tipo)
 {

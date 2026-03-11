@@ -56,4 +56,26 @@ class TrackingDetailsModel extends Model
             ->orderBy('tracking_details.id', 'ASC')
             ->findAll();
     }
+
+    public function getTrackingHistoryByPackage($packageId)
+    {
+        $horaLimite = date('Y-m-d') . ' 21:00:00';
+        return $this->db->table('tracking_details')
+            ->select('
+            tracking_details.*,
+            tracking_header.id AS tracking_id,
+            tracking_header.date AS tracking_date,
+            tracking_details.status AS tracking_status,
+            users.user_name AS motorista,
+            routes.route_name
+        ')
+            ->join('tracking_header', 'tracking_header.id = tracking_details.tracking_header_id', 'left')
+            ->join('users', 'users.id = tracking_header.user_id', 'left')
+            ->join('routes', 'routes.id = tracking_header.route_id', 'left')
+            ->where('tracking_details.package_id', $packageId)
+            ->where('tracking_details.updated_at >=', $horaLimite)
+            ->orderBy('tracking_header.date', 'DESC')
+            ->get()
+            ->getResult();
+    }
 }

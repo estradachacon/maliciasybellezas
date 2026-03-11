@@ -130,7 +130,7 @@ class TrackingRendicionController extends BaseController
                 ]);
 
                 // Actualizar tracking_details
-                $this->detailModel->update($p->package_id, [
+                $this->detailModel->update($p->id, [
                     'status' => 'en_casillero_externo'
                 ]);
 
@@ -139,8 +139,8 @@ class TrackingRendicionController extends BaseController
                 if (!$esPagado) {
                     continue;
                 }
-            } 
-            
+            }
+
             // CLIENTE PAGÓ DIRECTO AL VENDEDOR
             if ($esPagado) {
 
@@ -226,6 +226,15 @@ class TrackingRendicionController extends BaseController
             }
 
             $packageModel->update($p->package_id, $updateData);
+
+            // ACTUALIZAR TRACKING DETAILS
+            $this->detailModel->update($p->id, [
+                'status' => $newStatus,
+                'delivered_at' => in_array($newStatus, ['entregado', 'recolectado'])
+                    ? date('Y-m-d H:i:s')
+                    : null
+            ]);
+
             $paquetesModificados[] = "ID {$p->package_id} → {$newStatus}";
 
             // D) NO COBRAR SI REGRESADO

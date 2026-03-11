@@ -8,6 +8,7 @@ use App\Models\PackageModel;
 use App\Models\SellerModel;
 use App\Models\SettledPointModel;
 use App\Models\AccountModel;
+use App\Models\TrackingDetailsModel;
 
 class PackageController extends BaseController
 {
@@ -122,6 +123,8 @@ class PackageController extends BaseController
 
     public function show($id = null)
     {
+        $trackingDetailsModel = new TrackingDetailsModel();
+
         // Traemos el paquete con joins a usuario, punto fijo y vendedor
         $package = $this->packageModel
             ->select(
@@ -153,6 +156,9 @@ class PackageController extends BaseController
         if (!$package) {
             throw new \CodeIgniter\Exceptions\PageNotFoundException("Paquete no encontrado");
         }
+
+        $trackingHistory = $trackingDetailsModel
+            ->getTrackingHistoryByPackage($id);
 
         // Normalizamos a array para que tu vista use siempre $package['campo']
         $package = (array) $package;
@@ -203,7 +209,8 @@ class PackageController extends BaseController
         $package['destinos'] = implode(' → ', $destinos);
 
         return view('packages/show', [
-            'package' => $package
+            'package' => $package,
+            'trackingHistory' => $trackingHistory
         ]);
     }
 
@@ -591,7 +598,7 @@ class PackageController extends BaseController
         $session = session();
         $userId = $session->get('user_id');
 
-        $id = $this->request->getPost('id');
+        $id   = $this->request->getPost('id');
         $tipo = $this->request->getPost('tipo_destino');
 
         $package = $this->packageModel->find($id);
@@ -603,60 +610,75 @@ class PackageController extends BaseController
         $log_message = '';
         $log_details = '';
 
-        if ($tipo === 'punto') {
-            $puntoFijoId = $this->request->getPost('id_puntofijo');
-            $fechaEntregaPuntoFijo = $this->request->getPost('fecha_entrega_puntofijo');
+        switch ($tipo) {
 
-            $data = [
-                'id_puntofijo' => $puntoFijoId,
-                'fecha_entrega_puntofijo' => $fechaEntregaPuntoFijo,
-                'estatus' => 'pendiente',
-                'estatus2' => 'reenvio',
-                'branch' => null,
+            case 'punto':
 
-                // limpiar campos que no aplican
-                'destino_personalizado' => null,
-                'fecha_entrega_personalizado' => null,
-            ];
+                $puntoFijoId = $this->request->getPost('id_puntofijo');
+                $fechaEntregaPuntoFijo = $this->request->getPost('fecha_entrega_puntofijo');
 
-            $log_message = 'Destino actualizado a PUNTOS FIJOS (ID: ' . esc($puntoFijoId) . ')';
-            $log_details = 'Fecha de entrega punto fijo: ' . esc($fechaEntregaPuntoFijo);
-        } elseif ($tipo === 'personalizado') {
-            $destinoPersonalizado = $this->request->getPost('destino_personalizado');
-            $fechaEntregaPersonalizado = $this->request->getPost('fecha_entrega_personalizado');
+                $data = [
+                    'tipo_servicio' => 1,
+                    'id_puntofijo' => $puntoFijoId,
+                    'fecha_entrega_puntofijo' => $fechaEntregaPuntoFijo,
+                    'estatus' => 'pendiente',
+                    'estatus2' => 'reenvio',
+                    'branch' => null,
+                    'destino_personalizado' => null,
+                    'fecha_entrega_personalizado' => null,
+                ];
 
-            $data = [
-                'destino_personalizado' => $destinoPersonalizado,
-                'fecha_entrega_personalizado' => $fechaEntregaPersonalizado,
-                'estatus' => 'pendiente',
-                'estatus2' => 'reenvio',
-                'branch' => null,
-                // limpiar campos que no aplican
-                'id_puntofijo' => null,
-                'fecha_entrega_puntofijo' => null,
-            ];
+                $log_message = 'Destino actualizado a PUNTOS FIJOS (ID: ' . esc($puntoFijoId) . ')';
+                $log_details = 'Fecha de entrega punto fijo: ' . esc($fechaEntregaPuntoFijo);
 
-            $log_message = 'Destino actualizado a PERSONALIZADO';
-            $log_details = 'Dirección: ' . esc($destinoPersonalizado) . ', Fecha de entrega: ' . esc($fechaEntregaPersonalizado);
-        } elseif ($tipo === 'casillero') {
-            $branchId = $this->request->getPost('branch');
-            $data = [
-                'destino_personalizado' => 'Casillero',
-                'estatus' => 'en_casillero',
-                'branch' => $branchId,
+                break;
 
-                // limpiar campos que no aplican
-                'id_puntofijo' => null,
-                'fecha_entrega_puntofijo' => null,
-                'fecha_entrega_personalizado' => null,
-            ];
 
-            $log_message = 'Destino actualizado a CASILLERO';
-            $log_details = 'Estatus cambiado a: en_casillero';
+            case 'personalizado':
+
+                $destinoPersonalizado = $this->request->getPost('destino_personalizado');
+                $fechaEntregaPersonalizado = $this->request->getPost('fecha_entrega_personalizado');
+
+                $data = [
+                    'tipo_servicio' => 2,
+                    'destino_personalizado' => $destinoPersonalizado,
+                    'fecha_entrega_personalizado' => $fechaEntregaPersonalizado,
+                    'estatus' => 'pendiente',
+                    'estatus2' => 'reenvio',
+                    'branch' => null,
+                    'id_puntofijo' => null,
+                    'fecha_entrega_puntofijo' => null,
+                ];
+
+                $log_message = 'Destino actualizado a PERSONALIZADO';
+                $log_details = 'Dirección: ' . esc($destinoPersonalizado) . ', Fecha de entrega: ' . esc($fechaEntregaPersonalizado);
+
+                break;
+
+
+            case 'casillero':
+
+                $branchId = $this->request->getPost('branch');
+
+                $data = [
+                    'tipo_servicio' => 3,
+                    'destino_personalizado' => 'Casillero',
+                    'estatus' => 'en_casillero',
+                    'estatus2' => 'reenvio',
+                    'branch' => $branchId,
+                    'id_puntofijo' => null,
+                    'fecha_entrega_puntofijo' => null,
+                    'fecha_entrega_personalizado' => null,
+                ];
+
+                $log_message = 'Destino actualizado a CASILLERO';
+                $log_details = 'Estatus cambiado a: en_casillero';
+
+                break;
         }
 
-        // Si hay datos para actualizar, procedemos
         if (!empty($data)) {
+
             $this->packageModel->update($id, $data);
 
             registrar_bitacora(
