@@ -37,6 +37,8 @@ class PackageController extends BaseController
         $filter_service = $this->request->getGet('tipo_servicio');
         $filter_date_from = $this->request->getGet('fecha_desde');
         $filter_date_to = $this->request->getGet('fecha_hasta');
+        $filter_package_id = $this->request->getGet('package_id');
+        $filter_flete_cero = $this->request->getGet('flete_cero');
 
         $builder = $this->packageModel
             ->select('
@@ -69,6 +71,13 @@ class PackageController extends BaseController
             $builder->where('DATE(fecha_ingreso) <=', $filter_date_to);
         }
 
+        if (!empty($filter_package_id)) {
+            $builder->where('packages.id', $filter_package_id);
+        }
+
+        if ($filter_flete_cero == 1) {
+            $builder->where('COALESCE(packages.flete_total,0)', 0);
+        }
         $packages = $builder->paginate($perPage);
         $pager = $builder->pager;
 
@@ -105,6 +114,8 @@ class PackageController extends BaseController
             'puntos_fijos' => $puntos_fijos,
             'filter_seller_id' => $filter_vendedor_id,
             'seller_selected'  => $seller_selected,
+            'filter_package_id' => $filter_package_id,
+            'filter_flete_cero' => $filter_flete_cero,
             'tipoServicio' => $tipoServicio
         ]);
     }

@@ -3,21 +3,21 @@
 <link rel="stylesheet" href="<?= base_url('backend/assets/css/newpackage.css') ?>">
 <style>
     /* Animación dropdown */
-.dropdown-menu.show .dropdown-item {
-    animation: fadeItem 0.4s ease forwards;
-}
-
-@keyframes fadeItem {
-    from {
-        opacity: 0;
-        transform: translateX(-4px);
+    .dropdown-menu.show .dropdown-item {
+        animation: fadeItem 0.4s ease forwards;
     }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
+    @keyframes fadeItem {
+        from {
+            opacity: 0;
+            transform: translateX(-4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
 </style>
 <script>
     const base_url = "<?= base_url() ?>";
@@ -35,7 +35,6 @@
             <div class="card-body">
                 <form id="formPaquete" method="GET" action="<?= base_url('packages') ?>" class="mb-3">
                     <div class="row">
-
                         <!-- Vendedor -->
                         <div class="col-md-4">
                             <label for="seller_id" class="form-label">Vendedor</label>
@@ -69,6 +68,8 @@
                                     Entregado</option>
                                 <option value="en_casillero" <?= ($filter_status == 'en_casillero') ? 'selected' : '' ?>>
                                     En casillero</option>
+                                <option value="en_casillero_externo" <?= ($filter_status == 'en_casillero_externo') ? 'selected' : '' ?>>
+                                    En casillero externo</option>    
                                 <option value="finalizado" <?= ($filter_status == 'finalizado') ? 'selected' : '' ?>>
                                     Finalizado</option>
                                 <option value="remunerado" <?= ($filter_status == 'remunerado') ? 'selected' : '' ?>>
@@ -93,7 +94,6 @@
                                 <option value="4" <?= ($filter_service == 4) ? 'selected' : '' ?>>Casillero</option>
                             </select>
                         </div>
-
                         <!-- Fecha desde -->
                         <div class="col-md-2">
                             <label class="form-label">Fecha (inicio) desde</label>
@@ -107,7 +107,23 @@
                             <input type="date" name="fecha_hasta" class="form-control"
                                 value="<?= esc($filter_date_to) ?>">
                         </div>
-
+                        <!-- Flete en cero -->
+                        <div class="col-md-2">
+                            <label class="form-label">Flete</label>
+                            <select name="flete_cero" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="1" <?= ($filter_flete_cero == 1) ? 'selected' : '' ?>>
+                                    Solo flete $0
+                                </option>
+                            </select>
+                        </div>
+                        <!-- Buscar por ID -->
+                        <div class="col-md-2">
+                            <label class="form-label">ID paquete</label>
+                            <input type="number" name="package_id" class="form-control"
+                                placeholder="Ej: 1502"
+                                value="<?= esc($filter_package_id ?? '') ?>">
+                        </div>
                     </div>
 
                     <div class="row mt-3">
@@ -124,11 +140,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="col-md-2">
+                        <div class="col-md-2 mt-2">
                             <button type="submit" class="btn btn-primary btn-block mt-4">Filtrar</button>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-2 mt-2">
                             <a href="<?= base_url('packages') ?>" class="btn btn-secondary btn-block mt-4">Limpiar</a>
                         </div>
 
