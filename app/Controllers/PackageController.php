@@ -1216,4 +1216,17 @@ class PackageController extends BaseController
             'status' => 'ok'
         ]);
     }
+    public function marcarNoRetirado($id)
+    {
+        $model = new PackageModel();
+
+        $model->update($id, [
+            'estatus' => 'no_retirado',
+            'estatus2' => 'en_casillero_externo'
+        ]);
+
+        return $this->response->setJSON([
+            'success' => true
+        ]);
+    }
 }

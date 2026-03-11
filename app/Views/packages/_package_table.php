@@ -250,7 +250,19 @@
                                                         </li>
                                                     <?php endif; ?>
                                                 <?php endif; ?>
-
+                                                
+                                                <!-- APLICAR NO RETIRADO A LOS QUE ESTAN EN CASILLERO EXTERNO -->
+                                                <?php if ($pkg['estatus'] == 'en_casillero_externo'): ?>
+                                                <li>
+                                                    <a class="dropdown-item btn-no-retirado"
+                                                        href="#"
+                                                        data-id="<?= $pkg['id'] ?>">
+                                                        
+                                                        <i class="fa-solid fa-user-clock"></i> Marcar como no retirado
+                                                    </a>
+                                                </li>
+                                                <?php endif; ?>
+                                                
                                                 <!-- DEVOLVER PAQUETE -->
                                                 <?php if ($pkg['estatus2'] != 'devuelto'): ?>
                                                     <?php if (

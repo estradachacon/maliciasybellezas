@@ -69,7 +69,7 @@
                                 <option value="en_casillero" <?= ($filter_status == 'en_casillero') ? 'selected' : '' ?>>
                                     En casillero</option>
                                 <option value="en_casillero_externo" <?= ($filter_status == 'en_casillero_externo') ? 'selected' : '' ?>>
-                                    En casillero externo</option>    
+                                    En casillero externo</option>
                                 <option value="finalizado" <?= ($filter_status == 'finalizado') ? 'selected' : '' ?>>
                                     Finalizado</option>
                                 <option value="remunerado" <?= ($filter_status == 'remunerado') ? 'selected' : '' ?>>
@@ -264,6 +264,55 @@
             }
         }).trigger('change'); // <-- Esta línea hace que Select2 lea el option inicial
 
+        //Interceptar los paquetes para ponerles no retirado a los en_casillero_externo
+        $(document).on('click', '.btn-no-retirado', function(e) {
+
+            e.preventDefault();
+
+            let id = $(this).data('id');
+
+            Swal.fire({
+                title: '¿Marcar paquete como no retirado?',
+                text: "El paquete seguirá registrado como proveniente del casillero externo.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, marcar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    fetch("<?= base_url('packages/no-retirado') ?>/" + id, {
+                            method: "POST"
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+
+                            if (data.success) {
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Actualizado',
+                                    text: 'El paquete fue marcado como no retirado',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+
+                                setTimeout(() => location.reload(), 1200);
+
+                            } else {
+
+                                Swal.fire('Error', data.message, 'error');
+
+                            }
+
+                        });
+
+                }
+
+            });
+
+        });
         // Interceptar el envío del form de agregar destino
         $("form[action*='packages-setDestino']").on("submit", function(e) {
             e.preventDefault();

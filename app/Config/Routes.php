@@ -153,6 +153,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('packages-entregar/(:num)', 'PackageController::entregar/$1');
     $routes->get('packages-getDestinoInfo/(:num)', 'PackageController::getDestinoInfo/$1');
     $routes->get('packages/return', 'PackageController::showReturnPackages');
+    $routes->post('packages/no-retirado/(:num)', 'PackageController::marcarNoRetirado/$1');
     $routes->presenter('packages', ['controller' => 'PackageController', 'only' => ['index', 'new', 'create', 'edit', 'update', 'delete', 'show']]);
 
     // Módulo de mantenimiento de tracking
