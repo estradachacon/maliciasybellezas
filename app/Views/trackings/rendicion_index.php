@@ -58,6 +58,52 @@
         pointer-events: none;
         opacity: .7;
     }
+
+    .stat-box {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 12px 8px;
+        border: 1px solid #e5e5e5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+        transition: all .2s ease;
+    }
+
+    .stat-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, .12);
+    }
+
+    .stat-number {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #343a40;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    /* colores por tipo */
+    .stat-exito {
+        color: #198754;
+    }
+
+    .stat-warning {
+        color: #ffc107;
+    }
+
+    .stat-danger {
+        color: #dc3545;
+    }
+
+    .stat-info {
+        color: #0dcaf0;
+    }
+
+    .stat-primary {
+        color: #0d6efd;
+    }
 </style>
 <div class="row">
     <div class="col-md-12">
@@ -301,7 +347,48 @@
                         <h5 class="mb-0">Pagado directo al vendedor: <strong id="total-directo">$0.00</strong></h5>
                         <small class="text-muted">Paquetes cancelados al delivery porque el cliente pagó directo</small>
                     </div>
+                    <div class="card bg-light p-3 mb-3 shadow-sm">
+                        <h5 class="mb-2">Estadísticas de la ruta</h5>
 
+                        <div class="row text-center">
+
+                            <div class="col-md-2">
+                                <div class="stat-box">
+                                    <div id="total-paquetes" class="stat-number stat-primary">0</div>
+                                    <div class="stat-label">Total paquetes</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="stat-box">
+                                    <div id="total-exitosos" class="stat-number stat-exito">0</div>
+                                    <div class="stat-label">Exitosos</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="stat-box">
+                                    <div id="total-no-retirados" class="stat-number stat-warning">0</div>
+                                    <div class="stat-label">No retirados</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="stat-box">
+                                    <div id="total-casilleros" class="stat-number stat-info">0</div>
+                                    <div class="stat-label">Casilleros externos</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="stat-box">
+                                    <div id="total-pagado-vendedor" class="stat-number stat-danger">0</div>
+                                    <div class="stat-label">Pagado vendedor</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                     <button type="submit" id="btnRendir" class="btn btn-success">
                         Guardar rendición
                     </button>
@@ -651,11 +738,16 @@
             let totales = {
                 efectivo: 0,
                 otras: 0,
-                directo: 0
+                directo: 0,
+                noRetirados: 0,
+                casilleros: 0,
+                pagadoVendedor: 0,
+                exitosos: 0,
+                totalPaquetes: 0
             };
 
             document.querySelectorAll('.paquete-row').forEach(row => {
-
+                totales.totalPaquetes++;
                 row.classList.remove(
                     'bg-warning',
                     'bg-danger-light',
@@ -688,34 +780,54 @@
 
                 // PRIORIDAD 1: FALLIDO
                 if (aplicarRegresado(row, refs)) {
+
+                    totales.noRetirados++;
+
                     return;
                 }
 
                 // PRIORIDAD 2: PAGADO AL VENDEDOR
                 const esPagado = aplicarPagadoVendedor(row, refs, totales);
 
+
                 // PRIORIDAD 3: CASILLERO
                 const esCasillero = aplicarCasillero(row, refs);
+                const esFallido = refs.cbRegresado?.checked;
+
+                if (!esFallido && !esCasillero) {
+                    totales.exitosos++;
+                }
+                if (esCasillero) {
+                    totales.casilleros++;
+                }
 
                 // PRIORIDAD 4: NORMAL
                 if (!esPagado && !esCasillero) {
                     calcularTotales(row, refs, totales);
                 }
 
+                if (esPagado) {
+                    totales.pagadoVendedor++;
+                }
             });
 
             document.getElementById('total-entregar').innerText = '$' + totales.efectivo.toFixed(2);
             document.getElementById('total-otras').innerText = '$' + totales.otras.toFixed(2);
             document.getElementById('total-directo').innerText = '$' + totales.directo.toFixed(2);
+            document.getElementById('total-no-retirados').innerText = totales.noRetirados;
+            document.getElementById('total-casilleros').innerText = totales.casilleros;
+            document.getElementById('total-pagado-vendedor').innerText = totales.pagadoVendedor;
+            document.getElementById('total-exitosos').innerText = totales.exitosos;
+            document.getElementById('total-paquetes').innerText = totales.totalPaquetes;
         }
 
         actualizarEstadoYTotal();
 
 
         /*
-        *Listeners para recalcular totales y actualizar estados visuales
-        */
-        
+         *Listeners para recalcular totales y actualizar estados visuales
+         */
+
         //Recalcular cuando cambie la cuenta (Select2)
         $(document).on('change', '.select2-account', function() {
             actualizarEstadoYTotal();

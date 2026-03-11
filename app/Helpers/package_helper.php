@@ -71,3 +71,19 @@ function statusBadge($status)
 
     return "<span class='badge badge-$color'>$label</span>";
 }
+
+function trackingHeaderBadge($status)
+{
+    $map = [
+        'asignado' => ['Asignado', 'badge-secondary'],
+        'en_ruta' => ['En ruta', 'badge-primary'],
+        'finalizado' => ['Finalizado', 'badge-success'],
+        'rendido' => ['Rendido', 'badge-success'],
+        'cancelado' => ['Cancelado', 'badge-danger']
+    ];
+
+    $label = $map[$status][0] ?? ucfirst($status);
+    $class = $map[$status][1] ?? 'badge-dark';
+
+    return "<span class='badge {$class}'>{$label}</span>";
+}
