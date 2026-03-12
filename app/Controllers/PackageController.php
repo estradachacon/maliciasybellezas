@@ -1220,9 +1220,19 @@ class PackageController extends BaseController
     {
         $model = new PackageModel();
 
+        // Obtener el paquete actual
+        $paquete = $model->find($id);
+
+        if (!$paquete) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Paquete no encontrado'
+            ]);
+        }
+
         $model->update($id, [
-            'estatus' => 'no_retirado',
-            'estatus2' => 'en_casillero_externo'
+            'estatus2' => $paquete['estatus'], // mover estatus actual
+            'estatus'  => 'no_retirado'        // nuevo estatus
         ]);
 
         return $this->response->setJSON([

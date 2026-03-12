@@ -252,7 +252,7 @@
                                                 <?php endif; ?>
                                                 
                                                 <!-- APLICAR NO RETIRADO A LOS QUE ESTAN EN CASILLERO EXTERNO -->
-                                                <?php if ($pkg['estatus'] == 'en_casillero_externo'): ?>
+                                                <?php if ($pkg['estatus'] == 'en_casillero_externo' || $pkg['estatus'] == 'en_casillero'): ?>
                                                 <li>
                                                     <a class="dropdown-item btn-no-retirado"
                                                         href="#"
