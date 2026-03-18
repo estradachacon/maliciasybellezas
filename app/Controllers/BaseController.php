@@ -51,7 +51,7 @@ abstract class BaseController extends Controller
         // Do Not Edit This Line
         parent::initController($request, $response, $logger);
         session()->remove('_permisos_refrescados');
-        
+
         // Preload any models, libraries, etc, here.
         date_default_timezone_set('America/El_Salvador');
 
@@ -67,6 +67,66 @@ abstract class BaseController extends Controller
             }
         } catch (\Exception $e) {
             log_message('error', 'Error comprobando time_zone en la BD: ' . $e->getMessage());
+        }
+
+        if (session()->get('id')) {
+            $this->runSystemTasks();
+        }
+    }
+    protected function runSystemTasks()
+    {
+        $this->ejecutarBackup();
+    }
+    protected function ejecutarBackup()
+    {
+        $db = \Config\Database::connect();
+
+        $tarea = $db->table('tareas_sistema')
+            ->where('nombre', 'backup_sistema')
+            ->get()
+            ->getRow();
+
+        $now = new \DateTime();
+
+        if ($tarea && $tarea->ultima_ejecucion) {
+            $lastRun = new \DateTime($tarea->ultima_ejecucion);
+            $diff = $now->getTimestamp() - $lastRun->getTimestamp();
+
+            if ($diff < 1800) {
+                return;
+            }
+        }
+
+        // 🔒 evitar ejecuciones múltiples
+        $lockFile = WRITEPATH . 'backup.lock';
+
+        if (file_exists($lockFile)) {
+            return;
+        }
+
+        file_put_contents($lockFile, 'running');
+
+        try {
+            command('backup:run');
+
+            if ($tarea) {
+                $db->table('tareas_sistema')
+                    ->where('nombre', 'backup_sistema')
+                    ->update([
+                        'ultima_ejecucion' => date('Y-m-d H:i:s')
+                    ]);
+            } else {
+                $db->table('tareas_sistema')->insert([
+                    'nombre' => 'backup_sistema',
+                    'ultima_ejecucion' => date('Y-m-d H:i:s')
+                ]);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Error en backup: ' . $e->getMessage());
+        } finally {
+            if (file_exists($lockFile)) {
+                unlink($lockFile);
+            }
         }
     }
 }
