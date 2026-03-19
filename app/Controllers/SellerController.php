@@ -152,24 +152,56 @@ class SellerController extends BaseController
         helper(['form']);
         $session = session();
         $id = $this->request->getPost('id');
-        $cashierModel = new SellerModel();
+        $sellerModel = new SellerModel();
+        $db = db_connect();
 
         if (!$id) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'ID inválido.']);
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'ID inválido.'
+            ]);
         }
 
-        if ($cashierModel->delete($id)) {
+        // VALIDACIÓN SIMPLE Y FUERTE
+        $paquetes = $db->table('packages')
+            ->select('id, cliente, estatus, fecha_ingreso')
+            ->where('vendedor', $id)
+            ->limit(20)
+            ->get()
+            ->getResult();
+
+        if (!empty($paquetes)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'type' => 'has_packages',
+                'message' => 'El vendedor tiene paquetes asociados.',
+                'paquetes' => $paquetes,
+                'total' => count($paquetes) // opcional
+            ]);
+        }
+
+        // SI NO TIENE → eliminar
+        if ($sellerModel->delete($id)) {
+
             registrar_bitacora(
                 'Eliminó vendedor',
                 'Vendedores',
                 'Se eliminó el vendedor con ID ' . esc($id) . '.',
                 $session->get('user_id')
             );
-            return $this->response->setJSON(['status' => 'success', 'message' => 'Registro de vendedor eliminado correctamente.']);
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Registro de vendedor eliminado correctamente.'
+            ]);
         }
 
-        return $this->response->setJSON(['status' => 'error', 'message' => 'No se pudo eliminar el vendedor.']);
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'No se pudo eliminar el vendedor.'
+        ]);
     }
+
     public function search()
     {
         $term = $this->request->getGet('q');

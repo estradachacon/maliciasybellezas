@@ -13,7 +13,7 @@
             <div class="card-body">
 
                 <div class="row mb-3 align-items-end">
-                    
+
                     <div class="col-md-10">
                         <label for="searchInput">Buscar vendedor</label>
                         <div class="input-group">
@@ -31,7 +31,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <div class="d-flex justify-content-end align-items-center"> 
+                        <div class="d-flex justify-content-end align-items-center">
                             <label for="perPageSelect" class="mr-2 mb-0">Resultados:</label>
                             <select id="perPageSelect" class="form-control form-control-sm" style="width: 80px;">
                                 <option value="5" <?= ($perPage == 5) ? 'selected' : '' ?>>5</option>
@@ -51,7 +51,7 @@
     </div>
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
         const tableContainer = document.getElementById('table-container');
         const loadingSpinner = document.getElementById('loading-spinner');
@@ -82,7 +82,7 @@
         }
 
         // 🔥 Cuando cambias los resultados por página
-        document.getElementById('perPageSelect').addEventListener('change', function () {
+        document.getElementById('perPageSelect').addEventListener('change', function() {
             const query = searchInput.value.trim();
             loadResults(query, 1);
         });
@@ -90,7 +90,7 @@
         // Re-adjuntar eventos (paginación y delete)
         function rebindEvents() {
             document.querySelectorAll('#pagination-links a').forEach(link => {
-                link.addEventListener('click', function (e) {
+                link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const url = new URL(this.href);
                     const page = url.searchParams.get('page');
@@ -107,7 +107,7 @@
         }
 
         // Búsqueda en vivo
-        searchInput.addEventListener('input', function () {
+        searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
             const query = this.value.trim();
             searchTimeout = setTimeout(() => {
@@ -115,7 +115,7 @@
             }, 300);
         });
 
-        clearSearchBtn.addEventListener('click', function () {
+        clearSearchBtn.addEventListener('click', function() {
             searchInput.value = '';
             loadResults('');
             updateClearButton('');
@@ -125,7 +125,6 @@
             clearSearchBtn.style.display = query.length > 0 ? 'block' : 'none';
         }
 
-        // Eliminar – SweetAlert
         function handleDelete() {
             const id = this.dataset.id;
 
@@ -139,41 +138,108 @@
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             }).then(result => {
-                if (result.isConfirmed) {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const csrfHeader = document.querySelector('meta[name="csrf-header"]').getAttribute('content');
 
-                    fetch("<?= base_url('sellers/delete') ?>", {
+                if (!result.isConfirmed) return;
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="csrf-header"]').getAttribute('content');
+
+                fetch("<?= base_url('sellers/delete') ?>", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                             'X-Requested-With': 'XMLHttpRequest',
                             [csrfHeader]: csrfToken
                         },
-                        body: new URLSearchParams({ id })
+                        body: new URLSearchParams({
+                            id
+                        })
                     })
-                        .then(response => response.json())
-                        .then(data => {
+                    .then(response => response.json())
+                    .then(data => {
+
+                        //  CASO ÉXITO
+                        if (data.status === 'success') {
                             Swal.fire({
-                                title: data.status === 'success' ? 'Éxito' : 'Error',
+                                title: 'Éxito',
                                 text: data.message,
-                                icon: data.status,
-                                timer: 2000,
+                                icon: 'success',
+                                timer: 1800,
                                 showConfirmButton: false
                             });
 
-                            if (data.status === 'success') {
-                                const query = searchInput.value.trim();
-                                loadResults(query);
+                            const query = searchInput.value.trim();
+                            loadResults(query);
+                            return;
+                        }
+
+                        // CASO: TIENE PAQUETES
+                        if (data.type === 'has_packages') {
+
+                            let paquetes = data.paquetes || [];
+
+                            let lista = paquetes.slice(0, 10).map(p => `
+                    <li>
+                        <b>#${p.id}</b> - ${p.tracking ?? ''} - ${p.cliente_nombre ?? ''}
+                    </li>
+                `).join('');
+
+                            let extra = '';
+                            if (paquetes.length > 10) {
+                                extra = `<li><i>... y ${paquetes.length - 10} más</i></li>`;
                             }
+
+                            Swal.fire({
+                                title: 'No se puede eliminar',
+                                icon: 'error',
+                                html: `
+                        <p class="mb-2">
+                            Este vendedor tiene <b>${paquetes.length}</b> paquete(s) asociado(s):
+                        </p>
+
+                        <ul style="
+                            text-align:left;
+                            max-height:200px;
+                            overflow:auto;
+                            padding-left:20px;
+                            font-size: 14px;
+                        ">
+                            ${lista}
+                            ${extra}
+                        </ul>
+
+                        <div class="alert alert-warning mt-3">
+                            Debe reasignar estos paquetes antes de eliminar.
+                        </div>
+                    `,
+                                confirmButtonText: 'Entendido'
+                            });
+
+                            return;
+                        }
+
+                        // ERROR GENERAL
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo eliminar el vendedor.',
+                            icon: 'error'
                         });
-                }
+
+                    })
+                    .catch(() => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Error de conexión con el servidor.',
+                            icon: 'error'
+                        });
+                    });
+
             });
         }
 
         // Toggle detalles
         document.querySelectorAll('.toggle-details').forEach(btn => {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function() {
                 const details = this.closest('.card').querySelector('.details');
                 details.classList.toggle('d-none');
                 this.textContent = details.classList.contains('d-none') ? 'Ver' : 'Ocultar';
