@@ -49,7 +49,7 @@ class TrackingDetailsModel extends Model
             ->join('settled_points', 'settled_points.id = packages.id_puntofijo', 'left')
             ->join('sellers', 'sellers.id = packages.vendedor', 'left')
 
-            // 🔥 ESTE ES EL JOIN NUEVO
+            // ESTE ES EL JOIN NUEVO
             ->join('accounts', 'accounts.id = packages.pago_cuenta', 'left')
 
             ->where('tracking_details.tracking_header_id', $trackingHeaderId)

@@ -406,23 +406,36 @@
                 "<?= base_url('upload/paquetes') ?>/" + foto :
                 "<?= base_url('upload/no-image.png') ?>";
 
+            const esGratis = parseFloat(valor) === 0;
+
             Swal.fire({
                 title: '¿Entregar paquete de casillero?',
                 html: `
-                <p>Este paquete se marcará como entregado.</p>
-                <img src="${fotoUrl}" style="max-width: 200px; border-radius: 10px; margin-bottom: 15px;" />
+        <p>Este paquete se marcará como entregado.</p>
+        <img src="${fotoUrl}" style="max-width: 200px; border-radius: 10px; margin-bottom: 15px;" />
 
-                <div class="alert alert-success text-center fw-bold">
-                    Valor del paquete: $${valor}
+        <div class="alert alert-success text-center fw-bold">
+            Valor del paquete: $${valor}
+        </div>
+
+        ${
+            esGratis 
+            ? `
+                <div class="alert alert-warning text-center fw-bold">
+                    ⚠️ Este paquete está cancelado o sin valor.<br>
+                    La remuneración será de $0.00
                 </div>
-
+            `
+            : `
                 <div style="text-align:left">
                     <label class="fw-bold mb-1">Cuenta donde se recibió el pago</label>
                     <select id="cuenta_asignada" class="form-control select2-account" style="width:100%">
                         <option></option>
                     </select>
                 </div>
-            `,
+            `
+        }
+    `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, entregar',
@@ -431,51 +444,60 @@
                 cancelButtonColor: '#d33',
 
                 didOpen: () => {
-                    // 🔹 Inicializar Select2 dentro del SweetAlert
-                    $('#cuenta_asignada').select2({
-                        dropdownParent: $('.swal2-popup'),
-                        theme: 'bootstrap4',
-                        width: '100%',
-                        placeholder: 'Buscar cuenta...',
-                        allowClear: true,
-                        minimumInputLength: 1,
-                        language: {
-                            inputTooShort: () => 'Ingrese 1 o más caracteres'
-                        },
-                        ajax: {
+                    if (!esGratis) {
+                        $('#cuenta_asignada').select2({
+                            dropdownParent: $('.swal2-popup'),
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            placeholder: 'Buscar cuenta...',
+                            allowClear: true,
+                            minimumInputLength: 1,
+                            language: {
+                                inputTooShort: () => 'Ingrese 1 o más caracteres'
+                            },
+                            ajax: {
+                                url: "<?= base_url('accounts-list') ?>",
+                                dataType: 'json',
+                                delay: 250,
+                                data: params => ({
+                                    q: params.term
+                                }),
+                                processResults: data => ({
+                                    results: data.map(item => ({
+                                        id: item.id,
+                                        text: item.name
+                                    }))
+                                })
+                            }
+                        });
+
+                        // default cuenta
+                        $.ajax({
                             url: "<?= base_url('accounts-list') ?>",
+                            data: {
+                                q: 'efectivo'
+                            },
                             dataType: 'json',
-                            delay: 250,
-                            data: params => ({
-                                q: params.term
-                            }),
-                            processResults: data => ({
-                                results: data.map(item => ({
-                                    id: item.id,
-                                    text: item.name
-                                }))
-                            })
-                        }
-                    });
+                            success: function(data) {
+                                const cuenta = data.find(item => item.id == 1);
+                                if (!cuenta) return;
 
-                    // 🔹 Seleccionar por defecto cuenta ID = 1
-                    $.ajax({
-                        url: "<?= base_url('accounts-list') ?>",
-                        data: {
-                            q: 'efectivo'
-                        },
-                        dataType: 'json',
-                        success: function(data) {
-                            const cuenta = data.find(item => item.id == 1);
-                            if (!cuenta) return;
-
-                            let option = new Option(cuenta.name, cuenta.id, true, true);
-                            $('#cuenta_asignada').append(option).trigger('change');
-                        }
-                    });
+                                let option = new Option(cuenta.name, cuenta.id, true, true);
+                                $('#cuenta_asignada').append(option).trigger('change');
+                            }
+                        });
+                    }
                 },
 
                 preConfirm: () => {
+
+                    if (esGratis) {
+                        return {
+                            cuenta_id: null,
+                            valor: valor
+                        };
+                    }
+
                     const cuentaId = $('#cuenta_asignada').val();
 
                     if (!cuentaId) {

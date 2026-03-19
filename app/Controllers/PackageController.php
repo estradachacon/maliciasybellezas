@@ -780,9 +780,7 @@ class PackageController extends BaseController
 
         if (
             !$data ||
-            empty($data['cuenta_id']) ||
-            !isset($data['valor']) ||
-            $data['valor'] <= 0
+            !isset($data['valor'])
         ) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -791,11 +789,21 @@ class PackageController extends BaseController
         }
 
         $cuentaId = (int)$data['cuenta_id'];
-        $valor    = (float)$data['valor'];
+
+        $valor = (float)$data['valor'];
+        $esGratis = $valor <= 0;
+        $cuentaId = $esGratis ? null : (int)$data['cuenta_id'];
+
+        if (!$esGratis && empty($cuentaId)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg' => 'Debe seleccionar una cuenta'
+            ]);
+        }
 
         $db = db_connect();
 
-        // 🔥 MISMA LÓGICA QUE SAVE()
+        // MISMA LÓGICA QUE SAVE()
         $sumarSaldo = function ($accountId, $monto) use ($db) {
             if ($monto <= 0) return;
 
@@ -809,31 +817,39 @@ class PackageController extends BaseController
 
         try {
 
-            // 1️⃣ Actualizar paquete
+            // Actualizar paquete
             $this->packages->update($id, [
                 'estatus' => 'entregado',
                 'pago_cuenta' => $cuentaId,
                 'fecha_pack_entregado' => date('Y-m-d')
             ]);
 
-            // 2️⃣ 🔥 SUMAR SALDO (LO QUE TE FALTABA)
-            $sumarSaldo($cuentaId, $valor);
+            if (!$esGratis) {
 
-            // 3️⃣ Registrar movimiento
-            registrarEntrada(
-                $cuentaId,
-                $valor,
-                'Pago recibido por entrega de paquete a cliente',
-                'Paquete ID ' . $id,
-                $id
-            );
+                // SUMAR SALDO
+                $sumarSaldo($cuentaId, $valor);
 
+                // Registrar movimiento
+                registrarEntrada(
+                    $cuentaId,
+                    $valor,
+                    'Pago recibido por entrega de paquete a cliente',
+                    'Paquete ID ' . $id,
+                    $id
+                );
+
+                $detalleBitacora = 'Entrega registrada con pago de $' . number_format($valor, 2) .
+                    ' en cuenta ID ' . $cuentaId;
+            } else {
+
+                $detalleBitacora = 'Entrega registrada SIN VALOR (paquete cancelado o gratuito)';
+            }
+
+            // Bitácora SIEMPRE
             registrar_bitacora(
                 'Entrega de paquete ID ' . esc($id),
                 'Paquetería',
-                'Entrega registrada con pago de $' . number_format($valor, 2) .
-                    ' en cuenta ID ' . $cuentaId .
-                    ' por el usuario ' . $userId,
+                $detalleBitacora . ' por el usuario ' . $userId,
                 $userId
             );
 
