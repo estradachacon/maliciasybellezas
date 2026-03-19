@@ -59,7 +59,7 @@ class TrackingDetailsModel extends Model
 
     public function getTrackingHistoryByPackage($packageId)
     {
-        $horaLimite = date('Y-m-d') . ' 21:00:00';
+        $horaLimite = '2026-03-10 21:01:00';
         return $this->db->table('tracking_details')
             ->select('
             tracking_details.*,
