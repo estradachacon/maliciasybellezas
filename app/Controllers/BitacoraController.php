@@ -9,6 +9,9 @@ class BitacoraController extends BaseController
 {
     public function index()
     {
+        $chk = requerirPermiso('ver_bitacora');
+        if ($chk !== true) return $chk;
+
         $bitacoraModel = new BitacoraSistemaModel();
 
         // ✅ Selector de cantidad por página (por defecto 10)

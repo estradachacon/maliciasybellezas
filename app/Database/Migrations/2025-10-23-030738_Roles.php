@@ -42,10 +42,7 @@ class Roles extends Migration
         // Esto es muy útil para que al migrar la tabla ya esté lista para usarse.
         $this->db->table('roles')->insertBatch([
             ['nombre' => 'Gerente'],
-            ['nombre' => 'Pagador'],
-            ['nombre' => 'Digitador'],
-            ['nombre' => 'Motorista'],
-            ['nombre' => 'Cliente'],
+            ['nombre' => 'Programador'],
         ]);
     }
 

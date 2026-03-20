@@ -6,6 +6,7 @@ use CodeIgniter\Config\BaseConfig;
 
 class Email extends BaseConfig
 {
+    /*
     public string $fromEmail  = 'fcencomiendasnet@gmail.com';
     public $fromName  = 'FC Encomiendas';
     public string $recipients = '';
@@ -30,4 +31,5 @@ class Email extends BaseConfig
     public bool $BCCBatchMode = false;
     public int $BCCBatchSize = 200;
     public bool $DSN = false;
+    */
 }

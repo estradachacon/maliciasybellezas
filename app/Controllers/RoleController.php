@@ -144,7 +144,7 @@ class RoleController extends BaseController
 
     public function saveAccess($roleId)
     {
-        $chk = requerirPermiso('ver_roles');
+        $chk = requerirPermiso('asignar_permisos');
         if ($chk !== true) return $chk;
 
         $permisoRolModel = new PermisoRolModel();

@@ -6,7 +6,7 @@
     <!-- Core Js  -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <meta charset="utf-8" />
-    <title>FC Encomiendas</title>
+    <title>Malicias y Bellezas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="csrf-token" content="<?= csrf_hash() ?>">
@@ -188,7 +188,7 @@
                         aria-expanded="false">
                         <img src="<?= esc($fotoPath) ?>"
                             alt="user-image"
-                            height="40"
+                            height="50"
                             class="rounded-circle shadow-sm">
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">

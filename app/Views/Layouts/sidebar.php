@@ -18,14 +18,14 @@
         ">
             </div>
 
-            <a href="<?= base_url('dashboard') ?>" class="text-center d-block pt-3">
+            <a href="<?= base_url('dashboard') ?>" class="text-center d-block">
 
                 <!-- LOGO EMPRESA -->
                 <?php if (setting('logo')): ?>
                     <img class="logo shadow-sm"
                         src="<?= base_url('upload/settings/' . setting('logo')) ?>"
                         alt="logo-company"
-                        height="60">
+                        height="135">
                 <?php else: ?>
                     <h5 class="text-white font-weight-bold">
                         <?= esc(setting('company_name') ?? 'Empresa') ?>
@@ -267,9 +267,6 @@
 
                             <?php if (tienePermiso('ver_sucursales')): ?>
                                 <a class="nav-link" href="/branches">Listado de sucursales</a>
-                            <?php endif; ?>
-                            <?php if (tienePermiso('ajustes_multimedia')): ?>
-                                <a class="nav-link" href="/content">Multimedia</a>
                             <?php endif; ?>
                             <?php if (tienePermiso('ver_configuracion')): ?>
                                 <a class="nav-link" href="/settings">Información de Sistema</a>

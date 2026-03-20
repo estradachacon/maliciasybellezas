@@ -24,6 +24,7 @@ class CashierController extends Controller
     {
         $chk = requerirPermiso('ver_cajas');
         if ($chk !== true) return $chk;
+        
         $perPage = service('request')->getUserAgent()->isMobile() ? 6 : 10;
 
         $cashiers = $this->cashierModel

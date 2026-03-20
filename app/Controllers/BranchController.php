@@ -18,6 +18,9 @@ class BranchController extends Controller
     // 🟦 1. INDEX: lista todas las sucursales
     public function index()
     {
+        $chk = requerirPermiso('ver_sucursales');
+        if ($chk !== true) return $chk;
+
         $data['branches'] = $this->branchModel->findAll();
         return view('sucursales/index', $data);
     }

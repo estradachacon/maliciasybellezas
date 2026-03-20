@@ -56,9 +56,7 @@ class Users extends Migration
         $this->forge->createTable('users');
         $this->db->table('users')->insertBatch([
             ['user_name' => 'Gerente', 'user_password' => '$2y$10$42k/s7W2rpRZFWMwWHQmYurL0gEvsSjBAEQ69m4pkPlc9cbUjWzWW', 'email' => 'gerente@mail.com', 'role_id' => 1,'branch_id' => 1],
-            ['user_name' => 'Pagador', 'user_password' => '$2y$10$e/YMVv4vInsp52XPRAi2C.Im41V6Ia.wZuhSMuAMauyIn6ERDOp82', 'email' => 'pagador@mail.com', 'role_id' => 2, 'branch_id' => 1],
-            ['user_name' => 'Digitador', 'user_password' => '$2y$10$.saDgnSHz5VglyjFkS.6Jeok2U0jeTnRJIkGWI2Ltf4wseFoO8afi', 'email' => 'digitador@mail.com', 'role_id' => 3, 'branch_id' => 1],
-            ['user_name' => 'Motorista', 'user_password' => '$2y$10$UO0TxUKl0pwbX5oe0tMWu.D3MM0pSaDsiCEiiO29UEiU6pMjeU2Se', 'email' => 'motorista@mail.com', 'role_id' => 4, 'branch_id' => 1],
+            ['user_name' => 'Programador', 'user_password' => '$2y$10$42k/s7W2rpRZFWMwWHQmYurL0gEvsSjBAEQ69m4pkPlc9cbUjWzWW', 'email' => 'programador@mail.com', 'role_id' => 2, 'branch_id' => 1],
         ]);
     }
 

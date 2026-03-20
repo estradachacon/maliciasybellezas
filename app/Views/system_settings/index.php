@@ -54,18 +54,20 @@
             </div>
 
 
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Almacenamiento en uso</h5>
-                    <p class="card-text text-muted">
-                        Espacio utilizado actualmente
-                    </p>
+            <?php if (tienePermiso('ver_almacenamiento')): ?>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Almacenamiento en uso</h5>
+                        <p class="card-text text-muted">
+                            Espacio utilizado actualmente
+                        </p>
 
-                    <h4 class="fw-bold text-primary">
-                        <?= $storageUsed ?> MB
-                    </h4>
+                        <h4 class="fw-bold text-primary">
+                            <?= $storageUsed ?> MB
+                        </h4>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
 
         </div>
 

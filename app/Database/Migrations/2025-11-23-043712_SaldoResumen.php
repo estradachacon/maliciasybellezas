@@ -21,6 +21,6 @@ class SaldoResumen extends Migration
 
     public function down()
     {
-        //
+        $this->forge->dropTable('saldo_resumen');
     }
 }

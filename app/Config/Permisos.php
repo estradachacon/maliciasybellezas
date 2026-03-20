@@ -7,7 +7,25 @@ use CodeIgniter\Config\BaseConfig;
 class Permisos extends BaseConfig
 {
     public array $modulos = [
+        'Ajustes del sistema' => [
+            'ver_configuracion',
+            'ver_sucursales',
+            'ver_almacenamiento',
+            'ver_bitacora',
+        ],
 
+        'Gestión de usuarios' => [
+            'ver_usuarios',
+            'crear_usuarios',
+            'editar_usuarios',
+            'eliminar_usuarios',
+            'ver_roles',
+            'editar_roles',
+            'eliminar_roles',
+            'crear_roles',
+            'asignar_permisos',
+        ],
+/*
         'Finanzas' => [
             'ver_transacciones',
             'ver_cajas',
@@ -66,25 +84,6 @@ class Permisos extends BaseConfig
         'Reportes' => [
             'ver_reportes',
         ],
-
-        'Ajustes del sistema' => [
-            'ver_configuracion',
-            'ver_sucursales',
-            'ver_almacenamiento',
-            'ver_bitacora',
-            'ajustes_multimedia',
-        ],
-
-        'Gestión de usuarios' => [
-            'ver_usuarios',
-            'crear_usuarios',
-            'editar_usuarios',
-            'eliminar_usuarios',
-            'ver_roles',
-            'editar_roles',
-            'eliminar_roles',
-            'crear_roles',
-            'asignar_permisos',
-        ],
+        */
     ];
 }

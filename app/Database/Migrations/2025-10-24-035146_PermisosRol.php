@@ -22,17 +22,16 @@ class PermisosRol extends Migration
             ],
             'nombre_accion' => [
                 'type' => 'VARCHAR',
-                'constraint' => '100', // Estructura == 'modulo/accion', remuneraciones/pago
+                'constraint' => '100',
             ],
             'habilitado' => [
                 'type' => 'TINYINT', 
                 'constraint' => 1,
-                'default' => 0, // Por defecto, deshabilitaré el permiso
+                'default' => 0, 
             ],
         ]);
         $this->forge->addPrimaryKey('id');
 
-        // 
         // Aquí defino la Clave Foránea a la tabla 'roles' Si se borra un Rol, todas sus definiciones de permiso se irán ('CASCADE')
         $this->forge->addForeignKey('role_id', 'roles', 'id', 'CASCADE', 'CASCADE');
 
