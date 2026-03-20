@@ -25,13 +25,6 @@ class Permisos extends BaseConfig
             'crear_roles',
             'asignar_permisos',
         ],
-
-        'Vendedores' => [
-            'ver_vendedores',
-            'crear_vendedor',
-            'editar_vendedor',
-            'eliminar_vendedor',
-        ],
 /*
         'Finanzas' => [
             'ver_transacciones',
@@ -83,6 +76,13 @@ class Permisos extends BaseConfig
 
         'Reportes' => [
             'ver_reportes',
+        ],
+
+        'Vendedores' => [
+            'ver_vendedores',
+            'crear_vendedor',
+            'editar_vendedor',
+            'eliminar_vendedor',
         ],
         */
     ];
