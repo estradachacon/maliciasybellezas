@@ -25,7 +25,8 @@ class Permisos extends BaseConfig
             'crear_roles',
             'asignar_permisos',
         ],
-/*
+        
+        /*
         'Finanzas' => [
             'ver_transacciones',
             'ver_cajas',
