@@ -162,24 +162,6 @@ class SellerController extends BaseController
             ]);
         }
 
-        // VALIDACIÓN SIMPLE Y FUERTE
-        $paquetes = $db->table('packages')
-            ->select('id, cliente, estatus, fecha_ingreso')
-            ->where('vendedor', $id)
-            ->limit(20)
-            ->get()
-            ->getResult();
-
-        if (!empty($paquetes)) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'type' => 'has_packages',
-                'message' => 'El vendedor tiene paquetes asociados.',
-                'paquetes' => $paquetes,
-                'total' => count($paquetes) // opcional
-            ]);
-        }
-
         // SI NO TIENE → eliminar
         if ($sellerModel->delete($id)) {
 

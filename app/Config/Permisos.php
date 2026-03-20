@@ -25,6 +25,13 @@ class Permisos extends BaseConfig
             'crear_roles',
             'asignar_permisos',
         ],
+
+        'Vendedores' => [
+            'ver_vendedores',
+            'crear_vendedor',
+            'editar_vendedor',
+            'eliminar_vendedor',
+        ],
 /*
         'Finanzas' => [
             'ver_transacciones',
@@ -51,13 +58,6 @@ class Permisos extends BaseConfig
             'remunerar_paquetes',
             'devolver_paquetes',
             'remunerar_paquetes_por_cuenta',
-        ],
-
-        'Vendedores' => [
-            'ver_vendedores',
-            'crear_vendedor',
-            'editar_vendedor',
-            'eliminar_vendedor',
         ],
 
         'Puntos fijos y rutas' => [
