@@ -17,6 +17,13 @@ $faviconUrl = base_url('favicon.ico');
         justify-content: center;
     }
 
+    .video-camara {
+        width: 100%;
+        height: 60vh;
+        object-fit: cover;
+        border-radius: 15px;
+    }
+
     #previewCard {
         background: white;
         padding: 15px;
@@ -262,7 +269,7 @@ $faviconUrl = base_url('favicon.ico');
             </button>
             <!-- FOTO -->
             <div class="text-center">
-                <video id="video" autoplay playsinline style="width:100%; max-width:300px; border-radius:10px;"></video>
+                <video id="video" autoplay playsinline class="video-camara"></video>
 
                 <button type="button" id="btnCapturar" class="btn btn-dark w-100 mt-2">
                     📸 Capturar foto
@@ -302,79 +309,17 @@ $faviconUrl = base_url('favicon.ico');
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-        $('#cancelado').change(function() {
-            if (this.checked) {
-                $('#total').val('0.00');
-                $('#precio, #envio').prop('disabled', true);
-            } else {
-                $('#precio, #envio').prop('disabled', false);
-                calcularTotal();
-            }
-        });
+        let imagenWebp = null;
+        let imagenURL = null;
+        let stream = null;
 
-        $('#btnImprimirFinal').click(function() {
-
-            let contenido = document.getElementById('miniPreview').innerHTML;
-
-            // detectar Android
-            let esAndroid = /Android/i.test(navigator.userAgent);
-
-            if (esAndroid) {
-
-                // 🔥 ANDROID → imprimir directo (SIN popup)
-                let original = document.body.innerHTML;
-
-                document.body.innerHTML = contenido;
-
-                window.print();
-
-                document.body.innerHTML = original;
-
-                location.reload();
-
-            } else {
-
-                // PC → usar popup (como ya tenías)
-                let ventana = window.open('', '', 'width=400,height=300');
-
-                ventana.document.write(`
-            <html>
-            <head>
-                <title>Imprimir</title>
-                <style>
-                    body { margin:0; padding:0; }
-                    .etiqueta {
-                        width: 4in;
-                        height: 2in;
-                        font-family: Arial;
-                    }
-                </style>
-            </head>
-            <body>
-                ${contenido}
-            </body>
-            </html>
-        `);
-
-                ventana.document.close();
-
-                ventana.onload = function() {
-                    ventana.print();
-                    ventana.close();
-                };
-            }
-
-        });
-        $('#btnVolver').click(function() {
-            $('#seccionFinal').hide();
-            $('#formPaquete').removeClass('blur');
-        });
-
+        // =========================
+        // FORMULARIO
+        // =========================
         $('#btnGuardar').click(function() {
 
             let data = $('#formPaquete').serializeArray();
             let obj = {};
-
             data.forEach(x => obj[x.name] = x.value);
 
             Swal.fire({
@@ -387,79 +332,43 @@ $faviconUrl = base_url('favicon.ico');
 
                 if (result.isConfirmed) {
 
-                    // blur
                     $('#formPaquete').addClass('blur');
-
-                    // preview
                     generarPreview(obj);
 
-                    // mostrar paso 2
                     $('#seccionFinal').fadeIn();
 
                     $('html, body').animate({
                         scrollTop: $('#seccionFinal').offset().top
                     }, 500);
+
+                    iniciarCamara();
                 }
-
             });
-
         });
 
-        $('#btnGuardarFinal').click(function() {
+        $('#btnVolver').click(function() {
+            $('#seccionFinal').hide();
+            $('#formPaquete').removeClass('blur');
+            detenerCamara();
+        });
 
-            if (!imagenWebp) {
-                Swal.fire('Falta foto', 'Debes tomar una foto', 'warning');
-                return;
+        // =========================
+        // CÁMARA
+        // =========================
+        async function iniciarCamara() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment"
+                    }
+                });
+
+                document.getElementById('video').srcObject = stream;
+
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
+                console.error(err);
             }
-
-            let formData = new FormData($('#formPaquete')[0]);
-
-            // 🔥 AQUÍ está la clave
-            formData.append('foto', imagenWebp);
-
-            $.ajax({
-                url: '<?= base_url('paquetes/guardar') ?>',
-                method: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(res) {
-                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
-                        .then(() => location.reload());
-                }
-            });
-
-        });
-
-        function formatearMoneda(valor) {
-            let numero = parseFloat(valor.replace(/[^0-9.-]+/g, "")) || 0;
-            return numero.toLocaleString('en-US', {
-                minimumFractionDigits: 2
-            });
-        }
-
-        function obtenerNumero(valor) {
-            return parseFloat(valor.replace(/,/g, '')) || 0;
-        }
-
-        $('.money').on('input', function() {
-            let cursor = this.selectionStart;
-
-            let valor = $(this).val();
-            let limpio = valor.replace(/[^0-9.]/g, '');
-
-            $(this).val(formatearMoneda(limpio));
-
-            calcularTotal();
-        });
-
-        function calcularTotal() {
-            let precio = obtenerNumero($('#precio').val());
-            let envio = obtenerNumero($('#envio').val());
-
-            let total = precio + envio;
-
-            $('#total').val(formatearMoneda(total.toString()));
         }
 
         function generarPreview(p) {
@@ -496,300 +405,15 @@ $faviconUrl = base_url('favicon.ico');
     `);
         }
 
-        function bloquearFormulario() {
-            $('#formPaquete :input').prop('disabled', true);
-        }
-
-        function desbloquearFormulario() {
-            $('#formPaquete :input').prop('disabled', false);
-        }
-
-        function mostrarPreview(p) {
-
-            $('#overlayPreview').css('display', 'flex');
-
-            let fecha = new Date(p.dia_entrega);
-            let dia = fecha.toLocaleDateString('es-SV', {
-                weekday: 'long',
-                day: 'numeric'
-            });
-
-            $('#p_cliente').text(p.cliente_nombre || '');
-            $('#p_tel').text(p.cliente_telefono || '');
-            $('#p_destino').text(p.destino || '');
-            $('#p_fecha').text(dia || '');
-            $('#p_encomendista').text(p.encomendista_nombre || '');
-            $('#p_precio').text(p.precio || '0.00');
-            $('#p_envio').text(p.envio || '0.00');
-            $('#p_total').text(p.total || '0.00');
-        }
-
-        $('#btnEditar').click(function() {
-            $('#overlayPreview').hide();
-            desbloquearFormulario();
-        });
-
-        $('#btnPrint').click(function() {
-
-            const img = document.getElementById('logoPrint');
-
-            // 🔥 convertir a base64
-            const base64Logo = getBase64Image(img);
-
-            // clonar contenido
-            let contenido = document.getElementById('printArea').outerHTML;
-
-            // reemplazar src del logo por base64
-            contenido = contenido.replace(img.src, base64Logo);
-
-            let ventana = window.open('', '', 'width=400,height=300');
-
-            ventana.document.write(`
-        <html>
-        <head>
-            <title>Imprimir</title>
-
-            <style>
-                * { box-sizing: border-box; }
-
-                html, body {
-                    margin: 0;
-                    padding: 0;
-                    width: 4in;
-                    height: 2in;
-                    overflow: hidden;
-                }
-
-                body {
-                    display: block;
-                }
-
-                /* 🔥 CLAVE: pegar a la esquina */
-                #printArea {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                }
-
-                /* 🔥 micro ajuste (calibración real) */
-                #printArea {
-                    top: -4px;
-                    left: -4px;
-                }
-
-                .etiqueta {
-                    width: 4in;
-                    height: 2in;
-                    border: 1px solid #000;
-                    font-family: Arial, sans-serif;
-                    font-size: 9px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    padding: 3px;
-                }
-
-                .contenedor {
-                    display: flex;
-                    flex: 1;
-                }
-
-                .col-logo {
-                    width: 32%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-right: 1px solid #000;
-                }
-
-                .logo {
-                    width: 100%;
-                    max-height: 80px;
-                    object-fit: contain;
-                }
-
-                .col-data {
-                    width: 68%;
-                    padding-left: 4px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                }
-
-                .empresa {
-                    font-weight: bold;
-                    font-size: 10px;
-                    border-bottom: 1px solid #000;
-                }
-
-                .fila {
-                    display: flex;
-                    justify-content: space-between;
-                    border-bottom: 1px dotted #ccc;
-                    line-height: 1.2;
-                }
-
-                .footer {
-                    display: flex;
-                    border-top: 1px solid #000;
-                }
-
-                .box {
-                    flex: 1;
-                    text-align: center;
-                    font-size: 8px;
-                }
-
-                .titulo {
-                    font-weight: bold;
-                    font-size: 7px;
-                }
-
-                .total {
-                    font-weight: bold;
-                    font-size: 9px;
-                }
-
-                @page {
-                    size: 4in 2in;
-                    margin: 0;
-                }
-            </style>
-
-        </head>
-
-        <body>
-            ${contenido}
-        </body>
-        </html>
-    `);
-
-            ventana.document.close();
-
-            ventana.onload = function() {
-                setTimeout(() => {
-                    ventana.print();
-                    ventana.close();
-                }, 200);
-            };
-
-        });
-
-        function getBase64Image(img) {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-
-            ctx.drawImage(img, 0, 0);
-
-            return canvas.toDataURL("image/png");
-        }
-
-        $('#btnFinalizar').click(function() {
-            location.reload();
-        });
-        let imagenWebp = null;
-        let stream = null;
-
-        async function iniciarCamara() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "environment"
-                    }
-                });
-
-                document.getElementById('video').srcObject = stream;
-
-            } catch (err) {
-                Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
-                console.error(err);
+        function detenerCamara() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
         }
 
-        // 🔥 iniciar cuando se muestra el paso final
-        $('#btnGuardar').click(function() {
-            setTimeout(() => {
-                iniciarCamara();
-            }, 500);
-        });
-
-        $('#btnCamara').click(function() {
-            $('#fotoPaquete').click();
-        });
-
-        $('#fotoPaquete').change(function(e) {
-
-            let file = e.target.files[0];
-            if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                Swal.fire('Error', 'Solo imágenes', 'error');
-                return;
-            }
-
-            let reader = new FileReader();
-
-            reader.onload = function(ev) {
-
-                let img = new Image();
-
-                img.onload = function() {
-
-                    // 🔥 REDIMENSIONAR (máx 800px)
-                    let maxWidth = 800;
-
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxWidth) {
-                        let scale = maxWidth / width;
-                        width = maxWidth;
-                        height = height * scale;
-                    }
-
-                    let canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    let ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // 🔥 CONVERTIR A WEBP (calidad 0.7)
-                    canvas.toBlob(function(blob) {
-
-                        imagenWebp = new File([blob], "foto.webp", {
-                            type: "image/webp"
-                        });
-
-                        // 🔥 PREVIEW
-                        let url = URL.createObjectURL(blob);
-
-                        $('#previewFoto')
-                            .attr('src', url)
-                            .show();
-                        $('#previewFoto')
-                            .off('load')
-                            .on('load', function() {
-                                URL.revokeObjectURL(url);
-                                $('#btnCamara').text('🔄 Cambiar foto');
-                            });
-
-                    }, 'image/webp', 0.7);
-
-                };
-
-                img.src = ev.target.result;
-            };
-
-            reader.readAsDataURL(file);
-        });
-        $('#previewFoto').click(function() {
-            $('#imagenGrande').attr('src', $(this).attr('src'));
-            $('#modalImagen').modal('show');
-        });
+        // =========================
+        // CAPTURAR FOTO
+        // =========================
         $('#btnCapturar').click(function() {
 
             let video = document.getElementById('video');
@@ -807,30 +431,103 @@ $faviconUrl = base_url('favicon.ico');
                     type: "image/webp"
                 });
 
-                let url = URL.createObjectURL(blob);
+                // 🔥 limpiar anterior si existe
+                if (imagenURL) {
+                    URL.revokeObjectURL(imagenURL);
+                }
+
+                imagenURL = URL.createObjectURL(blob);
 
                 $('#previewFoto')
-                    .attr('src', url)
+                    .attr('src', imagenURL)
                     .show();
 
-                $('#previewFoto').on('load', function() {
-                    URL.revokeObjectURL(url);
-                });
+                // opcional: apagar cámara después de capturar
+                detenerCamara();
 
             }, 'image/webp', 0.7);
 
         });
 
-        function detenerCamara() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+        // =========================
+        // MODAL IMAGEN
+        // =========================
+        $('#previewFoto').click(function() {
+
+            if (!imagenURL) return;
+
+            $('#imagenGrande').attr('src', imagenURL);
+
+            let modal = new bootstrap.Modal(document.getElementById('modalImagen'));
+            modal.show();
+        });
+
+        // =========================
+        // GUARDAR
+        // =========================
+        $('#btnGuardarFinal').click(function() {
+
+            if (!imagenWebp) {
+                Swal.fire('Falta foto', 'Debes tomar una foto', 'warning');
+                return;
             }
+
+            let formData = new FormData($('#formPaquete')[0]);
+            formData.append('foto', imagenWebp);
+
+            $.ajax({
+                url: '<?= base_url('paquetes/guardar') ?>',
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
+                        .then(() => location.reload());
+                }
+            });
+        });
+
+        // =========================
+        // DINERO
+        // =========================
+        function formatearMoneda(valor) {
+            let numero = parseFloat(valor.replace(/[^0-9.-]+/g, "")) || 0;
+            return numero.toLocaleString('en-US', {
+                minimumFractionDigits: 2
+            });
         }
 
-        // cuando vuelves atrás
-        $('#btnVolver').click(function() {
-            detenerCamara();
+        function obtenerNumero(valor) {
+            return parseFloat(valor.replace(/,/g, '')) || 0;
+        }
+
+        $('.money').on('input', function() {
+            let limpio = $(this).val().replace(/[^0-9.]/g, '');
+            $(this).val(formatearMoneda(limpio));
+            calcularTotal();
         });
+
+        function calcularTotal() {
+            let precio = obtenerNumero($('#precio').val());
+            let envio = obtenerNumero($('#envio').val());
+            let total = precio + envio;
+            $('#total').val(formatearMoneda(total.toString()));
+        }
+
+        // =========================
+        // CANCELADO
+        // =========================
+        $('#cancelado').change(function() {
+            if (this.checked) {
+                $('#total').val('0.00');
+                $('#precio, #envio').prop('disabled', true);
+            } else {
+                $('#precio, #envio').prop('disabled', false);
+                calcularTotal();
+            }
+        });
+
     });
 </script>
 
