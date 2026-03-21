@@ -261,24 +261,18 @@ $faviconUrl = base_url('favicon.ico');
                 ← Volver
             </button>
             <!-- FOTO -->
-            <div class="mt-3">
-                <label>Foto del paquete</label>
-                <input
-                    type="file"
-                    id="fotoPaquete"
-                    accept="image/*"
-                    capture="environment"
-                    style="display:none;">
+            <div class="text-center">
+                <video id="video" autoplay playsinline style="width:100%; max-width:300px; border-radius:10px;"></video>
 
-                <button type="button" id="btnCamara" class="btn btn-dark w-100">
-                    📷 Tomar foto del paquete
+                <button type="button" id="btnCapturar" class="btn btn-dark w-100 mt-2">
+                    📸 Capturar foto
                 </button>
 
-                <div class="mt-3 text-center">
-                    <img id="previewFoto"
-                        class="img-thumbnail shadow-sm"
-                        style="max-width: 200px; cursor:pointer; display:none;">
-                </div>
+                <canvas id="canvas" style="display:none;"></canvas>
+
+                <img id="previewFoto"
+                    class="img-thumbnail mt-3"
+                    style="max-width:200px; display:none; cursor:pointer;">
             </div>
 
             <!-- BOTONES -->
@@ -697,6 +691,30 @@ $faviconUrl = base_url('favicon.ico');
             location.reload();
         });
         let imagenWebp = null;
+        let stream = null;
+
+        async function iniciarCamara() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment"
+                    }
+                });
+
+                document.getElementById('video').srcObject = stream;
+
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
+                console.error(err);
+            }
+        }
+
+        // 🔥 iniciar cuando se muestra el paso final
+        $('#btnGuardar').click(function() {
+            setTimeout(() => {
+                iniciarCamara();
+            }, 500);
+        });
 
         $('#btnCamara').click(function() {
             $('#fotoPaquete').click();
@@ -771,6 +789,47 @@ $faviconUrl = base_url('favicon.ico');
         $('#previewFoto').click(function() {
             $('#imagenGrande').attr('src', $(this).attr('src'));
             $('#modalImagen').modal('show');
+        });
+        $('#btnCapturar').click(function() {
+
+            let video = document.getElementById('video');
+            let canvas = document.getElementById('canvas');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(function(blob) {
+
+                imagenWebp = new File([blob], "foto.webp", {
+                    type: "image/webp"
+                });
+
+                let url = URL.createObjectURL(blob);
+
+                $('#previewFoto')
+                    .attr('src', url)
+                    .show();
+
+                $('#previewFoto').on('load', function() {
+                    URL.revokeObjectURL(url);
+                });
+
+            }, 'image/webp', 0.7);
+
+        });
+
+        function detenerCamara() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        // cuando vuelves atrás
+        $('#btnVolver').click(function() {
+            detenerCamara();
         });
     });
 </script>
