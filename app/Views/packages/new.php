@@ -235,40 +235,57 @@ $faviconUrl = base_url('favicon.ico');
 
         $('#btnImprimirFinal').click(function() {
 
-            let contenido = document.getElementById('miniPreview').innerHTML;
+    let contenido = document.getElementById('miniPreview').innerHTML;
 
-            let ventana = window.open('', '', 'width=400,height=300');
+    // detectar Android
+    let esAndroid = /Android/i.test(navigator.userAgent);
 
-            ventana.document.write(`
-        <html>
-        <head>
-            <title>Imprimir</title>
-            <style>
-                body {
-                    margin:0;
-                    padding:0;
-                }
-                .etiqueta {
-                    width: 4in;
-                    height: 2in;
-                    font-family: Arial;
-                }
-            </style>
-        </head>
-        <body>
-            ${contenido}
-        </body>
-        </html>
-    `);
+    if (esAndroid) {
 
-            ventana.document.close();
+        // 🔥 ANDROID → imprimir directo (SIN popup)
+        let original = document.body.innerHTML;
 
-            ventana.onload = function() {
-                ventana.print();
-                ventana.close();
-            };
+        document.body.innerHTML = contenido;
 
-        });
+        window.print();
+
+        document.body.innerHTML = original;
+
+        location.reload();
+
+    } else {
+
+        // 💻 PC → usar popup (como ya tenías)
+        let ventana = window.open('', '', 'width=400,height=300');
+
+        ventana.document.write(`
+            <html>
+            <head>
+                <title>Imprimir</title>
+                <style>
+                    body { margin:0; padding:0; }
+                    .etiqueta {
+                        width: 4in;
+                        height: 2in;
+                        font-family: Arial;
+                    }
+                </style>
+            </head>
+            <body>
+                ${contenido}
+            </body>
+            </html>
+        `);
+
+        ventana.document.close();
+
+        ventana.onload = function() {
+            ventana.print();
+            ventana.close();
+        };
+    }
+
+});
 
         $('#btnGuardar').click(function() {
 
