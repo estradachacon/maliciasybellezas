@@ -116,6 +116,52 @@ $faviconUrl = base_url('favicon.ico');
     .total {
         font-weight: bold;
     }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .card-header {
+        border-top-left-radius: 15px !important;
+        border-top-right-radius: 15px !important;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 15px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+
+    input:focus {
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, .2);
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 10px 15px;
+    }
+
+    #seccionFinal {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <div class="row">
@@ -123,7 +169,7 @@ $faviconUrl = base_url('favicon.ico');
         <div class="card shadow-sm">
 
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Nuevo paquete</h5>
+                <h5 class="mb-0 fw-bold">📦 Nuevo paquete</h5>
             </div>
 
             <div class="card-body">
@@ -157,18 +203,26 @@ $faviconUrl = base_url('favicon.ico');
                             <input type="text" name="encomendista_nombre" class="form-control">
                         </div>
 
-                        <div class="col-md-4">
-                            <input type="number" name="precio" placeholder="Precio" class="form-control">
-                        </div>
+                        <div class="col-md-12 mt-2">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Precio</label>
+                                        <input type="text" name="precio" id="precio" class="form-control money">
+                                    </div>
 
-                        <div class="col-md-4">
-                            <input type="number" name="envio" placeholder="Envío" class="form-control">
-                        </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Envío</label>
+                                        <input type="text" name="envio" id="envio" class="form-control money">
+                                    </div>
 
-                        <div class="col-md-4">
-                            <input type="number" name="total" id="total" placeholder="Total" class="form-control">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Total</label>
+                                        <input type="text" name="total" id="total" class="form-control bg-light fw-bold" readonly>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
                         <div class="col-md-12">
                             <div class="form-check">
                                 <input type="checkbox" id="cancelado" class="form-check-input">
@@ -203,11 +257,28 @@ $faviconUrl = base_url('favicon.ico');
             <div style="transform: scale(0.8); transform-origin: top left;">
                 <div id="miniPreview"></div>
             </div>
-
+            <button id="btnVolver" class="btn btn-outline-secondary">
+                ← Volver
+            </button>
             <!-- FOTO -->
             <div class="mt-3">
                 <label>Foto del paquete</label>
-                <input type="file" id="fotoPaquete" class="form-control" accept="image/*">
+                <input
+                    type="file"
+                    id="fotoPaquete"
+                    accept="image/*"
+                    capture="environment"
+                    style="display:none;">
+
+                <button type="button" id="btnCamara" class="btn btn-dark w-100">
+                    📷 Tomar foto del paquete
+                </button>
+
+                <div class="mt-3 text-center">
+                    <img id="previewFoto"
+                        class="img-thumbnail shadow-sm"
+                        style="max-width: 200px; cursor:pointer; display:none;">
+                </div>
             </div>
 
             <!-- BOTONES -->
@@ -225,40 +296,54 @@ $faviconUrl = base_url('favicon.ico');
     </div>
 
 </div>
-
+<div class="modal fade" id="modalImagen" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-center">
+            <div class="modal-body p-2">
+                <img id="imagenGrande" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
         $('#cancelado').change(function() {
-            $('#total').prop('disabled', this.checked);
+            if (this.checked) {
+                $('#total').val('0.00');
+                $('#precio, #envio').prop('disabled', true);
+            } else {
+                $('#precio, #envio').prop('disabled', false);
+                calcularTotal();
+            }
         });
 
         $('#btnImprimirFinal').click(function() {
 
-    let contenido = document.getElementById('miniPreview').innerHTML;
+            let contenido = document.getElementById('miniPreview').innerHTML;
 
-    // detectar Android
-    let esAndroid = /Android/i.test(navigator.userAgent);
+            // detectar Android
+            let esAndroid = /Android/i.test(navigator.userAgent);
 
-    if (esAndroid) {
+            if (esAndroid) {
 
-        // 🔥 ANDROID → imprimir directo (SIN popup)
-        let original = document.body.innerHTML;
+                // 🔥 ANDROID → imprimir directo (SIN popup)
+                let original = document.body.innerHTML;
 
-        document.body.innerHTML = contenido;
+                document.body.innerHTML = contenido;
 
-        window.print();
+                window.print();
 
-        document.body.innerHTML = original;
+                document.body.innerHTML = original;
 
-        location.reload();
+                location.reload();
 
-    } else {
+            } else {
 
-        // 💻 PC → usar popup (como ya tenías)
-        let ventana = window.open('', '', 'width=400,height=300');
+                // PC → usar popup (como ya tenías)
+                let ventana = window.open('', '', 'width=400,height=300');
 
-        ventana.document.write(`
+                ventana.document.write(`
             <html>
             <head>
                 <title>Imprimir</title>
@@ -277,16 +362,19 @@ $faviconUrl = base_url('favicon.ico');
             </html>
         `);
 
-        ventana.document.close();
+                ventana.document.close();
 
-        ventana.onload = function() {
-            ventana.print();
-            ventana.close();
-        };
-    }
+                ventana.onload = function() {
+                    ventana.print();
+                    ventana.close();
+                };
+            }
 
-});
-
+        });
+        $('#btnVolver').click(function() {
+            $('#seccionFinal').hide();
+            $('#formPaquete').removeClass('blur');
+        });
         $('#btnGuardar').click(function() {
 
             let data = $('#formPaquete').serializeArray();
@@ -344,6 +432,37 @@ $faviconUrl = base_url('favicon.ico');
             });
 
         });
+
+        function formatearMoneda(valor) {
+            let numero = parseFloat(valor.replace(/[^0-9.-]+/g, "")) || 0;
+            return numero.toLocaleString('en-US', {
+                minimumFractionDigits: 2
+            });
+        }
+
+        function obtenerNumero(valor) {
+            return parseFloat(valor.replace(/,/g, '')) || 0;
+        }
+
+        $('.money').on('input', function() {
+            let cursor = this.selectionStart;
+
+            let valor = $(this).val();
+            let limpio = valor.replace(/[^0-9.]/g, '');
+
+            $(this).val(formatearMoneda(limpio));
+
+            calcularTotal();
+        });
+
+        function calcularTotal() {
+            let precio = obtenerNumero($('#precio').val());
+            let envio = obtenerNumero($('#envio').val());
+
+            let total = precio + envio;
+
+            $('#total').val(formatearMoneda(total.toString()));
+        }
 
         function generarPreview(p) {
 
@@ -573,7 +692,68 @@ $faviconUrl = base_url('favicon.ico');
         $('#btnFinalizar').click(function() {
             location.reload();
         });
+        let imagenWebp = null;
 
+        $('#btnCamara').click(function() {
+            $('#fotoPaquete').click();
+        });
+
+        $('#fotoPaquete').change(function(e) {
+
+            let file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'Solo imágenes', 'error');
+                return;
+            }
+
+            let reader = new FileReader();
+
+            reader.onload = function(ev) {
+
+                let img = new Image();
+
+                img.onload = function() {
+
+                    // 🔥 REDIMENSIONAR (máx 800px)
+                    let maxWidth = 800;
+                    let scale = maxWidth / img.width;
+
+                    let canvas = document.createElement('canvas');
+                    canvas.width = maxWidth;
+                    canvas.height = img.height * scale;
+
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // 🔥 CONVERTIR A WEBP (calidad 0.7)
+                    canvas.toBlob(function(blob) {
+
+                        imagenWebp = new File([blob], "foto.webp", {
+                            type: "image/webp"
+                        });
+
+                        // 🔥 PREVIEW
+                        let url = URL.createObjectURL(blob);
+
+                        $('#previewFoto')
+                            .attr('src', url)
+                            .show();
+
+                    }, 'image/webp', 0.7);
+
+                };
+
+                img.src = ev.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        });
+        $('#previewFoto').click(function() {
+    $('#imagenGrande').attr('src', $(this).attr('src'));
+    $('#modalImagen').modal('show');
+});
     });
 </script>
 
