@@ -417,6 +417,13 @@ $faviconUrl = base_url('favicon.ico');
         $('#btnCapturar').click(function() {
 
             let video = document.getElementById('video');
+
+            // 🔥 VALIDACIÓN CLAVE
+            if (!video.videoWidth) {
+                Swal.fire('Espera', 'La cámara aún no está lista', 'info');
+                return;
+            }
+
             let canvas = document.getElementById('canvas');
 
             canvas.width = video.videoWidth;
@@ -431,7 +438,6 @@ $faviconUrl = base_url('favicon.ico');
                     type: "image/webp"
                 });
 
-                // 🔥 limpiar anterior si existe
                 if (imagenURL) {
                     URL.revokeObjectURL(imagenURL);
                 }
@@ -441,9 +447,6 @@ $faviconUrl = base_url('favicon.ico');
                 $('#previewFoto')
                     .attr('src', imagenURL)
                     .show();
-
-                // opcional: apagar cámara después de capturar
-                detenerCamara();
 
             }, 'image/webp', 0.7);
 
