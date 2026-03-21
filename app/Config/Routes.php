@@ -147,6 +147,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('packages/updateFlete','PackageController::updateFlete');
     $routes->post('packages/updatePagoParcial','PackageController::updatePagoParcial');
     $routes->post('packages/updateFleteCompleto','PackageController::updateFleteCompleto');
+    $routes->get('paquetes/etiqueta', 'PackageController::generarEtiqueta');
 
     $routes->post('packages-setDestino', 'PackageController::setDestino');
     $routes->post('packages-setReenvio', 'PackageController::setReenvio');

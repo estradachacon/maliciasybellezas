@@ -201,12 +201,12 @@ $faviconUrl = base_url('favicon.ico');
                             <label>Día de entrega</label>
                             <input type="date" name="dia_entrega" class="form-control">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <label>Hora inicio</label>
                             <input type="time" name="hora_inicio" class="form-control">
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <label>Hora fin</label>
                             <input type="time" name="hora_fin" class="form-control">
                         </div>
@@ -409,24 +409,24 @@ $faviconUrl = base_url('favicon.ico');
             }
         }
 
-       function generarPreview(p) {
+        function generarPreview(p) {
 
-    let fecha = new Date(p.dia_entrega);
-    let vendedor = "<?= $codigoVendedor ?>";
+            let fecha = new Date(p.dia_entrega);
+            let vendedor = "<?= $codigoVendedor ?>";
 
-    let horaInicio = p.hora_inicio || '';
-    let horaFin = p.hora_fin || '';
+            let horaInicio = p.hora_inicio || '';
+            let horaFin = p.hora_fin || '';
 
-    let rangoHora = (horaInicio && horaFin)
-        ? `${formatearHora(horaInicio)} - ${formatearHora(horaFin)}`
-        : '';
+            let rangoHora = (horaInicio && horaFin) ?
+                `${formatearHora(horaInicio)} - ${formatearHora(horaFin)}` :
+                '';
 
-    let dia = fecha.toLocaleDateString('es-SV', {
-        weekday: 'long',
-        day: 'numeric'
-    });
+            let dia = fecha.toLocaleDateString('es-SV', {
+                weekday: 'long',
+                day: 'numeric'
+            });
 
-    $('#miniPreview').html(`
+            $('#miniPreview').html(`
         <div class="etiqueta">
             <div style="position:absolute; top:2px; right:5px; font-size:7px;">
                 ${vendedor}
@@ -455,7 +455,7 @@ $faviconUrl = base_url('favicon.ico');
             </div>
         </div>
     `);
-}
+        }
 
         function activarModoArchivo() {
             $('#video').hide();
@@ -659,7 +659,12 @@ $faviconUrl = base_url('favicon.ico');
                 calcularTotal();
             }
         });
+        $('#btnImprimirFinal').click(function() {
 
+            let formData = $('#formPaquete').serialize();
+
+            window.open('<?= base_url('paquetes/etiqueta') ?>?' + formData, '_blank');
+        });
     });
 </script>
 

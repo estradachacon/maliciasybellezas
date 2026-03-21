@@ -7,8 +7,9 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PackageModel;
 use App\Models\SellerModel;
 use App\Models\SettledPointModel;
-use App\Models\AccountModel;
-use App\Models\TrackingDetailsModel;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
 
 class PackageController extends BaseController
 {
@@ -24,75 +25,69 @@ class PackageController extends BaseController
         $this->packages = new PackageModel();
     }
 
-    public function index()
-    {
-    }
+    public function index() {}
 
-    public function show($id = null)
-    {
-    }
+    public function show($id = null) {}
 
     public function new()
     {
         return view('packages/new');
     }
+    public function generarEtiqueta()
+    {
+        $data = [
+            'logo' => base_url('favicon.ico'), // dompdf sí soporta esto
+            'codigo' => session('codigo_vendedor') ?? 'N/A',
+            'cliente' => $this->request->getGet('cliente_nombre'),
+            'telefono' => $this->request->getGet('cliente_telefono'),
+            'destino' => $this->request->getGet('destino'),
+            'fecha' => $this->request->getGet('dia_entrega'),
+            'hora' => $this->request->getGet('hora_inicio') . ' - ' . $this->request->getGet('hora_fin'),
+            'precio' => $this->request->getGet('precio'),
+            'envio' => $this->request->getGet('envio'),
+            'total' => $this->request->getGet('total'),
+        ];
 
-    public function store()
-    {
-    }
+        $html = view('packages/pdf/etiqueta', $data);
 
-    public function subirImagen()
-    {
-    }
-    public function edit($id)
-    {
-    }
+        $options = new Options();
+        $options->set('isRemoteEnabled', true); // 🔥 para imágenes
 
-    public function update($id)
-    {
-    }
+        $dompdf = new Dompdf($options);
 
-    public function setDestino()
-    {
-    }
+        $dompdf->loadHtml($html);
 
-    public function setReenvio()
-    {
-    }
+        // 🔥 TAMAÑO EXACTO 4x2 pulgadas
+        $dompdf->setPaper([0, 0, 288, 144]);
 
-    public function getPackageData($id)
-    {
-    }
-    public function getDestinoInfo($id)
-    {
-    }
-    public function devolver($id)
-    {
-    }
-    public function entregar($id)
-    {
-    }
+        $dompdf->render();
 
-    public function showReturnPackages()
-    {
+        return $this->response
+            ->setContentType('application/pdf')
+            ->setBody($dompdf->output());
     }
-    public function quickLoad()
-    {
-    }
-    public function quickStore()
-    {
-    }
-    public function updateFlete()
-    {
-    }
+    public function store() {}
 
-    public function updatePagoParcial()
-    {
-    }
-    public function updateFleteCompleto()
-    {
-    }
-    public function marcarNoRetirado($id)
-    {
-    }
+    public function subirImagen() {}
+    public function edit($id) {}
+
+    public function update($id) {}
+
+    public function setDestino() {}
+
+    public function setReenvio() {}
+
+    public function getPackageData($id) {}
+    public function getDestinoInfo($id) {}
+    public function devolver($id) {}
+    public function entregar($id) {}
+
+    public function showReturnPackages() {}
+    public function quickLoad() {}
+    public function quickStore() {}
+    public function updateFlete() {}
+
+    public function updatePagoParcial() {}
+    public function updateFleteCompleto() {}
+    public function marcarNoRetirado($id) {}
 }
