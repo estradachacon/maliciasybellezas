@@ -9,19 +9,27 @@
             </div>
 
             <div class="card-body">
+                <?php if (session('errors')): ?>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <?php foreach (session('errors') as $error): ?>
+                                <li><?= esc($error) ?></li>
+                            <?php endforeach ?>
+                        </ul>
+                    </div>
+                <?php endif ?>
                 <form action="<?= base_url('users/update/' . $user['id']) ?>" method="post">
-                    <?= csrf_field() ?>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="user_name" class="form-label">Nombre de usuario</label>
                             <input type="text" class="form-control" id="user_name" name="user_name" required
-                                value="<?= esc($user['user_name']) ?>">
+                                value="<?= old('user_name', $user['user_name']) ?>">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Correo electrónico</label>
                             <input type="email" class="form-control" id="email" name="email" required
-                                value="<?= esc($user['email']) ?>">
+                                value="<?= old('email', $user['email']) ?>">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="user_password" class="form-label">Contraseña</label>
@@ -31,11 +39,12 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="codigo" class="form-label">Código</label>
-                            <input type="text" 
-                                class="form-control" 
-                                id="codigo" 
+                            <input type="text"
+                                class="form-control"
+                                id="codigo"
                                 name="codigo"
-                                value="<?= esc($user['codigo'] ?? '') ?>"
+                                value="<?= old('codigo', $user['codigo'] ?? '') ?>"
+                                required
                                 placeholder="Ej: USR-001"
                                 minlength="2">
                             <small class="text-muted">Codigo debe contener al menos 2 caracteres.</small>
@@ -45,7 +54,8 @@
                             <select class="form-select" id="role_id" name="role_id" required>
                                 <option value="">Seleccione un rol</option>
                                 <?php foreach ($roles as $role): ?>
-                                    <option value="<?= esc($role['id']) ?>" <?= $role['id'] == $user['role_id'] ? 'selected' : '' ?>>
+                                    <option value="<?= esc($role['id']) ?>" 
+                                    <?= old('role_id', $user['role_id']) == $role['id'] ? 'selected' : '' ?>>
                                         <?= esc($role['nombre']) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -56,7 +66,8 @@
                             <select class="form-select" id="branch_id" name="branch_id" required>
                                 <option value="">Seleccione una sucursal</option>
                                 <?php foreach ($branches as $branch): ?>
-                                    <option value="<?= esc($branch->id) ?>" <?= $branch->id == $user['branch_id'] ? 'selected' : '' ?>>
+                                    <option value="<?= esc($branch->id) ?>" 
+                                    <?= old('branch_id', $user['branch_id']) == $branch->id ? 'selected' : '' ?>>
                                         <?= esc($branch->branch_name) ?>
                                     </option>
                                 <?php endforeach; ?>
