@@ -375,35 +375,28 @@ $faviconUrl = base_url('favicon.ico');
             $('#seccionFinal').hide();
             $('#formPaquete').removeClass('blur');
         });
-        $('#btnGuardar').click(function() {
+        $('#btnGuardarFinal').click(function() {
 
-            let data = $('#formPaquete').serializeArray();
-            let obj = {};
-            data.forEach(x => obj[x.name] = x.value);
+            if (!imagenWebp) {
+                Swal.fire('Falta foto', 'Debes tomar una foto', 'warning');
+                return;
+            }
 
-            Swal.fire({
-                title: '¿Confirmar datos?',
-                text: 'Revisá antes de continuar',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, continuar'
-            }).then((result) => {
+            let formData = new FormData($('#formPaquete')[0]);
 
-                if (result.isConfirmed) {
+            // 🔥 AQUÍ está la clave
+            formData.append('foto', imagenWebp);
 
-                    // aplicar blur
-                    $('#formPaquete').addClass('blur');
-
-                    // generar preview
-                    generarPreview(obj);
-
-                    // mostrar sección final
-                    $('#seccionFinal').fadeIn();
-                    $('html, body').animate({
-                        scrollTop: $('#seccionFinal').offset().top
-                    }, 500);
+            $.ajax({
+                url: '<?= base_url('paquetes/guardar') ?>',
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
+                        .then(() => location.reload());
                 }
-
             });
 
         });
@@ -718,7 +711,15 @@ $faviconUrl = base_url('favicon.ico');
 
                     // 🔥 REDIMENSIONAR (máx 800px)
                     let maxWidth = 800;
-                    let scale = maxWidth / img.width;
+
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        let scale = maxWidth / width;
+                        width = maxWidth;
+                        height = height * scale;
+                    }
 
                     let canvas = document.createElement('canvas');
                     canvas.width = maxWidth;
@@ -741,6 +742,14 @@ $faviconUrl = base_url('favicon.ico');
                             .attr('src', url)
                             .show();
 
+                        // 🔥 liberar memoria después
+                        $('#previewFoto').on('load', function() {
+                            URL.revokeObjectURL(url);
+                        });
+                        $('#previewFoto').on('load', function() {
+                            $('#btnCamara').text(' Cambiar foto');
+                        });
+
                     }, 'image/webp', 0.7);
 
                 };
@@ -751,9 +760,9 @@ $faviconUrl = base_url('favicon.ico');
             reader.readAsDataURL(file);
         });
         $('#previewFoto').click(function() {
-    $('#imagenGrande').attr('src', $(this).attr('src'));
-    $('#modalImagen').modal('show');
-});
+            $('#imagenGrande').attr('src', $(this).attr('src'));
+            $('#modalImagen').modal('show');
+        });
     });
 </script>
 
