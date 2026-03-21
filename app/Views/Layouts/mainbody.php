@@ -147,6 +147,23 @@
         .badge-text-lg {
             font-size: 1rem;
         }
+
+        @media (max-width: 576px) {
+
+            .navbar-brand {
+                font-size: 14px !important;
+            }
+
+            #sidebarToggle {
+                font-size: 12px;
+                padding: 2px 6px;
+            }
+
+            #sidebarToggle .lines span {
+                height: 2px;
+            }
+
+        }
     </style>
 </head>
 
@@ -156,7 +173,7 @@
         style="background-color: <?= setting('primary_color') ?? '#1d2744' ?>;">
         <div class="container-fluid d-flex justify-content-between">
             <div class="d-flex align-items-center">
-                <a class="navbar-brand mb-0 h5 mr-3" href="/dashboard">
+                <a class="navbar-brand mb-0 h6 mr-3" href="/dashboard">
                     <?= esc(setting('company_name') ?? 'Sistema') ?>
                 </a>
                 <button class="btn btn-link btn-sm text-white" id="sidebarToggle">
@@ -245,7 +262,7 @@
     <!--End layoutSidenav-->
     <!-- Bootstrap 4  -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Datatable js -->
     <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
     <!-- Dropify -->
