@@ -375,6 +375,42 @@ $faviconUrl = base_url('favicon.ico');
             $('#seccionFinal').hide();
             $('#formPaquete').removeClass('blur');
         });
+
+        $('#btnGuardar').click(function() {
+
+            let data = $('#formPaquete').serializeArray();
+            let obj = {};
+
+            data.forEach(x => obj[x.name] = x.value);
+
+            Swal.fire({
+                title: '¿Confirmar datos?',
+                text: 'Revisá antes de continuar',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    // blur
+                    $('#formPaquete').addClass('blur');
+
+                    // preview
+                    generarPreview(obj);
+
+                    // mostrar paso 2
+                    $('#seccionFinal').fadeIn();
+
+                    $('html, body').animate({
+                        scrollTop: $('#seccionFinal').offset().top
+                    }, 500);
+                }
+
+            });
+
+        });
+
         $('#btnGuardarFinal').click(function() {
 
             if (!imagenWebp) {
@@ -386,31 +422,6 @@ $faviconUrl = base_url('favicon.ico');
 
             // 🔥 AQUÍ está la clave
             formData.append('foto', imagenWebp);
-
-            $.ajax({
-                url: '<?= base_url('paquetes/guardar') ?>',
-                method: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(res) {
-                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
-                        .then(() => location.reload());
-                }
-            });
-
-        });
-        $('#btnGuardarFinal').click(function() {
-
-            let file = $('#fotoPaquete')[0].files[0];
-
-            if (!file) {
-                Swal.fire('Falta foto', 'Debes subir una foto del paquete', 'warning');
-                return;
-            }
-
-            let formData = new FormData($('#formPaquete')[0]);
-            formData.append('foto', file);
 
             $.ajax({
                 url: '<?= base_url('paquetes/guardar') ?>',
@@ -722,11 +733,11 @@ $faviconUrl = base_url('favicon.ico');
                     }
 
                     let canvas = document.createElement('canvas');
-                    canvas.width = maxWidth;
-                    canvas.height = img.height * scale;
+                    canvas.width = width;
+                    canvas.height = height;
 
                     let ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, width, height);
 
                     // 🔥 CONVERTIR A WEBP (calidad 0.7)
                     canvas.toBlob(function(blob) {
@@ -741,14 +752,12 @@ $faviconUrl = base_url('favicon.ico');
                         $('#previewFoto')
                             .attr('src', url)
                             .show();
-
-                        // 🔥 liberar memoria después
-                        $('#previewFoto').on('load', function() {
-                            URL.revokeObjectURL(url);
-                        });
-                        $('#previewFoto').on('load', function() {
-                            $('#btnCamara').text(' Cambiar foto');
-                        });
+                        $('#previewFoto')
+                            .off('load')
+                            .on('load', function() {
+                                URL.revokeObjectURL(url);
+                                $('#btnCamara').text('🔄 Cambiar foto');
+                            });
 
                     }, 'image/webp', 0.7);
 
