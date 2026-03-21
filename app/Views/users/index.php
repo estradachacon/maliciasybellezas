@@ -1,5 +1,19 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        /* altura estándar Bootstrap */
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        /* centra texto */
+        padding-left: .75rem;
+    }
+</style>
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -14,15 +28,9 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-lg-3 mb-2">
-                        <label>Tipo de usuario</label>
-                        <select class="form-control select2 select-filter" data-placeholder="Seleccione una opción"
-                            name="status" multiple="true">
-                            <option value="Gerente">Gerente</option>
-                            <option value="Pagador">Pagador</option>
-                            <option value="Digitador">Digitador</option>
-                            <option value="Motorista">Motorista</option>
-                        </select>
+                    <div class="col-md-6 mb-2">
+                        <label>Buscar usuario</label>
+                        <select class="form-control select2-user" style="width:100%"></select>
                     </div>
                 </div>
                 <table class="table table-bordered" id="users-table">
@@ -31,15 +39,16 @@
                             <th>ID</th>
                             <th>Nombre de Usuario</th>
                             <th>Email</th>
-                            <th class="col-1">Rol</th>
-                            <th class="col-1">Sucursal</th>
+                            <th>Código</th>
+                            <th class="col-2">Rol</th>
+                            <th class="col-2">Sucursal</th>
                             <th class="col-1 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($users)): ?>
                             <tr>
-                                <td colspan="5" class="text-center">No hay usuarios registrados.</td>
+                                <td colspan="7" class="text-center">No hay usuarios registrados.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($users as $user): ?>
@@ -48,30 +57,36 @@
                                     <td><?= esc($user['user_name']) ?></td>
                                     <td><?= esc($user['email']) ?></td>
                                     <td class="text-center">
+                                        <?php if (!empty($user['codigo'])): ?>
+                                            <span class="badge bg-primary text-white px-3 py-2 fs-6">
+                                                <?= esc($user['codigo']) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-light text-muted border px-3 py-2 fs-6">
+                                                Sin código
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
                                         <?php
-                                        $roleName = esc($user['role_name']);
-                                        $style = []; // Array para definir las clases
+                                        $roleName = esc($user['role_name'] ?? 'Sin rol');
 
-                                        // Definimos el estilo basado en el rol
-                                        switch ($roleName) {
-                                            case 'Gerente':
-                                                $style['class'] = 'bg-dark text-white'; // Oscuro y potente
-                                                break;
-                                            case 'Pagador':
-                                                $style['class'] = 'bg-success text-white'; // Éxito y confirmación
-                                                break;
-                                            case 'Digitador':
-                                                $style['class'] = 'bg-info text-white'; // Informativo, texto oscuro para contraste
-                                                break;
-                                            case 'Motorista':
-                                                $style['class'] = 'bg-secondary text-white'; // Advertencia/Atención, texto oscuro para contraste
-                                                break;
-                                            default:
-                                                $style['class'] = 'bg-light text-warning border border-secondary'; // Para cualquier cosa que se escape
-                                                break;
+                                        $rolesStyles = [
+                                            'Gerente'   => 'bg-dark text-white',
+                                            'Pagador'   => 'bg-success text-white',
+                                            'Digitador' => 'bg-info text-white',
+                                            'Motorista' => 'bg-secondary text-white',
+                                        ];
+
+                                        if (isset($rolesStyles[$roleName])) {
+                                            $class = $rolesStyles[$roleName];
+                                        } else {
+                                            $colors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+                                            $index = crc32($roleName) % count($colors);
+                                            $class = 'bg-' . $colors[$index] . ' text-white';
                                         }
                                         ?>
-                                        <span class="badge <?= $style['class'] ?> rounded-pill px-3 py-2">
+                                        <span class="badge <?= $class ?> rounded-pill px-3 py-2 shadow-sm">
                                             <?= $roleName ?>
                                         </span>
                                     </td>
@@ -157,6 +172,51 @@
                     }
                 });
             });
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+
+        $('.select2-user').select2({
+            placeholder: "Buscar usuario...",
+            allowClear: true,
+            minimumInputLength: 1,
+            ajax: {
+                url: "<?= base_url('users/search') ?>",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return data; // 👈 ya viene con {results:[]}
+                }
+            }
+        });
+
+        $('.select2-user').on('change', function() {
+
+            let userId = $(this).val();
+
+            $('#users-table tbody tr').each(function() {
+                let row = $(this);
+                let id = row.find('td:eq(0)').text().trim();
+
+                if (!userId) {
+                    row.show();
+                    return;
+                }
+
+                if (id == userId) {
+                    row.show();
+                } else {
+                    row.hide();
+                }
+            });
+
         });
     });
 </script>

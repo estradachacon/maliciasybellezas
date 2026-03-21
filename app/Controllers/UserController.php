@@ -26,22 +26,29 @@ class UserController extends BaseController
         $chk = requerirPermiso('ver_usuarios');
         if ($chk !== true) return $chk;
 
-        // 1. Instanciamos el modelo de usuario.
         $userModel = new UserModel();
 
-        $users = $userModel
-            ->select('users.id, users.user_name, users.email, roles.nombre AS role_name, branches.branch_name AS branch_name')
-            ->join('roles', 'roles.id = users.role_id')
-            ->join('branches', 'branches.id = users.branch_id')
-            ->findAll();
+        // 👇 obtenemos filtros del request
+        $roles = $this->request->getGet('roles');
 
-        // 3. Preparamos los datos para la vista.
+        $builder = $userModel
+            ->select('users.id, users.user_name, users.email, roles.nombre AS role_name, branches.branch_name AS branch_name, users.codigo AS codigo')
+            ->join('roles', 'roles.id = users.role_id')
+            ->join('branches', 'branches.id = users.branch_id');
+
+        // 👇 aplicar filtro si viene algo
+        if (!empty($roles)) {
+            $builder->whereIn('roles.nombre', $roles);
+        }
+
+        $users = $builder->findAll();
+
         $data = [
             'users' => $users,
-            'title' => 'Lista de Usuarios' // Título para la página/layout
+            'title' => 'Lista de Usuarios',
+            'rolesSelected' => $roles // 👈 importante para mantener selección
         ];
 
-        // 4. Cargamos la vista. Asegúrate de que esta ruta sea correcta para tu proyecto.
         return view('users/index', $data);
     }
     public function new()
@@ -61,38 +68,84 @@ class UserController extends BaseController
         ];
         return view('users/new', $data);
     }
-    public function create()
-    {
-        $chk = requerirPermiso('crear_usuarios');
-        if ($chk !== true) return $chk;
+public function create()
+{
+    $chk = requerirPermiso('crear_usuarios');
+    if ($chk !== true) return $chk;
 
-        helper(['form']);
-        $session = session();
+    helper(['form']);
+    $session = session();
 
-        $password = $this->request->getPost('user_password');
+    $codigo = $this->request->getPost('codigo');
 
-        // Hashear la contraseña antes de guardar
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    // ✅ REGLAS
+    $rules = [
+        'user_name'     => 'required',
+        'email'         => 'required|valid_email',
+        'user_password' => 'required|min_length[4]',
+        'role_id'       => 'required',
+        'branch_id'     => 'required',
+    ];
 
-        $data = [
-            'user_name' => $this->request->getPost('user_name'),
-            'email' => $this->request->getPost('email'),
-            'user_password' => $hashedPassword,
-            'role_id' => $this->request->getPost('role_id'),
-            'branch_id' => $this->request->getPost('branch_id'),
-        ];
-
-        $this->userModel->insert($data);
-
-        registrar_bitacora(
-            'Crear usuario',
-            'Usuarios',
-            'Se creó un nuevo usuario.',
-            $session->get('user_id')
-        );
-
-        return redirect()->to('/users')->with('success', 'Usuario creado exitosamente.');
+    if (!empty($codigo)) {
+        $rules['codigo'] = 'min_length[2]|is_unique[users.codigo]';
     }
+
+    // ✅ MENSAJES PERSONALIZADOS
+    $messages = [
+        'user_name' => [
+            'required' => 'El nombre de usuario es obligatorio.',
+        ],
+        'email' => [
+            'required'    => 'El correo electrónico es obligatorio.',
+            'valid_email' => 'Debe ingresar un correo electrónico válido.',
+        ],
+        'user_password' => [
+            'required'   => 'La contraseña es obligatoria.',
+            'min_length' => 'La contraseña debe tener al menos 4 caracteres.',
+        ],
+        'codigo' => [
+            'min_length' => 'El código debe tener al menos 2 caracteres.',
+            'is_unique'  => 'El código ya está en uso.',
+        ],
+        'role_id' => [
+            'required' => 'Debe seleccionar un rol.',
+        ],
+        'branch_id' => [
+            'required' => 'Debe seleccionar una sucursal.',
+        ],
+    ];
+
+    if (!$this->validate($rules, $messages)) {
+        return redirect()->back()
+            ->withInput()
+            ->with('errors', $this->validator->getErrors());
+    }
+
+    $password = $this->request->getPost('user_password');
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+    $data = [
+        'user_name' => $this->request->getPost('user_name'),
+        'email' => $this->request->getPost('email'),
+        'user_password' => $hashedPassword,
+        'role_id' => $this->request->getPost('role_id'),
+        'branch_id' => $this->request->getPost('branch_id'),
+        'codigo' => $codigo,
+    ];
+
+    $this->userModel->insert($data);
+
+    registrar_bitacora(
+        'Crear usuario',
+        'Usuarios',
+        'Se creó un nuevo usuario.',
+        $session->get('user_id')
+    );
+
+    return redirect()->to('/users')->with('success', 'Usuario creado exitosamente.');
+}
+
     public function edit($id)
     {
         // 1. Obtener la caja a editar
@@ -125,6 +178,7 @@ class UserController extends BaseController
             !$this->validate([
                 'user_name' => 'required|min_length[3]|max_length[100]',
                 'email' => 'required|min_length[3]|max_length[100]',
+                'codigo' => 'required|min_length[2]|max_length[100]',
                 'branch_id' => 'required|integer',
                 'role_id' => 'required|integer',
             ])
@@ -138,6 +192,7 @@ class UserController extends BaseController
             'user_name' => $this->request->getPost('user_name'),
             'email' => $this->request->getPost('email'),
             'branch_id' => $this->request->getPost('branch_id'),
+            'codigo' => $this->request->getPost('codigo'),
             'role_id' => $this->request->getPost('role_id'),
         ];
 
@@ -181,5 +236,34 @@ class UserController extends BaseController
         }
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'No se pudo eliminar el usuario.']);
+    }
+    public function search()
+    {
+        $term = $this->request->getGet('term');
+
+        $userModel = new UserModel();
+
+        $users = $userModel
+            ->select('id, user_name, email, codigo')
+            ->groupStart()
+            ->like('user_name', $term)
+            ->orLike('email', $term)
+            ->orLike('codigo', $term)
+            ->groupEnd()
+            ->findAll(10);
+
+        $result = [];
+
+        foreach ($users as $user) {
+            $result[] = [
+                'id' => $user['id'],
+                'text' => $user['user_name'] . ' - ' . $user['email']
+                    . (!empty($user['codigo']) ? ' (' . $user['codigo'] . ')' : '')
+            ];
+        }
+
+        return $this->response->setJSON([
+            'results' => $result
+        ]);
     }
 }

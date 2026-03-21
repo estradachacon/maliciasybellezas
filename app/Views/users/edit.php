@@ -29,7 +29,17 @@
                                 placeholder="Dejar en blanco si no desea cambiarla">
                             <small class="text-muted">Deje este campo vacío para mantener la contraseña actual.</small>
                         </div>
-
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo" class="form-label">Código</label>
+                            <input type="text" 
+                                class="form-control" 
+                                id="codigo" 
+                                name="codigo"
+                                value="<?= esc($user['codigo'] ?? '') ?>"
+                                placeholder="Ej: USR-001"
+                                minlength="2">
+                            <small class="text-muted">Codigo debe contener al menos 2 caracteres.</small>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="role_id" class="form-label">Rol asignado</label>
                             <select class="form-select" id="role_id" name="role_id" required>

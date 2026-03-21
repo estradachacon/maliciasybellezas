@@ -88,6 +88,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     // Módulo de mantenimiento de usuarios
     $routes->presenter('users', ['controller' => 'UserController', 'only' => ['index', 'new', 'create', 'edit', 'update']]);
     $routes->post('users/delete', 'UserController::delete');
+    $routes->get('users/search', 'UserController::search');
 
     // Módulo de mantenimiento de sucursales
     $routes->get('branches-list', 'BranchController::list');
