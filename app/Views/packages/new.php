@@ -56,6 +56,8 @@ $faviconUrl = base_url('favicon.ico');
         flex-direction: column;
         justify-content: space-between;
         padding: 2px;
+        position: relative;
+        /* 🔥 NECESARIO */
         /* 🔥 bajar padding */
     }
 
@@ -199,7 +201,15 @@ $faviconUrl = base_url('favicon.ico');
                             <label>Día de entrega</label>
                             <input type="date" name="dia_entrega" class="form-control">
                         </div>
+                        <div class="col-md-6">
+                            <label>Hora inicio</label>
+                            <input type="time" name="hora_inicio" class="form-control">
+                        </div>
 
+                        <div class="col-md-6">
+                            <label>Hora fin</label>
+                            <input type="time" name="hora_fin" class="form-control">
+                        </div>
                         <div class="col-md-12">
                             <label>Destino</label>
                             <input type="text" name="destino" class="form-control">
@@ -259,7 +269,7 @@ $faviconUrl = base_url('favicon.ico');
         </div>
 
         <div class="card-body">
-
+            <?php $codigoVendedor = session('codigo_vendedor'); ?>
             <!-- MINI PREVIEW -->
             <div style="transform: scale(0.8); transform-origin: top left;">
                 <div id="miniPreview"></div>
@@ -270,13 +280,15 @@ $faviconUrl = base_url('favicon.ico');
             <!-- FOTO -->
             <div class="text-center">
                 <video id="video" autoplay playsinline class="video-camara"></video>
-
+                <button type="button" id="btnSubirFoto" class="btn btn-secondary w-100 mt-2" style="display:none;">
+                    📁 Subir foto
+                </button>
                 <button type="button" id="btnCapturar" class="btn btn-dark w-100 mt-2">
                     📸 Capturar foto
                 </button>
 
                 <canvas id="canvas" style="display:none;"></canvas>
-
+                <input type="file" id="fileFoto" accept="image/*" style="display:none;">
                 <img id="previewFoto"
                     class="img-thumbnail mt-3"
                     style="max-width:200px; display:none; cursor:pointer;">
@@ -356,7 +368,25 @@ $faviconUrl = base_url('favicon.ico');
         // CÁMARA
         // =========================
         async function iniciarCamara() {
+
             try {
+
+                let devices = await navigator.mediaDevices.enumerateDevices();
+                let hayCamara = devices.some(d => d.kind === 'videoinput');
+
+                if (!hayCamara) {
+
+                    activarModoArchivo();
+
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Modo archivo',
+                        text: 'No se detectó cámara. Debes subir una foto.'
+                    });
+
+                    return;
+                }
+
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "environment"
@@ -366,21 +396,42 @@ $faviconUrl = base_url('favicon.ico');
                 document.getElementById('video').srcObject = stream;
 
             } catch (err) {
-                Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
+
                 console.error(err);
+
+                activarModoArchivo();
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cámara no disponible',
+                    text: 'Se activó modo subida de archivo.'
+                });
             }
         }
 
-        function generarPreview(p) {
+       function generarPreview(p) {
 
-            let fecha = new Date(p.dia_entrega);
-            let dia = fecha.toLocaleDateString('es-SV', {
-                weekday: 'long',
-                day: 'numeric'
-            });
+    let fecha = new Date(p.dia_entrega);
+    let vendedor = "<?= $codigoVendedor ?>";
 
-            $('#miniPreview').html(`
+    let horaInicio = p.hora_inicio || '';
+    let horaFin = p.hora_fin || '';
+
+    let rangoHora = (horaInicio && horaFin)
+        ? `${formatearHora(horaInicio)} - ${formatearHora(horaFin)}`
+        : '';
+
+    let dia = fecha.toLocaleDateString('es-SV', {
+        weekday: 'long',
+        day: 'numeric'
+    });
+
+    $('#miniPreview').html(`
         <div class="etiqueta">
+            <div style="position:absolute; top:2px; right:5px; font-size:7px;">
+                ${vendedor}
+            </div>
+
             <div class="contenedor">
                 <div class="col-logo">
                     <img src="<?= $faviconUrl ?>" class="logo">
@@ -392,6 +443,7 @@ $faviconUrl = base_url('favicon.ico');
                     <div class="fila"><b>TEL:</b> ${p.cliente_telefono || ''}</div>
                     <div class="fila"><b>DESTINO:</b> ${p.destino || ''}</div>
                     <div class="fila"><b>ENTREGA:</b> ${dia || ''}</div>
+                    <div class="fila"><b>HORA:</b> ${rangoHora}</div>
                     <div class="fila"><b>ENCOM:</b> ${p.encomendista_nombre || ''}</div>
                 </div>
             </div>
@@ -403,6 +455,21 @@ $faviconUrl = base_url('favicon.ico');
             </div>
         </div>
     `);
+}
+
+        function activarModoArchivo() {
+            $('#video').hide();
+            $('#btnCapturar').hide();
+            $('#btnSubirFoto').show();
+            $('#btnSubirFoto').removeClass('btn-secondary').addClass('btn-warning');
+        }
+
+        function formatearHora(hora) {
+            if (!hora) return '';
+            let [h, m] = hora.split(':');
+            let suffix = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${suffix}`;
         }
 
         function detenerCamara() {
@@ -451,7 +518,9 @@ $faviconUrl = base_url('favicon.ico');
             }, 'image/webp', 0.7);
 
         });
-
+        $('#btnSubirFoto').click(function() {
+            $('#fileFoto').click();
+        });
         // =========================
         // MODAL IMAGEN
         // =========================
@@ -500,6 +569,66 @@ $faviconUrl = base_url('favicon.ico');
                 minimumFractionDigits: 2
             });
         }
+        $('#fileFoto').change(function(e) {
+
+            let file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'Solo imágenes', 'error');
+                return;
+            }
+
+            let reader = new FileReader();
+
+            reader.onload = function(ev) {
+
+                let img = new Image();
+
+                img.onload = function() {
+
+                    let maxWidth = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        let scale = maxWidth / width;
+                        width = maxWidth;
+                        height = height * scale;
+                    }
+
+                    let canvas = document.getElementById('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(function(blob) {
+
+                        imagenWebp = new File([blob], "foto.webp", {
+                            type: "image/webp"
+                        });
+
+                        if (imagenURL) {
+                            URL.revokeObjectURL(imagenURL);
+                        }
+
+                        imagenURL = URL.createObjectURL(blob);
+
+                        $('#previewFoto')
+                            .attr('src', imagenURL)
+                            .show();
+
+                    }, 'image/webp', 0.7);
+
+                };
+
+                img.src = ev.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        });
 
         function obtenerNumero(valor) {
             return parseFloat(valor.replace(/,/g, '')) || 0;
