@@ -1,6 +1,8 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
-
+<?php
+$faviconUrl = base_url('favicon.ico');
+?>
 <style>
     #overlayPreview {
         position: fixed;
@@ -20,6 +22,12 @@
         padding: 15px;
         border-radius: 10px;
         width: 340px;
+    }
+
+    .blur {
+        filter: blur(3px);
+        pointer-events: none;
+        opacity: 0.6;
     }
 
     * {
@@ -182,83 +190,40 @@
         </div>
     </div>
 </div>
+<div id="seccionFinal" style="display:none; margin-top:20px;">
 
-<!-- OVERLAY -->
-<div id="overlayPreview">
-    <div id="previewCard">
-        <?php
-        $favicon = setting('favicon');
-        if ($favicon && file_exists(FCPATH . 'upload/settings/' . $favicon)) {
-            $faviconUrl = base_url('upload/settings/' . $favicon);
-        } else {
-            $faviconUrl = base_url('favicon.ico');
-        }
-        ?>
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            Confirmación de paquete
+        </div>
 
-        <!-- VIÑETA -->
-        <div id="printArea" class="etiqueta">
+        <div class="card-body">
 
-            <div class="contenedor">
-
-                <!-- LOGO -->
-                <div class="col-logo">
-                    <img src="<?= $faviconUrl ?>" class="logo" id="logoPrint">
-                </div>
-
-                <!-- DATOS -->
-                <div class="col-data">
-
-                    <div class="empresa">MALICIAS Y BELLEZAS</div>
-
-                    <div class="fila">
-                        <b>CLIENTE:</b> <span id="p_cliente"></span>
-                    </div>
-
-                    <div class="fila">
-                        <b>TEL:</b> <span id="p_tel"></span>
-                    </div>
-
-                    <div class="fila">
-                        <b>DESTINO:</b> <span id="p_destino"></span>
-                    </div>
-
-                    <div class="fila">
-                        <b>ENTREGA:</b> <span id="p_fecha"></span>
-                    </div>
-
-                    <div class="fila">
-                        <b>ENCOM:</b> <span id="p_encomendista"></span>
-                    </div>
-
-                </div>
-
+            <!-- MINI PREVIEW -->
+            <div style="transform: scale(0.8); transform-origin: top left;">
+                <div id="miniPreview"></div>
             </div>
 
-            <!-- FOOTER -->
-            <div class="footer">
-                <div class="box">
-                    <div class="titulo">PRECIO</div>
-                    <div>$<span id="p_precio"></span></div>
-                </div>
+            <!-- FOTO -->
+            <div class="mt-3">
+                <label>Foto del paquete</label>
+                <input type="file" id="fotoPaquete" class="form-control" accept="image/*">
+            </div>
 
-                <div class="box">
-                    <div class="titulo">ENVÍO</div>
-                    <div>$<span id="p_envio"></span></div>
-                </div>
+            <!-- BOTONES -->
+            <div class="mt-3 d-flex gap-2">
+                <button id="btnImprimirFinal" class="btn btn-secondary">
+                    Imprimir
+                </button>
 
-                <div class="box total">
-                    <div class="titulo">TOTAL</div>
-                    <div>$<span id="p_total"></span></div>
-                </div>
+                <button id="btnGuardarFinal" class="btn btn-success">
+                    Guardar paquete
+                </button>
             </div>
 
         </div>
-
-        <button id="btnPrint" class="btn btn-secondary w-100 mt-2">Imprimir</button>
-        <button id="btnEditar" class="btn btn-warning w-100 mt-2">Editar</button>
-        <button id="btnFinalizar" class="btn btn-success w-100 mt-2">Finalizar</button>
-
     </div>
+
 </div>
 
 <script>
@@ -268,16 +233,134 @@
             $('#total').prop('disabled', this.checked);
         });
 
+        $('#btnImprimirFinal').click(function() {
+
+            let contenido = document.getElementById('miniPreview').innerHTML;
+
+            let ventana = window.open('', '', 'width=400,height=300');
+
+            ventana.document.write(`
+        <html>
+        <head>
+            <title>Imprimir</title>
+            <style>
+                body {
+                    margin:0;
+                    padding:0;
+                }
+                .etiqueta {
+                    width: 4in;
+                    height: 2in;
+                    font-family: Arial;
+                }
+            </style>
+        </head>
+        <body>
+            ${contenido}
+        </body>
+        </html>
+    `);
+
+            ventana.document.close();
+
+            ventana.onload = function() {
+                ventana.print();
+                ventana.close();
+            };
+
+        });
+
         $('#btnGuardar').click(function() {
 
             let data = $('#formPaquete').serializeArray();
             let obj = {};
             data.forEach(x => obj[x.name] = x.value);
 
-            bloquearFormulario();
-            mostrarPreview(obj);
+            Swal.fire({
+                title: '¿Confirmar datos?',
+                text: 'Revisá antes de continuar',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    // aplicar blur
+                    $('#formPaquete').addClass('blur');
+
+                    // generar preview
+                    generarPreview(obj);
+
+                    // mostrar sección final
+                    $('#seccionFinal').fadeIn();
+                    $('html, body').animate({
+                        scrollTop: $('#seccionFinal').offset().top
+                    }, 500);
+                }
+
+            });
 
         });
+        $('#btnGuardarFinal').click(function() {
+
+            let file = $('#fotoPaquete')[0].files[0];
+
+            if (!file) {
+                Swal.fire('Falta foto', 'Debes subir una foto del paquete', 'warning');
+                return;
+            }
+
+            let formData = new FormData($('#formPaquete')[0]);
+            formData.append('foto', file);
+
+            $.ajax({
+                url: '<?= base_url('paquetes/guardar') ?>',
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
+                        .then(() => location.reload());
+                }
+            });
+
+        });
+
+        function generarPreview(p) {
+
+            let fecha = new Date(p.dia_entrega);
+            let dia = fecha.toLocaleDateString('es-SV', {
+                weekday: 'long',
+                day: 'numeric'
+            });
+
+            $('#miniPreview').html(`
+        <div class="etiqueta">
+            <div class="contenedor">
+                <div class="col-logo">
+                    <img src="<?= $faviconUrl ?>" class="logo">
+                </div>
+                <div class="col-data">
+                    <div class="empresa">MALICIAS Y BELLEZAS</div>
+
+                    <div class="fila"><b>CLIENTE:</b> ${p.cliente_nombre || ''}</div>
+                    <div class="fila"><b>TEL:</b> ${p.cliente_telefono || ''}</div>
+                    <div class="fila"><b>DESTINO:</b> ${p.destino || ''}</div>
+                    <div class="fila"><b>ENTREGA:</b> ${dia || ''}</div>
+                    <div class="fila"><b>ENCOM:</b> ${p.encomendista_nombre || ''}</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="box">PRECIO $${p.precio || '0.00'}</div>
+                <div class="box">ENVÍO $${p.envio || '0.00'}</div>
+                <div class="box total">TOTAL $${p.total || '0.00'}</div>
+            </div>
+        </div>
+    `);
+        }
 
         function bloquearFormulario() {
             $('#formPaquete :input').prop('disabled', true);
