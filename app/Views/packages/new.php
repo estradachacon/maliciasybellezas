@@ -307,16 +307,6 @@ $logoUrl = setting('logo')
                             <div class="p-3 border rounded-lg bg-light">
                                 <div class="row g-2">
                                     <div class="col-md-4">
-                                        <label class="form-label">Precio</label>
-                                        <input type="text" name="precio" id="precio" class="form-control money">
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <label class="form-label">Envío</label>
-                                        <input type="text" name="envio" id="envio" class="form-control money">
-                                    </div>
-
-                                    <div class="col-md-4">
                                         <label class="form-label fw-bold">Total</label>
                                         <input type="text" name="total" id="total" class="form-control bg-light fw-bold">
                                     </div>
@@ -622,9 +612,7 @@ $logoUrl = setting('logo')
         <!-- FOOTER -->
         <table style="width:100%; margin-top:3px;">
             <tr>
-                <td style="width:33%;">Precio: $${p.precio || '0.00'}</td>
-                <td style="width:33%;">Envío: $${p.envio || '0.00'}</td>
-                <td style="width:34%; text-align:right; font-weight:bold;">
+                <td style="text-align:right; font-weight:bold;">
                     Total: $${p.total || '0.00'}
                 </td>
             </tr>
@@ -737,8 +725,6 @@ $logoUrl = setting('logo')
                 formData.append('foto', imagenFile);
             }
 
-            formData.append('precio', limpiarNumero($('#precio').val()));
-            formData.append('envio', limpiarNumero($('#envio').val()));
             formData.append('total', limpiarNumero($('#total').val()));
 
             // 🔥 LOADING
@@ -806,18 +792,6 @@ $logoUrl = setting('logo')
                 maximumFractionDigits: 2
             });
         }
-
-        $('.money').on('input', function() {
-            let limpio = $(this).val()
-                .replace(/[^0-9.]/g, '')
-                .replace(/(\..*)\./g, '$1');
-
-            $(this).val(limpio);
-        });
-        $('.money').on('blur', function() {
-            let numero = limpiarNumero($(this).val());
-            $(this).val(formatearMoneda(numero));
-        });
 
         $('#precio, #envio').on('blur', function() {
             if ($('#cancelado').is(':checked')) return;
@@ -934,7 +908,7 @@ $logoUrl = setting('logo')
                 $('#total').val('0.00');
 
                 // 🔥 bloquear TODO
-                $('#precio, #envio, #total').prop('disabled', true)
+                $('#total').prop('disabled', true)
                     .addClass('bg-light');
 
             } else {
@@ -943,7 +917,7 @@ $logoUrl = setting('logo')
                 cancelado.css('opacity', '0.3');
 
                 // 🔥 desbloquear
-                $('#precio, #envio, #total').prop('disabled', false)
+                $('#total').prop('disabled', false)
                     .removeClass('bg-light');
 
                 // 🔥 recalcular solo al volver

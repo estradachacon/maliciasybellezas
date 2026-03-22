@@ -209,7 +209,7 @@
                             <!-- HEADER -->
                             <table style="border-bottom:1px solid #000; margin-bottom:2pt;">
                                 <tr>
-                                    <td class="col-17" style="font-size:10pt; font-weight:bold;">
+                                    <td class="col-17" style="font-size:11pt; font-weight:bold; font-family: 'Trebuchet MS', sans-serif;">
                                         MALICIAS Y BELLEZAS
                                     </td>
                                     <td class="col-3" style="text-align:right; font-size:6pt;">
@@ -217,56 +217,59 @@
                                     </td>
                                 </tr>
                             </table>
-
-                            <!-- CLIENTE + TEL -->
+                            <!-- CLIENTE FULL -->
                             <table class="bloque">
                                 <tr>
-                                    <td class="col-13">
+                                    <td class="col-20">
                                         <table>
                                             <tr>
-                                                <td class="col-5 label">Cliente:</td>
-                                                <td class="col-15 value"><?= $cliente ?></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-
-                                    <td class="col-7">
-                                        <table>
-                                            <tr>
-                                                <td class="col-5 label">Tel:</td>
-                                                <td class="col-15 value"><?= $telefono ?></td>
+                                                <td class="col-4 label">Cliente:</td>
+                                                <td class="col-16 value"><?= $cliente ?></td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- FECHA + ENCOM -->
+                            <!-- TEL + FECHA -->
                             <table class="bloque">
                                 <tr>
-                                    <td class="col-7 label">
+                                    <td class="col-10">
                                         <table>
                                             <tr>
-                                                <td class="col-9 label">Fecha: </td>
-                                                <td class="col-11 value">
+                                                <td class="col-6 label">Tel:</td>
+                                                <td class="col-14 value"><?= $telefono ?></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+
+                                    <td class="col-10">
+                                        <table>
+                                            <tr>
+                                                <td class="col-6 label">Fecha:</td>
+                                                <td class="col-14 value">
                                                     <?php
                                                     Locale::setDefault('es_SV');
                                                     $fmt = new IntlDateFormatter('es_SV', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
                                                     $fmt->setPattern('EEE d');
                                                     echo ucfirst($fmt->format(new DateTime($fecha)));
-                                                    ?></td>
+                                                    ?>
+                                                </td>
                                             </tr>
                                         </table>
                                     </td>
-                                    <td class="col-13 label">
+                                </tr>
+                            </table>
 
+                            <!-- ENCOMENDISTA FULL -->
+                            <table class="bloque">
+                                <tr>
+                                    <td class="col-20">
                                         <table>
                                             <tr>
-                                                <td class="col-7 label">Encomend:</td>
-                                                <td class="col-12 value">
-                                                    <div class="multi-line">
-                                                        <?= wordwrap($encomendista, 18, "<br>", true) ?>
-                                                    </div>
+                                                <td class="col-6 label">Encomendista:</td>
+                                                <td class="col-14 value">
+                                                    <?= wordwrap($encomendista, 30, true) ?>
                                                 </td>
                                             </tr>
                                         </table>
@@ -304,10 +307,8 @@
 
                 <table>
                     <tr>
-                        <td class="col-4">Precio: $<?= $precio ?></td>
-                        <td class="col-4">Envío: $<?= $envio ?></td>
-                        <td class="col-4" style="text-align:right; font-weight:bold;">
-                            Total: $<?= $total ?>
+                        <td class="col-20" style="text-align:right; font-weight:bold; font-size:9pt;">
+                            Total: $<?= number_format($total, 2) ?>
                         </td>
                     </tr>
                 </table>

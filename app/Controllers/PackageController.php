@@ -55,8 +55,6 @@ class PackageController extends BaseController
                     ($horaInicio && $horaFin ? ' - ' : '') .
                     ($horaFin ? $this->formatearHora($horaFin) : '')
             ),
-            'precio' => $this->request->getGet('precio'),
-            'envio' => $this->request->getGet('envio'),
             'total' => $this->request->getGet('total'),
             'encomendista' => $this->request->getGet('encomendista_nombre'),
         ];
@@ -100,8 +98,6 @@ class PackageController extends BaseController
             ];
 
             // 🔥 LIMPIAR NUMÉRICOS (muy importante)
-            $data['precio'] = floatval(str_replace(',', '', $this->request->getPost('precio') ?? 0));
-            $data['envio']  = floatval(str_replace(',', '', $this->request->getPost('envio') ?? 0));
             $data['total']  = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
 
             // 🔥 FOTO
