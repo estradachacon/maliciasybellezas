@@ -323,7 +323,10 @@ $faviconUrl = base_url('favicon.ico');
 
         let imagenWebp = null;
         let imagenURL = null;
+        let imagenFile = null;
         let stream = null;
+        let procesandoImagen = false;
+
 
         // =========================
         // FORMULARIO
@@ -539,13 +542,17 @@ $faviconUrl = base_url('favicon.ico');
         // =========================
         $('#btnGuardarFinal').click(function() {
 
-            if (!imagenWebp) {
+            if (!imagenWebp && !imagenFile) {
                 Swal.fire('Falta foto', 'Debes tomar una foto', 'warning');
                 return;
             }
 
             let formData = new FormData($('#formPaquete')[0]);
-            formData.append('foto', imagenWebp);
+            if (imagenWebp) {
+                formData.append('foto', imagenWebp);
+            } else if (imagenFile) {
+                formData.append('foto', imagenFile);
+            }
             formData.append('precio', limpiarNumero($('#precio').val()));
             formData.append('envio', limpiarNumero($('#envio').val()));
             formData.append('total', limpiarNumero($('#total').val()));
@@ -609,6 +616,7 @@ $faviconUrl = base_url('favicon.ico');
 
             $('#total').val(formatearMoneda(total));
         }
+
         $('#fileFoto').change(function(e) {
 
             let file = e.target.files[0];
@@ -618,6 +626,8 @@ $faviconUrl = base_url('favicon.ico');
                 Swal.fire('Error', 'Solo imágenes', 'error');
                 return;
             }
+
+            procesandoImagen = true; // 🔥 bloqueamos guardar
 
             let reader = new FileReader();
 
@@ -646,13 +656,17 @@ $faviconUrl = base_url('favicon.ico');
 
                     canvas.toBlob(function(blob) {
 
+                        if (!blob) {
+                            procesandoImagen = false;
+                            Swal.fire('Error', 'No se pudo procesar la imagen', 'error');
+                            return;
+                        }
+
                         imagenWebp = new File([blob], "foto.webp", {
                             type: "image/webp"
                         });
 
-                        if (imagenURL) {
-                            URL.revokeObjectURL(imagenURL);
-                        }
+                        if (imagenURL) URL.revokeObjectURL(imagenURL);
 
                         imagenURL = URL.createObjectURL(blob);
 
@@ -660,8 +674,9 @@ $faviconUrl = base_url('favicon.ico');
                             .attr('src', imagenURL)
                             .show();
 
-                    }, 'image/webp', 0.7);
+                        procesandoImagen = false; // ✅ listo
 
+                    }, 'image/webp', 0.7);
                 };
 
                 img.src = ev.target.result;
@@ -699,11 +714,32 @@ $faviconUrl = base_url('favicon.ico');
                 calcularTotal();
             }
         });
-        $('#btnImprimirFinal').click(function() {
+        $('#btnGuardarFinal').click(function() {
 
-            let formData = $('#formPaquete').serialize();
+            if (procesandoImagen) {
+                Swal.fire('Espera', 'La imagen aún se está procesando', 'info');
+                return;
+            }
 
-            window.open('<?= base_url('paquetes/etiqueta') ?>?' + formData, '_blank');
+            if (!imagenWebp) {
+                Swal.fire('Falta foto', 'Debes tomar o subir una foto', 'warning');
+                return;
+            }
+
+            let formData = new FormData($('#formPaquete')[0]);
+            formData.append('foto', imagenWebp);
+
+            $.ajax({
+                url: '<?= base_url('paquetes/guardar') ?>',
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
+                        .then(() => location.reload());
+                }
+            });
         });
     });
 </script>
