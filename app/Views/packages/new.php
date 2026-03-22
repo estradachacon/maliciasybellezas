@@ -1,8 +1,8 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
 <?php
-$logoUrl = setting('logo') 
-    ? base_url('upload/settings/' . setting('logo')) 
+$logoUrl = setting('logo')
+    ? base_url('upload/settings/' . setting('logo'))
     : '';
 ?>
 <style>
@@ -254,6 +254,15 @@ $logoUrl = setting('logo')
     #miniPreview>div {
         pointer-events: none;
     }
+
+    #video {
+        border-radius: 15px;
+        transition: transform 0.2s;
+    }
+
+    #video:active {
+        transform: scale(0.98);
+    }
 </style>
 
 <div class="row">
@@ -356,6 +365,22 @@ $logoUrl = setting('logo')
                 <button id="btnVolver" class="btn btn-outline-secondary">
                     ← Volver
                 </button>
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+
+                    <span class="fw-bold">📷 Cámara</span>
+
+                    <label class="switch">
+                        <input type="checkbox" id="modoArchivo">
+                        <span class="slider"></span>
+                    </label>
+
+                    <span class="fw-bold">📁 Archivo</span>
+
+                </div>
+
+                <small id="hintCamara" class="text-muted d-block text-center mb-2">
+                    Presione la imagen para reiniciar cámara
+                </small>
             </div>
 
             <!-- 🧾 PREVIEW -->
@@ -468,10 +493,12 @@ $logoUrl = setting('logo')
         const video = document.getElementById('video');
 
         video.addEventListener('click', () => {
+
+            if ($('#modoArchivo').is(':checked')) return; // 🔥 evita bug
+
             if (!stream || !stream.active) {
                 iniciarCamara();
             } else {
-                // opcional: reinicio manual siempre
                 stream.getTracks().forEach(track => track.stop());
                 iniciarCamara();
             }
@@ -481,7 +508,6 @@ $logoUrl = setting('logo')
         // CÁMARA
         // =========================
         async function iniciarCamara() {
-
             try {
 
                 let devices = await navigator.mediaDevices.enumerateDevices();
@@ -489,12 +515,12 @@ $logoUrl = setting('logo')
 
                 if (!hayCamara) {
 
-                    activarModoArchivo();
+                    $('#modoArchivo').prop('checked', true).trigger('change');
 
                     Swal.fire({
-                        icon: 'info',
-                        title: 'Modo archivo',
-                        text: 'No se detectó cámara. Debes subir una foto.'
+                        icon: 'warning',
+                        title: 'Cámara no disponible',
+                        text: 'Se activó modo subida de archivo.'
                     });
 
                     return;
@@ -512,7 +538,8 @@ $logoUrl = setting('logo')
 
                 console.error(err);
 
-                activarModoArchivo();
+                // 🔥 MISMA LÓGICA
+                $('#modoArchivo').prop('checked', true).trigger('change');
 
                 Swal.fire({
                     icon: 'warning',
@@ -626,8 +653,9 @@ $logoUrl = setting('logo')
         function activarModoArchivo() {
             $('#video').hide();
             $('#btnCapturar').hide();
-            $('#btnSubirFoto').show();
-            $('#btnSubirFoto').removeClass('btn-secondary').addClass('btn-warning');
+            $('#btnSubirFoto').show()
+                .removeClass('btn-secondary')
+                .addClass('btn-warning');
         }
 
         function formatearHora(hora) {
@@ -684,6 +712,38 @@ $logoUrl = setting('logo')
             }, 'image/webp', 0.7);
 
         });
+        $('#modoArchivo').change(function() {
+
+            if (this.checked) {
+                // 📁 MODO ARCHIVO
+                detenerCamara();
+
+                $('#video, #btnCapturar').fadeOut(200, function() {
+                    activarModoArchivo();
+                    $('#btnSubirFoto').fadeIn(200);
+                });
+
+                $('#hintCamara')
+                    .text('Seleccione una imagen desde su dispositivo')
+                    .fadeIn(200);
+
+            } else {
+                // 📷 MODO CÁMARA
+
+                $('#btnSubirFoto').fadeOut(200, function() {
+
+                    $('#video, #btnCapturar').fadeIn(200);
+
+                    iniciarCamara();
+                });
+
+                $('#hintCamara')
+                    .text('Presione la imagen para reiniciar cámara')
+                    .fadeIn(200);
+            }
+
+        });
+
         $('#btnSubirFoto').click(function() {
             $('#fileFoto').click();
         });

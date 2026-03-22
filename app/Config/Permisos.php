@@ -28,6 +28,7 @@ class Permisos extends BaseConfig
 
         'Paquetería' => [
             'crear_paquetes',
+            'ver_paquetes',
         ],
         
         /*
@@ -46,7 +47,6 @@ class Permisos extends BaseConfig
         ],
 
         'Paquetería' => [
-            'ver_paquetes',
             'ver_tracking',
             'crear_tracking',
         ],
