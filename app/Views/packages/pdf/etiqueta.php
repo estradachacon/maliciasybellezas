@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
 
     <style>
-@media print {
-}
-@page {
+        @media print {}
+
+        @page {
             margin: 0;
         }
 
@@ -172,12 +172,14 @@
             white-space: nowrap;
         }
 
-td, tr {
-    padding: 0;
-    margin: 0;
-    line-height: 1;
-    vertical-align: middle;
-}
+        td,
+        tr {
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            vertical-align: middle;
+        }
+
         .bloque {
             border-bottom: 1px dotted #999;
             padding-bottom: 2pt;
@@ -198,137 +200,104 @@ td, tr {
 
 <body>
 
-<div class="etiqueta">
+    <div class="etiqueta">
 
-    <table style="height:100%;">
+        <table style="width:100%; height:100%;">
 
-        <!-- 🔹 CONTENIDO -->
-        <tr>
-            <td style="vertical-align:top;">
+            <tr>
+                <!-- COLUMNA IZQUIERDA -->
+                <td style="width:30%; vertical-align:top;">
 
-                <!-- LOGO + CONTENIDO -->
-                <table>
-                    <tr>
+                    <!-- LOGO -->
+                    <img src="<?= $logo ?>" style="width:100%; max-height:64pt;">
 
-                        <!-- LOGO -->
-                        <td class="col-5" style="vertical-align:top;">
-                            <img src="<?= $logo ?>" style="width:100%; max-height:80pt;">
-                        </td>
+                    <!-- MENSAJE -->
+                    <div style="text-align:center; margin-top:3pt;">
+                        <img src="<?= base_url('img/gracias.png') ?>" style="width:110%; max-height:40pt;">
+                    </div>
 
-                        <!-- CONTENIDO -->
-                        <td class="col-15">
+                </td>
 
-                            <!-- HEADER -->
-                            <table style="border-bottom:1px solid #000; margin-bottom:2pt;">
-                                <tr>
-                                    <td>
-                                        <img src="<?= $titulo_img ?>" style="height:30pt;">
-                                    </td>
-                                    <td class="col-3" style="text-align:right; font-size:6pt;">
-                                        #<?= $codigo ?>
-                                    </td>
-                                </tr>
-                            </table>
-                            <!-- CLIENTE FULL -->
-                            <table class="bloque">
-                                <tr>
-                                    <td class="col-20">
-                                        <table>
-                                            <tr>
-                                                <td class="col-4 label">Cliente:</td>
-                                                <td class="col-16 value"><?= $cliente ?></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
+                <!-- COLUMNA DERECHA -->
+                <td style="width:70%; padding-left:4pt; vertical-align:top;">
 
-                            <!-- TEL + FECHA -->
-                            <table class="bloque">
-                                <tr>
-                                    <td class="col-10">
-                                        <table>
-                                            <tr>
-                                                <td class="col-6 label">Tel:</td>
-                                                <td class="col-14 value"><?= $telefono ?></td>
-                                            </tr>
-                                        </table>
-                                    </td>
+                    <!-- HEADER -->
+                    <table style="border-bottom:1px solid #000;">
+                        <tr>
+                            <td>
+                                <img src="<?= $titulo_img ?>" style="height:26pt;">
+                            </td>
+                            <td style="text-align:right; font-size:6pt;">
+                                #<?= $codigo ?>
+                            </td>
+                        </tr>
+                    </table>
 
-                                    <td class="col-10">
-                                        <table>
-                                            <tr>
-                                                <td class="col-6 label">Fecha:</td>
-                                                <td class="col-14 value">
-                                                    <?php
-                                                    Locale::setDefault('es_SV');
-                                                    $fmt = new IntlDateFormatter('es_SV', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
-                                                    $fmt->setPattern('EEE d');
-                                                    echo ucfirst($fmt->format(new DateTime($fecha)));
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
+                    <!-- CLIENTE -->
+                    <table class="bloque">
+                        <tr>
+                            <td class="label" style="width:30%;">Cliente:</td>
+                            <td><?= $cliente ?></td>
+                        </tr>
+                    </table>
 
-                            <!-- ENCOMENDISTA FULL -->
-                            <table class="bloque">
-                                <tr>
-                                    <td class="col-20">
-                                        <table>
-                                            <tr>
-                                                <td class="col-6 label">Encomendista:</td>
-                                                <td class="col-14 value">
-                                                    <?= wordwrap($encomendista, 30, true) ?>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
+                    <!-- TEL + FECHA -->
+                    <table class="bloque">
+                        <tr>
+                            <td style="width:50%;">
+                                <span class="label">Tel:</span> <?= $telefono ?>
+                            </td>
+                            <td style="width:50%;">
+                                <span class="label">Fecha:</span>
+                                <?php
+                                Locale::setDefault('es_SV');
+                                $fmt = new IntlDateFormatter('es_SV', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
+                                $fmt->setPattern('EEE d');
+                                echo ucfirst($fmt->format(new DateTime($fecha)));
+                                ?>
+                            </td>
+                        </tr>
+                    </table>
 
-                        </td>
+                    <!-- ENCOMENDISTA -->
+                    <table class="bloque">
+                        <tr>
+                            <td class="label" style="width:30%;">Encomendista:</td>
+                            <td><?= $encomendista ?></td>
+                        </tr>
+                    </table>
 
-                    </tr>
-                </table>
+                    <!-- 🔥 DESTINO AHORA DENTRO DE LA COLUMNA -->
+                    <table class="bloque">
+                        <tr>
+                            <td class="label" style="width:25%;">Destino:</td>
+                            <td>
+                                <?= $destino ?>
+                                <?php if (!empty($hora)): ?>
+                                    (<?= $hora ?>)
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    </table>
 
-                <!-- DESTINO (full width) -->
-                <table class="bloque">
-                    <tr>
-                        <td class="col-2 label">Destino:</td>
-                        <td class="col-10 value">
-                            <?= $destino ?>
-                            <?php if (!empty($hora)): ?>
-                                (<?= $hora ?>)
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                </table>
+                </td>
+            </tr>
 
-            </td>
-        </tr>
-        <!-- ESPACIADOR QUE CRECE -->
-        <tr>
-            <td></td>
-        </tr>
-        <!-- FOOTER FIJO ABAJO -->
-        <tr>
-            <td style="vertical-align:bottom;">
+            <!-- FOOTER -->
+            <tr>
+                <td colspan="2" style="vertical-align:bottom;">
+                    <table>
+                        <tr>
+                            <td style="text-align:right; font-weight:bold; font-size:9pt;">
+                                Total: $<?= $total ?>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
 
-                <table>
-                    <tr>
-                        <td class="col-20" style="text-align:right; font-weight:bold; font-size:9pt;">
-                            Total: $<?= $total ?>
-                        </td>
-                    </tr>
-                </table>
+        </table>
 
-            </td>
-        </tr>
-
-    </table>
     </div>
 </body>
 
