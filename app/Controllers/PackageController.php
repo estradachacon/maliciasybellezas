@@ -25,38 +25,66 @@ class PackageController extends BaseController
         $this->packages = new PackageModel();
     }
 
-    public function index()
-    {
-        $model = new PackageModel();
+public function index()
+{
+    $model = new \App\Models\PackageModel();
 
-        // filtros
-        $cliente = $this->request->getGet('cliente');
-        $fecha   = $this->request->getGet('fecha');
+    $cliente = $this->request->getGet('cliente');
+    $fecha   = $this->request->getGet('fecha');
+    $estado  = $this->request->getGet('estado');
 
-        if ($cliente) {
-            $model->like('cliente_nombre', $cliente);
+    // 🔥 QUERY BASE
+    $builder = $model;
+
+    // =========================
+    // FILTROS
+    // =========================
+
+    if (!empty($cliente)) {
+        $builder = $builder->like('cliente_nombre', $cliente);
+    }
+
+    if (!empty($fecha)) {
+        $builder = $builder->where('dia_entrega', $fecha);
+    }
+
+    // 👇 este depende de tu lógica real (ahorita no tienes campo estado)
+    if ($estado !== '' && $estado !== null) {
+
+        if ($estado == '1') {
+            $builder = $builder->where('total', 0); // cancelado
+        } else {
+            $builder = $builder->where('total >', 0); // activo
         }
+    }
 
-        if ($fecha) {
-            $model->where('DATE(dia_entrega)', $fecha);
-        }
+    // =========================
+    // PAGINACIÓN
+    // =========================
 
-        $paquetes = $model->orderBy('id', 'DESC')->paginate(10);
-        $pager = $model->pager;
+    $paquetes = $builder->paginate(10);
+    $pager = $builder->pager;
 
-        // AJAX
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
-                'pager' => $pager->links('default', 'default_full')
-            ]);
-        }
+    // =========================
+    // AJAX
+    // =========================
 
-        return view('packages/index', [
-            'paquetes' => $paquetes,
-            'pager' => $pager
+    if ($this->request->isAJAX()) {
+        return $this->response->setJSON([
+            'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
+            'pager' => $pager->links('default', 'bitacora_pagination')
         ]);
     }
+
+    // =========================
+    // NORMAL
+    // =========================
+
+    return view('packages/index', [
+        'paquetes' => $paquetes,
+        'pager' => $pager
+    ]);
+}
 
     public function show($id)
     {

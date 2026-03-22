@@ -1,9 +1,50 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
+<style>
+    .info-label {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
 
+    .info-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .info-sub {
+        font-size: 14px;
+        color: #495057;
+    }
+
+    .card-section {
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        background: #fff;
+        transition: 0.2s;
+    }
+
+    .card-section:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .total-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    .total-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #198754;
+    }
+</style>
 <div class="row">
     <div class="col-md-12">
-
         <div class="card shadow-sm">
 
             <!-- HEADER -->
@@ -26,92 +67,76 @@
 
             <div class="card-body">
 
-                <!-- INFO PRINCIPAL -->
-                <div class="row mb-4">
+                <div class="row">
 
-                    <!-- CLIENTE -->
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded h-100">
+                    <!-- 🔵 COLUMNA IZQUIERDA -->
+                    <div class="col-md-8">
 
-                            <small class="text-muted">Cliente</small>
-                            <div class="fw-bold">
+                        <!-- CLIENTE -->
+                        <div class="card-section mb-3">
+                            <div class="info-label">Cliente</div>
+                            <div class="info-value">
                                 <?= esc($paquete->cliente_nombre) ?>
                             </div>
 
-                            <small class="text-muted mt-2 d-block">Teléfono</small>
-                            <div>
+                            <div class="info-label mt-2">Teléfono</div>
+                            <div class="info-sub">
                                 <?= esc($paquete->cliente_telefono) ?>
                             </div>
-
                         </div>
-                    </div>
 
-                    <!-- ENTREGA -->
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded h-100">
-
-                            <small class="text-muted">Fecha de entrega</small>
-                            <div class="fw-bold">
+                        <!-- ENTREGA -->
+                        <div class="card-section mb-3">
+                            <div class="info-label">Fecha de entrega</div>
+                            <div class="info-value">
                                 <?= date('d/m/Y', strtotime($paquete->dia_entrega)) ?>
                             </div>
 
-                            <small class="text-muted mt-2 d-block">Horario</small>
-                            <div>
+                            <div class="info-label mt-2">Horario</div>
+                            <div class="info-sub">
                                 <?= $paquete->hora_inicio ?> - <?= $paquete->hora_fin ?>
                             </div>
-
                         </div>
-                    </div>
 
-                </div>
-
-                <!-- DESTINO -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="p-3 border rounded">
-
-                            <small class="text-muted">Destino</small>
-                            <div class="fw-semibold">
+                        <!-- DESTINO -->
+                        <div class="card-section mb-3">
+                            <div class="info-label">Destino</div>
+                            <div class="info-value">
                                 <?= esc($paquete->destino) ?>
                             </div>
 
-                            <small class="text-muted mt-2 d-block">Encomendista</small>
-                            <div>
+                            <div class="info-label mt-2">Encomendista</div>
+                            <div class="info-sub">
                                 <?= esc($paquete->encomendista_nombre ?: '—') ?>
                             </div>
-
                         </div>
-                    </div>
-                </div>
 
-                <!-- FOTO -->
-                <?php if (!empty($paquete->foto)): ?>
-                    <div class="row mb-4">
-                        <div class="col-md-12 text-center">
-
-                            <small class="text-muted d-block mb-2">Foto del paquete</small>
-
-                            <img src="<?= base_url('uploads/paquetes/' . $paquete->foto) ?>"
-                                class="img-fluid rounded shadow"
-                                style="max-height:300px; cursor:pointer;"
-                                onclick="verImagen(this.src)">
-
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- TOTAL -->
-                <div class="row">
-
-                    <div class="col-md-4 offset-md-8">
-
-                        <div class="p-3 border rounded text-end bg-light">
-
-                            <small class="text-muted">Total</small>
-
-                            <div class="fs-4 fw-bold text-success">
+                        <!-- TOTAL -->
+                        <div class="card-section total-box text-end">
+                            <div class="info-label">Total</div>
+                            <div class="total-value">
                                 $<?= number_format($paquete->total, 2) ?>
                             </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 🟡 COLUMNA DERECHA (FOTO) -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded text-center h-100" style="position: sticky; top:20px; border-radius:12px;">
+
+                            <div class="info-label mb-2">Foto del paquete</div>
+
+                            <?php if (!empty($paquete->foto)): ?>
+                                <img src="<?= base_url('upload/paquetes/' . $paquete->foto) ?>"
+                                    class="img-fluid rounded shadow-sm"
+                                    style="max-height:350px; cursor:pointer;"
+                                    onclick="verImagen(this.src)">
+                            <?php else: ?>
+                                <div class="text-muted">
+                                    Sin imagen
+                                </div>
+                            <?php endif; ?>
 
                         </div>
 
@@ -138,10 +163,10 @@
 </div>
 
 <script>
-function verImagen(src) {
-    $('#imagenGrande').attr('src', src);
-    new bootstrap.Modal(document.getElementById('modalImagen')).show();
-}
+    function verImagen(src) {
+        $('#imagenGrande').attr('src', src);
+        new bootstrap.Modal(document.getElementById('modalImagen')).show();
+    }
 </script>
 
 <?= $this->endSection() ?>
