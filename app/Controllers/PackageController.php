@@ -39,7 +39,9 @@ class PackageController extends BaseController
         $settings = $settingModel->first();
         $horaInicio = $this->request->getGet('hora_inicio');
         $horaFin = $this->request->getGet('hora_fin');
-
+        $tituloImg = $this->generarTituloImagen('MALICIAS Y BELLEZAS');
+dd($tituloImg);
+        $data['titulo_img'] = $tituloImg;
         $data = [
             'logo' => !empty($settings->logo)
                 ? base_url('upload/settings/' . $settings->logo)
@@ -57,6 +59,7 @@ class PackageController extends BaseController
             ),
             'total' => $this->request->getGet('total'),
             'encomendista' => $this->request->getGet('encomendista_nombre'),
+            'titulo_img' => $tituloImg, 
         ];
 
         $html = view('packages/pdf/etiqueta', $data);
@@ -79,6 +82,43 @@ class PackageController extends BaseController
         if (empty($hora)) return '';
 
         return date('g:i A', strtotime($hora));
+    }
+    private function generarTituloImagen($texto)
+    {
+        $rutaFuente = FCPATH . 'fonts/FleurDeLeah-Regular.ttf';
+
+        $ancho = 600;
+        $alto = 100;
+
+        $imagen = imagecreatetruecolor($ancho, $alto);
+
+        // Fondo transparente
+        imagesavealpha($imagen, true);
+        $transparente = imagecolorallocatealpha($imagen, 0, 0, 0, 127);
+        imagefill($imagen, 0, 0, $transparente);
+
+        // Color negro
+        $color = imagecolorallocate($imagen, 0, 0, 0);
+
+        // Tamaño fuente
+        $size = 28;
+
+        // Centrar texto
+        $bbox = imagettfbbox($size, 0, $rutaFuente, $texto);
+        $textWidth = $bbox[2] - $bbox[0];
+        $textHeight = $bbox[1] - $bbox[7];
+
+        $x = ($ancho - $textWidth) / 2;
+        $y = ($alto + $textHeight) / 2;
+
+        imagettftext($imagen, $size, 0, $x, $y, $color, $rutaFuente, $texto);
+
+        // Guardar temporal
+        $ruta = WRITEPATH . 'cache/titulo.png';
+        imagepng($imagen, $ruta);
+        imagedestroy($imagen);
+
+        return 'file:///' . str_replace('\\', '/', $ruta);
     }
     public function guardar()
     {

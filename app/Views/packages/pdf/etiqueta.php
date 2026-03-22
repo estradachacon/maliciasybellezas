@@ -9,10 +9,11 @@
             margin: 0;
         }
 
-@font-face {
-    font-family: 'FleurDeLeah';
-    src: url("<?= realpath(FCPATH . 'fonts/FleurDeLeah-Regular.ttf') ?>") format("truetype");
-}
+        .fleur-de-leah-regular {
+            font-family: "Fleur De Leah", cursive;
+            font-weight: 400;
+            font-style: normal;
+        }
 
         html,
         body {
@@ -214,11 +215,8 @@
                             <!-- HEADER -->
                             <table style="border-bottom:1px solid #000; margin-bottom:2pt;">
                                 <tr>
-<td style="
-    font-family: 'FleurDeLeah';
-    font-size: 12pt;
-">
-                                        MALICIAS Y BELLEZAS
+                                    <td>
+                                        <img src="<?= $titulo_img ?>" style="height:30pt;">
                                     </td>
                                     <td class="col-3" style="text-align:right; font-size:6pt;">
                                         #<?= $codigo ?>
