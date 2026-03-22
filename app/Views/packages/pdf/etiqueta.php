@@ -308,7 +308,7 @@
                 <table>
                     <tr>
                         <td class="col-20" style="text-align:right; font-weight:bold; font-size:9pt;">
-                            Total: $<?= number_format($total, 2) ?>
+                            Total: $<?= $total ?>
                         </td>
                     </tr>
                 </table>
