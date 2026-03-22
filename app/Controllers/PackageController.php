@@ -25,66 +25,66 @@ class PackageController extends BaseController
         $this->packages = new PackageModel();
     }
 
-public function index()
-{
-    $model = new \App\Models\PackageModel();
+    public function index()
+    {
+        $model = new PackageModel();
 
-    $cliente = $this->request->getGet('cliente');
-    $fecha   = $this->request->getGet('fecha');
-    $estado  = $this->request->getGet('estado');
+        $cliente = $this->request->getGet('cliente');
+        $fecha   = $this->request->getGet('fecha');
+        $estado  = $this->request->getGet('estado');
 
-    // 🔥 QUERY BASE
-    $builder = $model;
+        // 🔥 QUERY BASE
+        $builder = $model;
 
-    // =========================
-    // FILTROS
-    // =========================
+        // =========================
+        // FILTROS
+        // =========================
 
-    if (!empty($cliente)) {
-        $builder = $builder->like('cliente_nombre', $cliente);
-    }
-
-    if (!empty($fecha)) {
-        $builder = $builder->where('dia_entrega', $fecha);
-    }
-
-    // 👇 este depende de tu lógica real (ahorita no tienes campo estado)
-    if ($estado !== '' && $estado !== null) {
-
-        if ($estado == '1') {
-            $builder = $builder->where('total', 0); // cancelado
-        } else {
-            $builder = $builder->where('total >', 0); // activo
+        if (!empty($cliente)) {
+            $builder = $builder->like('cliente_nombre', $cliente);
         }
-    }
 
-    // =========================
-    // PAGINACIÓN
-    // =========================
+        if (!empty($fecha)) {
+            $builder = $builder->where('dia_entrega', $fecha);
+        }
 
-    $paquetes = $builder->paginate(10);
-    $pager = $builder->pager;
+        // 👇 este depende de tu lógica real (ahorita no tienes campo estado)
+        if ($estado !== '' && $estado !== null) {
 
-    // =========================
-    // AJAX
-    // =========================
+            if ($estado == '1') {
+                $builder = $builder->where('total', 0); // cancelado
+            } else {
+                $builder = $builder->where('total >', 0); // activo
+            }
+        }
 
-    if ($this->request->isAJAX()) {
-        return $this->response->setJSON([
-            'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
-            'pager' => $pager->links('default', 'bitacora_pagination')
+        // =========================
+        // PAGINACIÓN
+        // =========================
+        $builder = $builder->orderBy('id', 'DESC');
+        $paquetes = $builder->paginate(10);
+        $pager = $builder->pager;
+
+        // =========================
+        // AJAX
+        // =========================
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
+                'pager' => $pager->links('default', 'bitacora_pagination')
+            ]);
+        }
+
+        // =========================
+        // NORMAL
+        // =========================
+
+        return view('packages/index', [
+            'paquetes' => $paquetes,
+            'pager' => $pager
         ]);
     }
-
-    // =========================
-    // NORMAL
-    // =========================
-
-    return view('packages/index', [
-        'paquetes' => $paquetes,
-        'pager' => $pager
-    ]);
-}
 
     public function show($id)
     {
@@ -202,7 +202,6 @@ public function index()
 
             $model = new PackageModel();
 
-            // 🔥 SOLO TOMAR LOS CAMPOS VÁLIDOS (evita basura)
             $data = [
                 'cliente_nombre'       => $this->request->getPost('cliente_nombre'),
                 'cliente_telefono'     => $this->request->getPost('cliente_telefono'),
@@ -213,10 +212,11 @@ public function index()
                 'encomendista_nombre'  => $this->request->getPost('encomendista_nombre'),
             ];
 
-            // 🔥 LIMPIAR NUMÉRICOS (muy importante)
-            $data['total']  = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
+            $data['total'] = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
 
-            // 🔥 FOTO
+            // =========================
+            // FOTO
+            // =========================
             $file = $this->request->getFile('foto');
 
             if ($file && $file->isValid() && !$file->hasMoved()) {
@@ -225,7 +225,6 @@ public function index()
 
                 $path = ROOTPATH . 'public/upload/paquetes/';
 
-                // Crear carpeta si no existe
                 if (!is_dir($path)) {
                     mkdir($path, 0777, true);
                 }
@@ -235,13 +234,30 @@ public function index()
                 $data['foto'] = $nombre;
             }
 
-            // 🔥 INSERT CON VALIDACIÓN
+            // =========================
+            // INSERT
+            // =========================
             if (!$model->insert($data)) {
                 return $this->response->setJSON([
                     'status' => 'error',
                     'errors' => $model->errors()
                 ]);
             }
+
+            // ID INSERTADO
+            $id = $model->getInsertID();
+
+            // BITÁCORA 
+            $session = session();
+
+            registrar_bitacora(
+                'Creación de paquete ID ' . $id,
+                'Paquetes',
+                'Cliente: ' . esc($data['cliente_nombre']) .
+                    ' | Destino: ' . esc($data['destino']) .
+                    ' | Total: $' . number_format($data['total'], 2),
+                $session->get('id')
+            );
 
             return $this->response->setJSON([
                 'status' => 'ok'
