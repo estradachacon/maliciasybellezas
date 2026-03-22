@@ -40,7 +40,7 @@ class PackageController extends BaseController
         $horaInicio = $this->request->getGet('hora_inicio');
         $horaFin = $this->request->getGet('hora_fin');
         $tituloImg = $this->generarTituloImagen('MALICIAS Y BELLEZAS');
-dd($tituloImg);
+
         $data['titulo_img'] = $tituloImg;
         $data = [
             'logo' => !empty($settings->logo)
