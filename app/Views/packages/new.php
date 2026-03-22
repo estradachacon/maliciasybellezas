@@ -308,7 +308,7 @@ $faviconUrl = base_url('favicon.ico');
                         </div>
                         <div class="col-md-12 mb-2 mt-2">
                             <div class="switch-container">
-                                
+
                                 <span id="estadoTexto" class="estado activo">Cobrar total</span>
 
                                 <label class="switch">
@@ -447,6 +447,18 @@ $faviconUrl = base_url('favicon.ico');
             $('#seccionFinal').hide();
             $('#formPaquete').removeClass('blur');
             detenerCamara();
+        });
+
+        const video = document.getElementById('video');
+
+        video.addEventListener('click', () => {
+            if (!stream || !stream.active) {
+                iniciarCamara();
+            } else {
+                // opcional: reinicio manual siempre
+                stream.getTracks().forEach(track => track.stop());
+                iniciarCamara();
+            }
         });
 
         // =========================
@@ -626,20 +638,41 @@ $faviconUrl = base_url('favicon.ico');
         // =========================
         $('#btnGuardarFinal').click(function() {
 
+            // 🔒 evitar múltiples clicks
+            if ($(this).data('loading')) return;
+
             if (!imagenWebp && !imagenFile) {
                 Swal.fire('Falta foto', 'Debes tomar una foto', 'warning');
                 return;
             }
 
+            let btn = $(this);
+            btn.data('loading', true);
+            btn.prop('disabled', true);
+
             let formData = new FormData($('#formPaquete')[0]);
+
             if (imagenWebp) {
                 formData.append('foto', imagenWebp);
             } else if (imagenFile) {
                 formData.append('foto', imagenFile);
             }
+
             formData.append('precio', limpiarNumero($('#precio').val()));
             formData.append('envio', limpiarNumero($('#envio').val()));
             formData.append('total', limpiarNumero($('#total').val()));
+
+            // 🔥 LOADING
+            Swal.fire({
+                title: 'Guardando paquete...',
+                text: 'Por favor espera',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                    $('#video').addClass('blur');
+                }
+            });
 
             $.ajax({
                 url: '<?= base_url('paquetes/guardar') ?>',
@@ -649,23 +682,36 @@ $faviconUrl = base_url('favicon.ico');
                 processData: false,
                 success: function(res) {
 
-                    console.log(res);
-
                     if (res.status === 'ok') {
 
-                        Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
-                            .then(() => location.reload());
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Guardado',
+                            text: 'Paquete registrado correctamente'
+                        }).then(() => location.reload());
 
                     } else {
+
+                        btn.data('loading', false);
+                        btn.prop('disabled', false);
 
                         Swal.fire(
                             'Error',
                             JSON.stringify(res.errors || res.msg || res),
                             'error'
                         );
+                        $('#video').removeClass('blur');
                     }
+                },
+                error: function() {
+
+                    btn.data('loading', false);
+                    btn.prop('disabled', false);
+
+                    Swal.fire('Error', 'Error en el servidor', 'error');
                 }
             });
+
         });
 
         // =========================
