@@ -263,6 +263,15 @@ $logoUrl = setting('logo')
     #video:active {
         transform: scale(0.98);
     }
+
+    .form-control.is-valid {
+        border-color: #198754;
+        padding-right: 2.5rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23198754' viewBox='0 0 16 16'%3E%3Cpath d='M13.485 1.929l.707.707L6 10.828 1.808 6.636l.707-.707L6 9.414z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px;
+    }
 </style>
 
 <div class="row">
@@ -281,17 +290,17 @@ $logoUrl = setting('logo')
 
                         <div class="col-md-6">
                             <label>Cliente</label>
-                            <input type="text" name="cliente_nombre" class="form-control">
+                            <input type="text" name="cliente_nombre" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
                             <label>Teléfono</label>
-                            <input type="text" name="cliente_telefono" class="form-control">
+                            <input type="text" name="cliente_telefono" class="form-control" required>
                         </div>
 
                         <div class="col-md-6 mt-2">
                             <label>Día de entrega</label>
-                            <input type="date" name="dia_entrega" class="form-control">
+                            <input type="date" name="dia_entrega" class="form-control" required>
                         </div>
                         <div class="col-md-3 mt-2">
                             <label>Hora inicio</label>
@@ -304,12 +313,12 @@ $logoUrl = setting('logo')
                         </div>
                         <div class="col-md-12 mt-2">
                             <label>Destino</label>
-                            <input type="text" name="destino" class="form-control">
+                            <input type="text" name="destino" class="form-control" required>
                         </div>
 
                         <div class="col-md-12 mt-2">
                             <label>Encomendista</label>
-                            <input type="text" name="encomendista_nombre" class="form-control">
+                            <input type="text" name="encomendista_nombre" class="form-control" required>
                         </div>
 
                         <div class="col-md-12 mt-3">
@@ -456,6 +465,54 @@ $logoUrl = setting('logo')
 
         $('#btnGuardar').click(function() {
 
+            let errores = [];
+
+            let cliente = $('[name="cliente_nombre"]').val().trim();
+            let telefono = $('[name="cliente_telefono"]').val().trim();
+            let fecha = $('[name="dia_entrega"]').val();
+            let destino = $('[name="destino"]').val().trim();
+            let encomendista = $('[name="encomendista_nombre"]').val().trim();
+            let total = limpiarNumero($('#total').val());
+            let cancelado = $('#cancelado').is(':checked');
+
+            // 🔥 VALIDACIONES
+            if (!cliente) errores.push('Debe ingresar el cliente');
+
+            if (!telefono) {
+                errores.push('Debe ingresar el teléfono');
+            } else if (!/^\d{8}$/.test(telefono)) {
+                errores.push('El teléfono debe tener 8 dígitos');
+            }
+
+            if (!fecha) errores.push('Debe seleccionar fecha de entrega');
+
+            if (!destino) errores.push('Debe ingresar destino');
+
+            if (!encomendista) errores.push('Debe ingresar encomendista');
+
+            if (!cancelado && total <= 0) {
+                errores.push('Debe ingresar un total o marcar como cancelado');
+            }
+
+            // 🚫 SI HAY ERRORES
+            if (errores.length > 0) {
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validación',
+                    html: `
+                <div style="text-align:left">
+                    <ul>
+                        ${errores.map(e => `<li>${e}</li>`).join('')}
+                    </ul>
+                </div>
+            `
+                });
+
+                return;
+            }
+
+            // ✅ TODO OK
             let data = $('#formPaquete').serializeArray();
             let obj = {};
             data.forEach(x => obj[x.name] = x.value);
@@ -482,8 +539,25 @@ $logoUrl = setting('logo')
                     iniciarCamara();
                 }
             });
-        });
 
+        });
+        $('[name="cliente_telefono"]').on('input', function() {
+
+            let val = this.value.replace(/\D/g, '');
+            this.value = val;
+
+            let input = $(this);
+
+            // quitar estado previo
+            input.removeClass('is-valid is-invalid');
+
+            if (val.length === 8) {
+                input.addClass('is-valid');
+            } else if (val.length > 0) {
+                input.addClass('is-invalid');
+            }
+
+        });
         $('#btnVolver').click(function() {
             $('#seccionFinal').hide();
             $('#formPaquete').removeClass('blur');

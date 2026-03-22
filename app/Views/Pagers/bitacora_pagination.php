@@ -9,7 +9,7 @@ $totalPages = $pager->getPageCount();
 ?>
 
 <nav aria-label="<?= lang('Pager.pageNavigation') ?>" class="rounded-lg shadow-sm">
-    <ul class="pagination justify-content-center m-0 p-2">
+    <ul class="pagination m-0 p-2">
 
         <!-- Enlace 'Inicio' (<<) y 'Anterior' (<) -->
         <?php if ($pager->hasPrevious()) : ?>
@@ -64,6 +64,6 @@ $totalPages = $pager->getPageCount();
     </ul>
 </nav>
 
-<div class="text-center text-sm mt-2 text-muted">
+<div class="text-sm mt-2 text-muted">
     Mostrando Página <?= esc($currentPage) ?> de <?= esc($totalPages) ?>
 </div>

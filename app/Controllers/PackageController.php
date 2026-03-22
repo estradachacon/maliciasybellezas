@@ -25,9 +25,53 @@ class PackageController extends BaseController
         $this->packages = new PackageModel();
     }
 
-    public function index() {}
+    public function index()
+    {
+        $model = new PackageModel();
 
-    public function show($id = null) {}
+        // filtros
+        $cliente = $this->request->getGet('cliente');
+        $fecha   = $this->request->getGet('fecha');
+
+        if ($cliente) {
+            $model->like('cliente_nombre', $cliente);
+        }
+
+        if ($fecha) {
+            $model->where('DATE(dia_entrega)', $fecha);
+        }
+
+        $paquetes = $model->orderBy('id', 'DESC')->paginate(10);
+        $pager = $model->pager;
+
+        // AJAX
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
+                'pager' => $pager->links('default', 'default_full')
+            ]);
+        }
+
+        return view('packages/index', [
+            'paquetes' => $paquetes,
+            'pager' => $pager
+        ]);
+    }
+
+    public function show($id)
+    {
+        $model = new PackageModel();
+
+        $paquete = $model->find($id);
+
+        if (!$paquete) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Paquete no encontrado");
+        }
+
+        return view('packages/show', [
+            'paquete' => $paquete
+        ]);
+    }
 
     public function new()
     {
