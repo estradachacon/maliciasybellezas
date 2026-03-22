@@ -37,8 +37,10 @@ class PackageController extends BaseController
     {
         $settingModel = new \App\Models\SettingModel();
         $settings = $settingModel->first();
+        $horaInicio = $this->request->getGet('hora_inicio');
+        $horaFin = $this->request->getGet('hora_fin');
+
         $data = [
-            // 👇 ESTA ES LA CLAVE
             'logo' => !empty($settings->logo)
                 ? base_url('upload/settings/' . $settings->logo)
                 : null,
@@ -48,7 +50,11 @@ class PackageController extends BaseController
             'telefono' => $this->request->getGet('cliente_telefono'),
             'destino' => $this->request->getGet('destino'),
             'fecha' => $this->request->getGet('dia_entrega'),
-            'hora' => $this->request->getGet('hora_inicio') . ' - ' . $this->request->getGet('hora_fin'),
+            'hora' => trim(
+                ($horaInicio ? $this->formatearHora($horaInicio) : '') .
+                    ($horaInicio && $horaFin ? ' - ' : '') .
+                    ($horaFin ? $this->formatearHora($horaFin) : '')
+            ),
             'precio' => $this->request->getGet('precio'),
             'envio' => $this->request->getGet('envio'),
             'total' => $this->request->getGet('total'),
@@ -68,6 +74,13 @@ class PackageController extends BaseController
         return $this->response
             ->setContentType('application/pdf')
             ->setBody($dompdf->output());
+    }
+
+    public function formatearHora($hora)
+    {
+        if (empty($hora)) return '';
+
+        return date('g:i A', strtotime($hora));
     }
     public function guardar()
     {
