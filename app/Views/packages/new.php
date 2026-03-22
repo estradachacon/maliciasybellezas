@@ -1,7 +1,9 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
 <?php
-$faviconUrl = base_url('favicon.ico');
+$logoUrl = setting('logo') 
+    ? base_url('upload/settings/' . setting('logo')) 
+    : '';
 ?>
 <style>
     #overlayPreview {
@@ -237,6 +239,21 @@ $faviconUrl = base_url('favicon.ico');
     .switch input:checked+.slider:before {
         transform: translateX(24px);
     }
+
+    #miniPreview .etiqueta {
+        width: 262pt;
+        height: 110pt;
+        margin: 4pt auto;
+        padding: 5pt;
+        border: 2px solid #000;
+        border-radius: 4%;
+        font-family: sans-serif;
+        font-size: 9pt;
+    }
+
+    #miniPreview>div {
+        pointer-events: none;
+    }
 </style>
 
 <div class="row">
@@ -343,16 +360,25 @@ $faviconUrl = base_url('favicon.ico');
 
         <div class="card-body">
             <?php $codigoVendedor = session('codigo_vendedor'); ?>
-            <!-- MINI PREVIEW -->
-            <div class="mb-2">
+
+            <!-- 🔙 VOLVER ARRIBA -->
+            <div class="d-flex justify-content-start mb-2">
+                <button id="btnVolver" class="btn btn-outline-secondary">
+                    ← Volver
+                </button>
+            </div>
+
+            <!-- 🧾 PREVIEW -->
+            <div class="mb-2 text-center">
                 <div id="miniPreview"></div>
             </div>
-            <button id="btnImprimirFinal" class="btn btn-secondary">
-                Imprimir
-            </button>
-            <button id="btnVolver" class="btn btn-outline-secondary">
-                ← Volver
-            </button>
+
+            <!-- 🖨️ IMPRIMIR ABAJO DERECHA -->
+            <div class="d-flex justify-content-end mb-3">
+                <button id="btnImprimirFinal" class="btn btn-secondary">
+                    🖨️ Imprimir
+                </button>
+            </div>
             <!-- FOTO -->
             <div class="text-center">
                 <video id="video" autoplay playsinline class="video-camara"></video>
@@ -510,6 +536,7 @@ $faviconUrl = base_url('favicon.ico');
 
             let fecha = new Date(p.dia_entrega);
             let vendedor = "<?= $codigoVendedor ?>";
+            let logo = "<?= $logoUrl ?>";
 
             let horaInicio = p.hora_inicio || '';
             let horaFin = p.hora_fin || '';
@@ -519,40 +546,92 @@ $faviconUrl = base_url('favicon.ico');
                 '';
 
             let dia = fecha.toLocaleDateString('es-SV', {
-                weekday: 'long',
+                weekday: 'short',
                 day: 'numeric'
             });
 
             $('#miniPreview').html(`
-        <div class="etiqueta">
-            <div style="position:absolute; top:2px; right:5px; font-size:7px;">
-                ${vendedor}
-            </div>
+    <div style="zoom:1.2;">
 
-            <div class="contenedor">
-                <div class="col-logo">
-                    <img src="<?= $faviconUrl ?>" class="logo">
-                </div>
-                <div class="col-data">
-                    <div class="empresa">MALICIAS Y BELLEZAS</div>
+    <div class="etiqueta">
 
-                    <div class="fila"><b>CLIENTE:</b> ${p.cliente_nombre || ''}</div>
-                    <div class="fila"><b>TEL:</b> ${p.cliente_telefono || ''}</div>
-                    <div class="fila"><b>DESTINO:</b> ${p.destino || ''}</div>
-                    <div class="fila"><b>ENTREGA:</b> ${dia || ''}</div>
-                    <div class="fila"><b>HORA:</b> ${rangoHora}</div>
-                    <div class="fila">
-    <b>ENCOM:</b> ${p.encomendista_nombre ? p.encomendista_nombre : '—'}
-</div>
-                </div>
-            </div>
+        <table style="width:100%;">
 
-            <div class="footer">
-                <div class="box">PRECIO $${p.precio || '0.00'}</div>
-                <div class="box">ENVÍO $${p.envio || '0.00'}</div>
-                <div class="box total">TOTAL $${p.total || '0.00'}</div>
-            </div>
-        </div>
+            <tr>
+                <!-- LOGO -->
+                <td style="width:30%; text-align:center; vertical-align:top;">
+                    ${logo ? `
+                        <img src="${logo}" style="width:100%; max-height:80px; object-fit:contain;">
+                    ` : ``}
+                </td>
+
+                <!-- CONTENIDO -->
+                <td style="width:70%; padding-left:5px;">
+
+                    <!-- HEADER -->
+                    <table style="width:100%; border-bottom:1px solid #000; margin-bottom:2px;">
+                        <tr>
+                            <td style="font-size:10px; font-weight:bold;">
+                                MALICIAS Y BELLEZAS
+                            </td>
+                            <td style="text-align:right; font-size:6px;">
+                                #${vendedor}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- CLIENTE + TEL -->
+                    <table style="width:100%; border-bottom:1px dotted #ccc;">
+                        <tr>
+                            <td style="width:65%;">
+                                <b>Cliente:</b> ${p.cliente_nombre || ''}
+                            </td>
+                            <td style="width:35%;">
+                                <b>Tel:</b> ${p.cliente_telefono || ''}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- FECHA + ENCOM -->
+                    <table style="width:100%; border-bottom:1px dotted #ccc;">
+                        <tr>
+                            <td style="width:40%;">
+                                <b>Fecha:</b> ${dia}
+                            </td>
+                            <td style="width:60%;">
+                                <b>Encomend:</b> ${p.encomendista_nombre || '—'}
+                            </td>
+                        </tr>
+                    </table>
+
+                </td>
+            </tr>
+
+        </table>
+
+        <!-- DESTINO -->
+        <table style="width:100%; border-bottom:1px dotted #ccc;">
+            <tr>
+                <td>
+                    <b>Destino:</b> ${p.destino || ''}
+                    ${rangoHora ? `(${rangoHora})` : ''}
+                </td>
+            </tr>
+        </table>
+
+        <!-- FOOTER -->
+        <table style="width:100%; margin-top:3px;">
+            <tr>
+                <td style="width:33%;">Precio: $${p.precio || '0.00'}</td>
+                <td style="width:33%;">Envío: $${p.envio || '0.00'}</td>
+                <td style="width:34%; text-align:right; font-weight:bold;">
+                    Total: $${p.total || '0.00'}
+                </td>
+            </tr>
+        </table>
+
+    </div>
+    </div>
     `);
         }
 
