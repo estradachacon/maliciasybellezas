@@ -35,9 +35,15 @@ class PackageController extends BaseController
     }
     public function generarEtiqueta()
     {
+        $settingModel = new \App\Models\SettingModel();
+        $settings = $settingModel->first();
         $data = [
-            'logo' => base_url('favicon.ico'), // dompdf sí soporta esto
-            'codigo' => session('codigo_vendedor') ?? 'N/A',
+            // 👇 ESTA ES LA CLAVE
+            'logo' => !empty($settings->logo)
+                ? base_url('upload/settings/' . $settings->logo)
+                : null,
+
+            'codigo' => session('codigo_vendedor'),
             'cliente' => $this->request->getGet('cliente_nombre'),
             'telefono' => $this->request->getGet('cliente_telefono'),
             'destino' => $this->request->getGet('destino'),
@@ -46,19 +52,16 @@ class PackageController extends BaseController
             'precio' => $this->request->getGet('precio'),
             'envio' => $this->request->getGet('envio'),
             'total' => $this->request->getGet('total'),
+            'encomendista' => $this->request->getGet('encomendista_nombre'),
         ];
 
         $html = view('packages/pdf/etiqueta', $data);
 
         $options = new Options();
-        $options->set('isRemoteEnabled', true); // 🔥 para imágenes
-
+        $options->set('isRemoteEnabled', true);
         $dompdf = new Dompdf($options);
-
         $dompdf->loadHtml($html);
-
-        // 🔥 TAMAÑO EXACTO 4x2 pulgadas
-        $dompdf->setPaper([0, 0, 288, 144]);
+        $dompdf->setPaper([0, 0, 288, 144], 'portrait');
 
         $dompdf->render();
 
@@ -68,32 +71,64 @@ class PackageController extends BaseController
     }
     public function guardar()
     {
-        $model = new PackageModel();
+        try {
 
-        $data = $this->request->getPost();
+            $model = new PackageModel();
 
-        // 🔥 FOTO
-        $file = $this->request->getFile('foto');
+            // 🔥 SOLO TOMAR LOS CAMPOS VÁLIDOS (evita basura)
+            $data = [
+                'cliente_nombre'       => $this->request->getPost('cliente_nombre'),
+                'cliente_telefono'     => $this->request->getPost('cliente_telefono'),
+                'dia_entrega'          => $this->request->getPost('dia_entrega') ?: null,
+                'hora_inicio'          => $this->request->getPost('hora_inicio') ?: null,
+                'hora_fin'             => $this->request->getPost('hora_fin') ?: null,
+                'destino'              => $this->request->getPost('destino'),
+                'encomendista_nombre'  => $this->request->getPost('encomendista_nombre'),
+            ];
 
-        if ($file && $file->isValid()) {
+            // 🔥 LIMPIAR NUMÉRICOS (muy importante)
+            $data['precio'] = floatval(str_replace(',', '', $this->request->getPost('precio') ?? 0));
+            $data['envio']  = floatval(str_replace(',', '', $this->request->getPost('envio') ?? 0));
+            $data['total']  = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
 
-            $nombre = $file->getRandomName();
+            // 🔥 FOTO
+            $file = $this->request->getFile('foto');
 
-            $file->move(ROOTPATH . 'public/upload/paquetes', $nombre);
+            if ($file && $file->isValid() && !$file->hasMoved()) {
 
-            $data['foto'] = $nombre;
+                $nombre = $file->getRandomName();
+
+                $path = ROOTPATH . 'public/upload/paquetes/';
+
+                // Crear carpeta si no existe
+                if (!is_dir($path)) {
+                    mkdir($path, 0777, true);
+                }
+
+                $file->move($path, $nombre);
+
+                $data['foto'] = $nombre;
+            }
+
+            // 🔥 INSERT CON VALIDACIÓN
+            if (!$model->insert($data)) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'errors' => $model->errors()
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'status' => 'ok'
+            ]);
+        } catch (\Throwable $e) {
+
+            return $this->response->setJSON([
+                'status' => 'exception',
+                'msg' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
         }
-
-        // 🔥 NUMÉRICOS (seguridad)
-        $data['precio'] = floatval($data['precio'] ?? 0);
-        $data['envio'] = floatval($data['envio'] ?? 0);
-        $data['total'] = floatval($data['total'] ?? 0);
-
-        $model->insert($data);
-
-        return $this->response->setJSON([
-            'status' => 'ok'
-        ]);
     }
 
     public function subirImagen() {}

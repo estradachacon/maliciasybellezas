@@ -25,6 +25,10 @@ class Permisos extends BaseConfig
             'crear_roles',
             'asignar_permisos',
         ],
+
+        'Paquetería' => [
+            'crear_paquetes',
+        ],
         
         /*
         'Finanzas' => [
@@ -42,7 +46,6 @@ class Permisos extends BaseConfig
         ],
 
         'Paquetería' => [
-            'crear_paquetes',
             'ver_paquetes',
             'ver_tracking',
             'crear_tracking',

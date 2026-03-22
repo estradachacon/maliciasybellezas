@@ -77,6 +77,7 @@ class AuthController extends BaseController
             'email' => $user_complete['email'],
             'foto' => $user_complete['foto'] ?? null,
             'role_id' => $user_complete['role_id'],
+            'codigo_vendedor' => $user_complete['codigo'], 
             'branch_id' => $user_complete['branch_id'],
             'branch_name' => $user_complete['branch_name'],
             'branch_direction' => $user_complete['branch_direction'],

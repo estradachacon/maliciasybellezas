@@ -171,6 +171,72 @@ $faviconUrl = base_url('favicon.ico');
             transform: translateY(0);
         }
     }
+
+    .switch-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+    }
+
+    .estado {
+        font-size: 13px;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+
+    .estado.activo {
+        color: #198754;
+    }
+
+    .estado.cancelado {
+        color: #dc3545;
+    }
+
+    /* SWITCH */
+    .switch {
+        position: relative;
+        width: 50px;
+        height: 26px;
+    }
+
+    .switch input {
+        display: none;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        background-color: #198754;
+        border-radius: 50px;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transition: .3s;
+    }
+
+    /* bolita */
+    .slider:before {
+        content: "";
+        position: absolute;
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        top: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: .3s;
+    }
+
+    /* estado cancelado */
+    .switch input:checked+.slider {
+        background-color: #dc3545;
+    }
+
+    .switch input:checked+.slider:before {
+        transform: translateX(24px);
+    }
 </style>
 
 <div class="row">
@@ -197,31 +263,31 @@ $faviconUrl = base_url('favicon.ico');
                             <input type="text" name="cliente_telefono" class="form-control">
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-6 mt-2">
                             <label>Día de entrega</label>
                             <input type="date" name="dia_entrega" class="form-control">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 mt-2">
                             <label>Hora inicio</label>
                             <input type="time" name="hora_inicio" class="form-control">
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-3 mt-2">
                             <label>Hora fin</label>
                             <input type="time" name="hora_fin" class="form-control">
                         </div>
-                        <div class="col-md-12">
+                        <div class="col-md-12 mt-2">
                             <label>Destino</label>
                             <input type="text" name="destino" class="form-control">
                         </div>
 
-                        <div class="col-md-12">
+                        <div class="col-md-12 mt-2">
                             <label>Encomendista</label>
                             <input type="text" name="encomendista_nombre" class="form-control">
                         </div>
 
-                        <div class="col-md-12 mt-2">
-                            <div class="p-3 border rounded-3 bg-light">
+                        <div class="col-md-12 mt-3">
+                            <div class="p-3 border rounded-lg bg-light">
                                 <div class="row g-2">
                                     <div class="col-md-4">
                                         <label class="form-label">Precio</label>
@@ -235,15 +301,22 @@ $faviconUrl = base_url('favicon.ico');
 
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold">Total</label>
-                                        <input type="text" name="total" id="total" class="form-control bg-light fw-bold" readonly>
+                                        <input type="text" name="total" id="total" class="form-control bg-light fw-bold">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-12">
-                            <div class="form-check">
-                                <input type="checkbox" id="cancelado" class="form-check-input">
-                                <label class="form-check-label">Cancelado</label>
+                        <div class="col-md-12 mb-2 mt-2">
+                            <div class="switch-container">
+                                
+                                <span id="estadoTexto" class="estado activo">Cobrar total</span>
+
+                                <label class="switch">
+                                    <input type="checkbox" id="cancelado">
+                                    <span class="slider"></span>
+                                </label>
+
+                                <span class="estado cancelado">Paq. Cancelado</span>
                             </div>
                         </div>
 
@@ -271,9 +344,12 @@ $faviconUrl = base_url('favicon.ico');
         <div class="card-body">
             <?php $codigoVendedor = session('codigo_vendedor'); ?>
             <!-- MINI PREVIEW -->
-            <div style="transform: scale(0.8); transform-origin: top left;">
+            <div class="mb-2">
                 <div id="miniPreview"></div>
             </div>
+            <button id="btnImprimirFinal" class="btn btn-secondary">
+                Imprimir
+            </button>
             <button id="btnVolver" class="btn btn-outline-secondary">
                 ← Volver
             </button>
@@ -296,10 +372,6 @@ $faviconUrl = base_url('favicon.ico');
 
             <!-- BOTONES -->
             <div class="mt-3 d-flex gap-2">
-                <button id="btnImprimirFinal" class="btn btn-secondary">
-                    Imprimir
-                </button>
-
                 <button id="btnGuardarFinal" class="btn btn-success">
                     Guardar paquete
                 </button>
@@ -327,10 +399,20 @@ $faviconUrl = base_url('favicon.ico');
         let stream = null;
         let procesandoImagen = false;
 
+        $('#btnImprimirFinal').click(function() {
+
+            let data = $('#formPaquete').serialize();
+
+            // 🔥 redirige a tu controlador de impresión
+            window.open("<?= base_url('paquetes/etiqueta') ?>?" + data, '_blank');
+
+        });
 
         // =========================
         // FORMULARIO
         // =========================
+
+
         $('#btnGuardar').click(function() {
 
             let data = $('#formPaquete').serializeArray();
@@ -447,7 +529,9 @@ $faviconUrl = base_url('favicon.ico');
                     <div class="fila"><b>DESTINO:</b> ${p.destino || ''}</div>
                     <div class="fila"><b>ENTREGA:</b> ${dia || ''}</div>
                     <div class="fila"><b>HORA:</b> ${rangoHora}</div>
-                    <div class="fila"><b>ENCOM:</b> ${p.encomendista_nombre || ''}</div>
+                    <div class="fila">
+    <b>ENCOM:</b> ${p.encomendista_nombre ? p.encomendista_nombre : '—'}
+</div>
                 </div>
             </div>
 
@@ -564,8 +648,22 @@ $faviconUrl = base_url('favicon.ico');
                 contentType: false,
                 processData: false,
                 success: function(res) {
-                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
-                        .then(() => location.reload());
+
+                    console.log(res);
+
+                    if (res.status === 'ok') {
+
+                        Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
+                            .then(() => location.reload());
+
+                    } else {
+
+                        Swal.fire(
+                            'Error',
+                            JSON.stringify(res.errors || res.msg || res),
+                            'error'
+                        );
+                    }
                 }
             });
         });
@@ -584,21 +682,27 @@ $faviconUrl = base_url('favicon.ico');
             });
         }
 
-        // INPUTS
         $('.money').on('input', function() {
-
-            let valor = $(this).val();
-
-            // evitar múltiples puntos
-            let limpio = valor
+            let limpio = $(this).val()
                 .replace(/[^0-9.]/g, '')
-                .replace(/(\..*)\./g, '$1'); // 👈 clave anti bug
+                .replace(/(\..*)\./g, '$1');
 
-            let numero = parseFloat(limpio) || 0;
-
+            $(this).val(limpio);
+        });
+        $('.money').on('blur', function() {
+            let numero = limpiarNumero($(this).val());
             $(this).val(formatearMoneda(numero));
+        });
 
-            calcularTotal();
+        $('#precio, #envio').on('blur', function() {
+            if ($('#cancelado').is(':checked')) return;
+
+            let precio = limpiarNumero($('#precio').val());
+            let envio = limpiarNumero($('#envio').val());
+
+            let total = precio + envio;
+
+            $('#total').val(formatearMoneda(total));
         });
 
         // TOTAL
@@ -689,58 +793,40 @@ $faviconUrl = base_url('favicon.ico');
             return parseFloat(valor.replace(/,/g, '')) || 0;
         }
 
-        $('.money').on('input', function() {
-            let limpio = $(this).val().replace(/[^0-9.]/g, '');
-            $(this).val(formatearMoneda(limpio));
-            calcularTotal();
-        });
-
-        function calcularTotal() {
-            let precio = obtenerNumero($('#precio').val());
-            let envio = obtenerNumero($('#envio').val());
-            let total = precio + envio;
-            $('#total').val(formatearMoneda(total.toString()));
-        }
-
         // =========================
         // CANCELADO
         // =========================
         $('#cancelado').change(function() {
+
+            let activo = $('.estado.activo');
+            let cancelado = $('.estado.cancelado');
+
             if (this.checked) {
+
+                activo.css('opacity', '0.3');
+                cancelado.css('opacity', '1');
+
                 $('#total').val('0.00');
-                $('#precio, #envio').prop('disabled', true);
+
+                // 🔥 bloquear TODO
+                $('#precio, #envio, #total').prop('disabled', true)
+                    .addClass('bg-light');
+
             } else {
-                $('#precio, #envio').prop('disabled', false);
+
+                activo.css('opacity', '1');
+                cancelado.css('opacity', '0.3');
+
+                // 🔥 desbloquear
+                $('#precio, #envio, #total').prop('disabled', false)
+                    .removeClass('bg-light');
+
+                // 🔥 recalcular solo al volver
                 calcularTotal();
             }
+
         });
-        $('#btnGuardarFinal').click(function() {
 
-            if (procesandoImagen) {
-                Swal.fire('Espera', 'La imagen aún se está procesando', 'info');
-                return;
-            }
-
-            if (!imagenWebp) {
-                Swal.fire('Falta foto', 'Debes tomar o subir una foto', 'warning');
-                return;
-            }
-
-            let formData = new FormData($('#formPaquete')[0]);
-            formData.append('foto', imagenWebp);
-
-            $.ajax({
-                url: '<?= base_url('paquetes/guardar') ?>',
-                method: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(res) {
-                    Swal.fire('Guardado', 'Paquete registrado correctamente', 'success')
-                        .then(() => location.reload());
-                }
-            });
-        });
     });
 </script>
 
