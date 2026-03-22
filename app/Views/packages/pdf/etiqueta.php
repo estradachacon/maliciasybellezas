@@ -9,6 +9,11 @@
             margin: 0;
         }
 
+@font-face {
+    font-family: 'FleurDeLeah';
+    src: url("<?= realpath(FCPATH . 'fonts/FleurDeLeah-Regular.ttf') ?>") format("truetype");
+}
+
         html,
         body {
             width: 278pt;
@@ -16,7 +21,7 @@
             margin: 3;
             padding: 0;
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: DejaVu Sans, sans-serif;
             font-size: 9pt;
         }
 
@@ -209,7 +214,10 @@
                             <!-- HEADER -->
                             <table style="border-bottom:1px solid #000; margin-bottom:2pt;">
                                 <tr>
-                                    <td class="col-17" style="font-size:11pt; font-weight:bold; font-family: 'Trebuchet MS', sans-serif;">
+<td style="
+    font-family: 'FleurDeLeah';
+    font-size: 12pt;
+">
                                         MALICIAS Y BELLEZAS
                                     </td>
                                     <td class="col-3" style="text-align:right; font-size:6pt;">
