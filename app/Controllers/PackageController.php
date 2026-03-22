@@ -66,7 +66,35 @@ class PackageController extends BaseController
             ->setContentType('application/pdf')
             ->setBody($dompdf->output());
     }
-    public function store() {}
+    public function guardar()
+    {
+        $model = new PackageModel();
+
+        $data = $this->request->getPost();
+
+        // 🔥 FOTO
+        $file = $this->request->getFile('foto');
+
+        if ($file && $file->isValid()) {
+
+            $nombre = $file->getRandomName();
+
+            $file->move(ROOTPATH . 'public/upload/paquetes', $nombre);
+
+            $data['foto'] = $nombre;
+        }
+
+        // 🔥 NUMÉRICOS (seguridad)
+        $data['precio'] = floatval($data['precio'] ?? 0);
+        $data['envio'] = floatval($data['envio'] ?? 0);
+        $data['total'] = floatval($data['total'] ?? 0);
+
+        $model->insert($data);
+
+        return $this->response->setJSON([
+            'status' => 'ok'
+        ]);
+    }
 
     public function subirImagen() {}
     public function edit($id) {}

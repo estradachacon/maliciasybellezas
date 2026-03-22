@@ -546,6 +546,9 @@ $faviconUrl = base_url('favicon.ico');
 
             let formData = new FormData($('#formPaquete')[0]);
             formData.append('foto', imagenWebp);
+            formData.append('precio', limpiarNumero($('#precio').val()));
+            formData.append('envio', limpiarNumero($('#envio').val()));
+            formData.append('total', limpiarNumero($('#total').val()));
 
             $.ajax({
                 url: '<?= base_url('paquetes/guardar') ?>',
@@ -563,11 +566,48 @@ $faviconUrl = base_url('favicon.ico');
         // =========================
         // DINERO
         // =========================
-        function formatearMoneda(valor) {
-            let numero = parseFloat(valor.replace(/[^0-9.-]+/g, "")) || 0;
+        function limpiarNumero(valor) {
+            return parseFloat(valor.replace(/[^0-9.]/g, '')) || 0;
+        }
+
+        function formatearMoneda(numero) {
             return numero.toLocaleString('en-US', {
-                minimumFractionDigits: 2
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             });
+        }
+
+        // INPUTS
+        $('.money').on('input', function() {
+
+            let valor = $(this).val();
+
+            // evitar múltiples puntos
+            let limpio = valor
+                .replace(/[^0-9.]/g, '')
+                .replace(/(\..*)\./g, '$1'); // 👈 clave anti bug
+
+            let numero = parseFloat(limpio) || 0;
+
+            $(this).val(formatearMoneda(numero));
+
+            calcularTotal();
+        });
+
+        // TOTAL
+        function calcularTotal() {
+
+            if ($('#cancelado').is(':checked')) {
+                $('#total').val('0.00');
+                return;
+            }
+
+            let precio = limpiarNumero($('#precio').val());
+            let envio = limpiarNumero($('#envio').val());
+
+            let total = precio + envio;
+
+            $('#total').val(formatearMoneda(total));
         }
         $('#fileFoto').change(function(e) {
 
