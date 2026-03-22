@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
 
     <style>
-        @page {
+@media print {
+}
+@page {
             margin: 0;
         }
 
@@ -19,11 +21,11 @@
         body {
             width: 278pt;
             height: 150pt;
-            margin: 3;
+            margin: 2;
             padding: 0;
             overflow: hidden;
             font-family: DejaVu Sans, sans-serif;
-            font-size: 9pt;
+            font-size: 7pt;
         }
 
         .etiqueta {
@@ -34,7 +36,7 @@
             border-radius: 4%;
             /* Centramos la viñeta en el papel */
             padding: 5pt;
-            border: 2px solid #000;
+            border: 1px solid #000;
             overflow: hidden;
             display: block;
             position: relative;
@@ -166,15 +168,16 @@
             width: 100%;
         }
 
-        .value {
-            min-height: 16pt;
-        }
-
         .label {
             white-space: nowrap;
         }
 
-
+td, tr {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    vertical-align: middle;
+}
         .bloque {
             border-bottom: 1px dotted #999;
             padding-bottom: 2pt;
@@ -182,7 +185,7 @@
         }
 
         .multi-line {
-            height: 18pt;
+            height: 16pt;
             line-height: 8pt;
             overflow: hidden;
 
@@ -194,7 +197,10 @@
 </head>
 
 <body>
-    <table style="height:110pt;">
+
+<div class="etiqueta">
+
+    <table style="height:100%;">
 
         <!-- 🔹 CONTENIDO -->
         <tr>
@@ -205,7 +211,7 @@
                     <tr>
 
                         <!-- LOGO -->
-                        <td class="col-5" style="text-align:center; vertical-align:top;">
+                        <td class="col-5" style="vertical-align:top;">
                             <img src="<?= $logo ?>" style="width:100%; max-height:80pt;">
                         </td>
 
@@ -323,6 +329,7 @@
         </tr>
 
     </table>
+    </div>
 </body>
 
 </html>

@@ -39,7 +39,11 @@ class PackageController extends BaseController
         $settings = $settingModel->first();
         $horaInicio = $this->request->getGet('hora_inicio');
         $horaFin = $this->request->getGet('hora_fin');
-        $tituloImg = $this->generarTituloImagen('MALICIAS Y BELLEZAS');
+
+        $nombre = $settings->company_name ?? 'Mi Empresa';
+        $nombreFormateado = mb_convert_case($nombre, MB_CASE_TITLE, "UTF-8");
+
+        $tituloImg = $this->generarTituloImagen($nombreFormateado);
 
         $data['titulo_img'] = $tituloImg;
         $data = [
@@ -59,7 +63,7 @@ class PackageController extends BaseController
             ),
             'total' => $this->request->getGet('total'),
             'encomendista' => $this->request->getGet('encomendista_nombre'),
-            'titulo_img' => $tituloImg, 
+            'titulo_img' => $tituloImg,
         ];
 
         $html = view('packages/pdf/etiqueta', $data);
@@ -88,38 +92,38 @@ class PackageController extends BaseController
         $rutaFuente = FCPATH . 'fonts/FleurDeLeah-Regular.ttf';
 
         $ancho = 600;
-        $alto = 100;
+        $alto = 67;
 
         $imagen = imagecreatetruecolor($ancho, $alto);
 
-        // Fondo transparente
         imagesavealpha($imagen, true);
         $transparente = imagecolorallocatealpha($imagen, 0, 0, 0, 127);
         imagefill($imagen, 0, 0, $transparente);
 
-        // Color negro
-        $color = imagecolorallocate($imagen, 0, 0, 0);
+        $color = imagecolorallocate($imagen, 102, 51, 153);
 
-        // Tamaño fuente
-        $size = 28;
+        $size = 34;
 
-        // Centrar texto
         $bbox = imagettfbbox($size, 0, $rutaFuente, $texto);
         $textWidth = $bbox[2] - $bbox[0];
         $textHeight = $bbox[1] - $bbox[7];
 
-        $x = ($ancho - $textWidth) / 2;
-        $y = ($alto + $textHeight) / 2;
+        $x = 8;
+        $y = $textHeight - 22;
 
         imagettftext($imagen, $size, 0, $x, $y, $color, $rutaFuente, $texto);
 
-        // Guardar temporal
-        $ruta = WRITEPATH . 'cache/titulo.png';
-        imagepng($imagen, $ruta);
+        // 🔥 CAPTURAR IMAGEN EN MEMORIA
+        ob_start();
+        imagepng($imagen);
+        $imagenData = ob_get_clean();
+
         imagedestroy($imagen);
 
-        return 'file:///' . str_replace('\\', '/', $ruta);
+        // 🔥 CONVERTIR A BASE64
+        return 'data:image/png;base64,' . base64_encode($imagenData);
     }
+
     public function guardar()
     {
         try {
