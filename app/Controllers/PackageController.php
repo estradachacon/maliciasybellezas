@@ -11,6 +11,9 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class PackageController extends BaseController
 {
@@ -31,56 +34,26 @@ class PackageController extends BaseController
         $model = new PackageModel();
 
         $cliente = $this->request->getGet('cliente');
-        $fecha   = $this->request->getGet('fecha');
-        $estado  = $this->request->getGet('estado');
-
-        // QUERY BASE
+        $fecha_inicio = $this->request->getGet('fecha_inicio');
+        $fecha_fin    = $this->request->getGet('fecha_fin');
         $builder = $model;
-
-        // =========================
-        // FILTROS
-        // =========================
-
         if (!empty($cliente)) {
             $builder = $builder->like('cliente_nombre', $cliente);
         }
 
-        if (!empty($fecha)) {
-            $builder = $builder->where('dia_entrega', $fecha);
+        if ($fecha_inicio && $fecha_fin) {
+            $builder->where('DATE(dia_entrega) >=', $fecha_inicio)
+                ->where('DATE(dia_entrega) <=', $fecha_fin);
         }
-
-        // este depende de tu lógica real (ahorita no tienes campo estado)
-        if ($estado !== '' && $estado !== null) {
-
-            if ($estado == '1') {
-                $builder = $builder->where('total', 0); // cancelado
-            } else {
-                $builder = $builder->where('total >', 0); // activo
-            }
-        }
-
-        // =========================
-        // PAGINACIÓN
-        // =========================
         $builder = $builder->orderBy('id', 'DESC');
         $paquetes = $builder->paginate(10);
         $pager = $builder->pager;
-
-        // =========================
-        // AJAX
-        // =========================
-
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
                 'pager' => $pager->links('default', 'bitacora_pagination')
             ]);
         }
-
-        // =========================
-        // NORMAL
-        // =========================
-
         return view('packages/index', [
             'paquetes' => $paquetes,
             'pager' => $pager
@@ -232,9 +205,9 @@ class PackageController extends BaseController
                 'tipo_venta' => $this->request->getPost('tipo_venta') ?? 'detalle',
                 'estado1'    => 'pendiente',
             ];
-            
+
             $data['total'] = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
-            
+
             do {
                 $codigo = $this->request->getPost('codigoqr');
                 $existe = $model->where('codigoqr', $codigo)->first();
@@ -243,7 +216,6 @@ class PackageController extends BaseController
 
                 // regenerar si ya existe
                 $codigo = $this->generarCodigoInterno();
-
             } while (true);
 
             $data['codigoqr'] = $codigo;
@@ -337,7 +309,98 @@ class PackageController extends BaseController
 
         return $codigo;
     }
-    public function subirImagen() {}
+    public function exportar()
+    {
+        $model = new PackageModel();
+
+        $cliente = $this->request->getGet('cliente');
+        $estado = $this->request->getGet('estado');
+        $fecha_inicio = $this->request->getGet('fecha_inicio');
+        $fecha_fin    = $this->request->getGet('fecha_fin');
+
+        $builder = $model;
+
+        // filtros
+        if (!empty($cliente)) {
+            $builder->like('cliente_nombre', $cliente);
+        }
+
+        if ($fecha_inicio && $fecha_fin) {
+            $builder->where('dia_entrega >=', $fecha_inicio)
+                ->where('dia_entrega <=', $fecha_fin);
+        }
+
+        // 🔥 traer TODO (sin paginar)
+        $data = $builder->orderBy('id', 'DESC')->findAll();
+
+        // =========================
+        // EXCEL
+        // =========================
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // encabezados
+        $sheet->setCellValue('A1', '#');
+        $sheet->setCellValue('B1', 'Cliente');
+        $sheet->setCellValue('C1', 'Destino');
+        $sheet->setCellValue('D1', 'Entrega');
+        $sheet->setCellValue('E1', 'Total');
+        $sheet->setCellValue('F1', 'Estado');
+
+        // data
+        $row = 2;
+
+        foreach ($data as $p) {
+
+            $estadoTexto = trim(($p->estado1 ?? '') . ' ' . ($p->estado2 ?? ''));
+
+            $sheet->setCellValue('A' . $row, $p->id);
+            $sheet->setCellValue('B' . $row, $p->cliente_nombre);
+            $sheet->setCellValue('C' . $row, $p->destino);
+            $sheet->setCellValue('D' . $row, $p->dia_entrega);
+            $sheet->setCellValue('E' . $row, $p->total);
+            $sheet->setCellValue('F' . $row, $estadoTexto);
+            $sheet->setCellValue('E' . $row, $p->total);
+
+            // formato moneda
+            $sheet->getStyle('E' . $row)
+                ->getNumberFormat()
+                ->setFormatCode('"$"#,##0.00');
+
+            $row++;
+        }
+
+        // auto size
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension('A')->setWidth(8);   // #
+            $sheet->getColumnDimension('B')->setWidth(30);  // Cliente
+            $sheet->getColumnDimension('C')->setWidth(35);  // Destino
+            $sheet->getColumnDimension('D')->setWidth(15);  // Fecha
+            $sheet->getColumnDimension('E')->setWidth(15);  // Total
+            $sheet->getColumnDimension('F')->setWidth(25);  // Estado
+        }
+
+        // descargar
+        $writer = new Xlsx($spreadsheet);
+
+        $filename = 'paquetes_' . date('Ymd_His') . '.xlsx';
+
+        if (ob_get_length()) ob_end_clean();
+
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setHeader('Cache-Control', 'max-age=0')
+            ->setHeader('Pragma', 'public')
+            ->setHeader('Expires', '0')
+            ->setBody($excelOutput);
+    }
+
     public function edit($id) {}
 
     public function update($id) {}

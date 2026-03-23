@@ -29,6 +29,7 @@ class Permisos extends BaseConfig
         'Paquetería' => [
             'crear_paquetes',
             'ver_paquetes',
+            'exportar_paquetes_a_excel',
         ],
         
         /*

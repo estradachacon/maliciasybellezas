@@ -15,52 +15,64 @@
         <div class="card shadow-sm">
 
             <div class="card-header d-flex justify-content-between">
+
                 <h5 class="mb-0">📦 Listado de paquetes</h5>
 
-                <?php if (tienePermiso('crear_paquetes')): ?>
-                    <a href="<?= base_url('packages/new') ?>" class="btn btn-primary btn-sm ms-auto">
-                        + Nuevo
-                    </a>
-                <?php endif; ?>
+                <div class="d-flex">
+
+                    <?php if (tienePermiso('exportar_paquetes_a_excel')): ?>
+                        <a href="#" id="btnExportar" class="btn btn-success btn-sm mr-2">
+                            📥 Exportar Excel
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if (tienePermiso('crear_paquetes')): ?>
+                        <a href="<?= base_url('packages/new') ?>" class="btn btn-primary btn-sm">
+                            + Nuevo
+                        </a>
+                    <?php endif; ?>
+
+                </div>
             </div>
 
             <div class="card-body">
 
                 <div class="row g-2 mb-2">
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <small>Cliente</small>
                         <input type="text" id="clienteFiltro" class="form-control">
                     </div>
 
                     <div class="col-md-3">
-                        <small>Fecha</small>
-                        <input type="date" id="fechaFiltro" class="form-control">
+                        <small>Rango de fechas</small>
+                        <input type="text" id="fechaRango" class="form-control" placeholder="Selecciona rango">
                     </div>
 
                     <div class="col-md-3">
-                        <small>Estado</small>
-                        <select id="estadoFiltro" class="form-control">
-                            <option value="">Todos</option>
-                            <option value="0">Activos</option>
-                            <option value="1">Cancelados (total = $0)</option>
-                        </select>
-                    </div>
-
-                    <!-- 🔥 BOTONES -->
-                    <div class="col-md-2 d-flex justify-content-between align-items-end gap-2">
-                        <button id="btnFiltrar" class="btn btn-primary w-99">
-                            🔍 Filtrar
-                        </button>
-                        <button id="btnLimpiar" class="btn btn-outline-secondary w-99">
-                            Limpiar
-                        </button>
+                        <small>&nbsp;</small>
+                        <div class="d-grid gap-2">
+                            <button id="btnFiltrar" class="btn btn-primary">
+                                🔍 Filtrar
+                            </button>
+                            <button id="btnLimpiar" class="btn btn-outline-secondary">
+                                Limpiar
+                            </button>
+                        </div>
                     </div>
 
                 </div>
 
-                <!-- 📋 TABLA -->
-                <table class="table table-bordered table-striped">
+                <table class="table table-bordered table-striped table-sm align-middle">
+                    <colgroup>
+                        <col style="width: 5%;">
+                        <col style="width: 29%;">
+                        <col style="width: 29%;">
+                        <col style="width: 12%;">
+                        <col style="width: 10%;">
+                        <col style="width: 8%;">
+                        <col style="width: 7%;">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>#</th>
@@ -86,21 +98,56 @@
     </div>
 </div>
 <script>
+    let fp;
+
     document.addEventListener('DOMContentLoaded', function() {
-        // 🔍 FILTRAR
         $('#btnFiltrar').on('click', function() {
             cargarPaquetes();
         });
 
-        // 🧹 LIMPIAR
+        fp = flatpickr("#fechaRango", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            locale: "es",
+            allowInput: true,
+            rangeSeparator: " to "
+        });
+
+        $('#btnExportar').on('click', function(e) {
+            e.preventDefault();
+
+            let cliente = $('#clienteFiltro').val();
+            let estado = $('#estadoFiltro').val();
+
+            let fecha_inicio = '';
+            let fecha_fin = '';
+
+            if (fp && fp.selectedDates.length === 2) {
+                fecha_inicio = fp.formatDate(fp.selectedDates[0], "Y-m-d");
+                fecha_fin = fp.formatDate(fp.selectedDates[1], "Y-m-d");
+            }
+
+            const params = new URLSearchParams({
+                cliente,
+                estado,
+                fecha_inicio,
+                fecha_fin
+            });
+
+            window.open("<?= base_url('packages-exportar') ?>?" + params.toString(), '_blank');
+        });
+
+        // FILTRAR
         $('#btnLimpiar').on('click', function() {
 
             $('#clienteFiltro').val('');
-            $('#fechaFiltro').val('');
             $('#estadoFiltro').val('');
 
-            cargarPaquetes(); // recarga limpio
+            if (fp) fp.clear();
+
+            cargarPaquetes();
         });
+
         $('#clienteFiltro').on('keypress', function(e) {
             if (e.which === 13) {
                 cargarPaquetes();
@@ -112,13 +159,28 @@
     function cargarPaquetes(url = null) {
 
         let cliente = $('#clienteFiltro').val();
-        let fecha = $('#fechaFiltro').val();
+        let fechaRango = $('#fechaRango').val();
+
+        let fecha_inicio = '';
+        let fecha_fin = '';
+
+        if (fechaRango.includes(' to ')) {
+            let partes = fechaRango.split(' to ');
+            fecha_inicio = partes[0];
+            fecha_fin = partes[1];
+        }
+        if (fp && fp.selectedDates.length === 2) {
+            fecha_inicio = fp.formatDate(fp.selectedDates[0], "Y-m-d");
+            fecha_fin = fp.formatDate(fp.selectedDates[1], "Y-m-d");
+        }
+
         let estado = $('#estadoFiltro').val();
 
         const params = new URLSearchParams({
             cliente,
-            fecha,
-            estado
+            estado,
+            fecha_inicio,
+            fecha_fin
         });
 
         let endpoint = url || "<?= base_url('packages') ?>";
@@ -136,7 +198,10 @@
     }
     // listeners
     $('#clienteFiltro').on('keyup', cargarPaquetes);
-    $('#fechaFiltro, #estadoFiltro').on('change', cargarPaquetes);
+    $('#fechaRango, #estadoFiltro').on('change', cargarPaquetes);
+    $('#btnFiltrar').on('click', function() {
+        cargarPaquetes();
+    });
 
     // paginación AJAX
     $(document).on('click', '#pagerContainer a', function(e) {
@@ -145,11 +210,17 @@
         let url = new URL($(this).attr('href'));
 
         let cliente = $('#clienteFiltro').val();
-        let fecha = $('#fechaFiltro').val();
         let estado = $('#estadoFiltro').val();
+        let fecha_inicio = '';
+        let fecha_fin = '';
 
+        if (fp && fp.selectedDates.length === 2) {
+            fecha_inicio = fp.formatDate(fp.selectedDates[0], "Y-m-d");
+            fecha_fin = fp.formatDate(fp.selectedDates[1], "Y-m-d");
+        }
         url.searchParams.set('cliente', cliente || '');
-        url.searchParams.set('fecha', fecha || '');
+        url.searchParams.set('fecha_inicio', fecha_inicio || '');
+        url.searchParams.set('fecha_fin', fecha_fin || '');
         url.searchParams.set('estado', estado || '');
 
         fetch(url.toString(), {

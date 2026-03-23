@@ -38,7 +38,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->group('reports', function ($routes) {
         $routes->get('packages', 'ReportController::packages');
         $routes->post('packages', 'ReportController::packages');
-        $routes->get('packages/excel', 'ReportController::packagesExcel');
         $routes->get('packages/pdf', 'ReportController::packagesPDF');
         $routes->get('trans', 'ReportController::trans');
         $routes->post('trans', 'ReportController::trans');
@@ -200,4 +199,5 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     //Rutas para paquetería de MaliciasyBellezas
     $routes->post('paquetes/guardar', 'PackageController::guardar');
     $routes->get('packages/generar-codigo', 'PackageController::generarCodigo');
+    $routes->get('packages-exportar', 'PackageController::exportar');
 });

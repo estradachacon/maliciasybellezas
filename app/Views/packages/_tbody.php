@@ -34,20 +34,13 @@
                 $ <?= number_format($p->total, 2) ?>
             </td>
 
-            <td class="text-center">
-                <?php if (!empty($p->estado)): ?>
+            <td>
+                <?php if (!empty($p->estado1)): ?>
+                    <?= statusBadge($p->estado1) ?>
+                <?php endif; ?>
 
-                    <?php if ($p->estado == 'activo'): ?>
-                        <span class="badge bg-success badge-estado">
-                            Activo
-                        </span>
-
-                    <?php elseif ($p->estado == 'pendiente'): ?>
-                        <span class="badge bg-warning badge-estado">
-                            Inactivo
-                        </span>
-                    <?php endif; ?>
-
+                <?php if (!empty($p->estado2)): ?>
+                    <?= statusBadge($p->estado2) ?>
                 <?php endif; ?>
             </td>
 
