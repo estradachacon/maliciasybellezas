@@ -31,11 +31,11 @@
         .etiqueta {
             /* Bajamos un poco las dimensiones para dejar un margen físico real */
             width: 262pt;
-            height: 110pt;
+            height: 115pt;
             margin: 4pt auto;
             border-radius: 4%;
             /* Centramos la viñeta en el papel */
-            padding: 5pt;
+            padding: 3pt;
             border: 1px solid #000;
             overflow: hidden;
             display: block;
@@ -206,15 +206,23 @@
 
             <tr>
                 <!-- COLUMNA IZQUIERDA -->
-                <td style="width:30%; vertical-align:top;">
+                <td style="width:30%; vertical-align:top; padding:0;">
 
                     <!-- LOGO -->
-                    <img src="<?= $logo ?>" style="width:100%; max-height:64pt;">
+                    <?php if (!empty($logo)): ?>
+                        <img src="<?= $logo ?>" style="width:100%; max-height:57pt; display:block; margin-top:-7pt;">
+                    <?php endif; ?>
 
                     <!-- MENSAJE -->
-                    <div style="text-align:center; margin-top:3pt;">
-                        <img src="<?= base_url('img/gracias.png') ?>" style="width:110%; max-height:40pt;">
-                    </div>
+                    <img src="<?= base_url('img/gracias.png') ?>"
+                        style="width:100%; max-height:20pt; display:block; margin-top:-5pt;">
+
+                    <!-- QR -->
+                    <?php if (!empty($qr)): ?>
+                        <div style="text-align:center; margin-top:1pt;">
+                            <img src="<?= $qr ?>" style="width: 60px;pt; height:38pt;">
+                        </div>
+                    <?php endif; ?>
 
                 </td>
 

@@ -27,7 +27,8 @@ class PackageModel extends Model
         'foto',
         'tipo_venta',
         'estado1',
-        'estado2'
+        'estado2',
+        'codigoqr'
     ];
 
     // (Opcional pero recomendado)

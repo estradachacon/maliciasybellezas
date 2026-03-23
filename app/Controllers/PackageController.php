@@ -9,7 +9,8 @@ use App\Models\SellerModel;
 use App\Models\SettledPointModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
 
 class PackageController extends BaseController
 {
@@ -33,7 +34,7 @@ class PackageController extends BaseController
         $fecha   = $this->request->getGet('fecha');
         $estado  = $this->request->getGet('estado');
 
-        // 🔥 QUERY BASE
+        // QUERY BASE
         $builder = $model;
 
         // =========================
@@ -48,7 +49,7 @@ class PackageController extends BaseController
             $builder = $builder->where('dia_entrega', $fecha);
         }
 
-        // 👇 este depende de tu lógica real (ahorita no tienes campo estado)
+        // este depende de tu lógica real (ahorita no tienes campo estado)
         if ($estado !== '' && $estado !== null) {
 
             if ($estado == '1') {
@@ -103,7 +104,11 @@ class PackageController extends BaseController
 
     public function new()
     {
-        return view('packages/new');
+        $codigo = $this->generarCodigoInterno();
+
+        return view('packages/new', [
+            'codigoqr' => $codigo
+        ]);
     }
 
     public function generarEtiqueta()
@@ -112,6 +117,18 @@ class PackageController extends BaseController
         $settings = $settingModel->first();
         $horaInicio = $this->request->getGet('hora_inicio');
         $horaFin = $this->request->getGet('hora_fin');
+        $codigoQR = $this->request->getGet('codigoqr');
+
+        $builder = new Builder(
+            writer: new PngWriter(),
+            data: $codigoQR,
+            size: 90,
+            margin: 0
+        );
+
+        $result = $builder->build();
+
+        $qrBase64 = 'data:image/png;base64,' . base64_encode($result->getString());
 
         $nombre = $settings->company_name ?? 'Mi Empresa';
         $nombreFormateado = mb_convert_case($nombre, MB_CASE_TITLE, "UTF-8");
@@ -137,6 +154,7 @@ class PackageController extends BaseController
             'total' => $this->request->getGet('total'),
             'encomendista' => $this->request->getGet('encomendista_nombre'),
             'titulo_img' => $tituloImg,
+            'qr' => $qrBase64,
         ];
 
         $html = view('packages/pdf/etiqueta', $data);
@@ -217,6 +235,19 @@ class PackageController extends BaseController
             
             $data['total'] = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
             
+            do {
+                $codigo = $this->request->getPost('codigoqr');
+                $existe = $model->where('codigoqr', $codigo)->first();
+
+                if (!$existe) break;
+
+                // regenerar si ya existe
+                $codigo = $this->generarCodigoInterno();
+
+            } while (true);
+
+            $data['codigoqr'] = $codigo;
+
             // FOTO
             $file = $this->request->getFile('foto');
 
@@ -270,7 +301,42 @@ class PackageController extends BaseController
             ]);
         }
     }
+    public function generarCodigo()
+    {
+        $model = new PackageModel();
 
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $codigo = '';
+            for ($i = 0; $i < 6; $i++) {
+                $codigo .= $chars[random_int(0, strlen($chars) - 1)];
+            }
+
+            $existe = $model->where('codigoqr', $codigo)->first();
+        } while ($existe);
+
+        return $this->response->setJSON([
+            'codigo' => $codigo
+        ]);
+    }
+    private function generarCodigoInterno()
+    {
+        $model = new PackageModel();
+
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $codigo = '';
+            for ($i = 0; $i < 6; $i++) {
+                $codigo .= $chars[random_int(0, strlen($chars) - 1)];
+            }
+
+            $existe = $model->where('codigoqr', $codigo)->first();
+        } while ($existe);
+
+        return $codigo;
+    }
     public function subirImagen() {}
     public function edit($id) {}
 

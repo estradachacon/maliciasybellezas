@@ -199,4 +199,5 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     //Rutas para paquetería de MaliciasyBellezas
     $routes->post('paquetes/guardar', 'PackageController::guardar');
+    $routes->get('packages/generar-codigo', 'PackageController::generarCodigo');
 });

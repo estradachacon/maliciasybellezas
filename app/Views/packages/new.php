@@ -285,7 +285,7 @@ $logoUrl = setting('logo')
             <div class="card-body">
 
                 <form id="formPaquete">
-
+                    <input type="hidden" name="codigoqr" id="codigoqr" value="<?= $codigoqr ?>">
                     <div class="row g-3">
 
                         <div class="col-md-6">
@@ -464,12 +464,13 @@ $logoUrl = setting('logo')
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-
+        /* Variables globales */
         let imagenWebp = null;
         let imagenURL = null;
         let imagenFile = null;
         let stream = null;
         let procesandoImagen = false;
+        /* Fin de Variables globales */
 
         $('#btnImprimirFinal').click(function() {
 
@@ -663,6 +664,12 @@ $logoUrl = setting('logo')
                 day: 'numeric'
             });
 
+            // Generar Codigo QR
+            let codigo = $('#codigoqr').val();
+            let urlQR = codigo;
+            let qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(urlQR)}`;
+
+            //MiniPreview
             $('#miniPreview').html(`
     <div style="zoom:1.2;">
 
@@ -670,13 +677,16 @@ $logoUrl = setting('logo')
 
         <table style="width:100%;">
 
-            <tr>
-                <!-- LOGO -->
-                <td style="width:30%; text-align:center; vertical-align:top;">
-                    ${logo ? `
-                        <img src="${logo}" style="width:100%; max-height:80px; object-fit:contain;">
-                    ` : ``}
-                </td>
+<tr>
+    <!-- LOGO + QR -->
+    <td style="width:30%; text-align:center; vertical-align:top;">
+
+        ${logo ? `
+            <img src="${logo}" style="width:100%; max-height:50px; object-fit:contain;">
+        ` : ``}
+
+        <img src="${qrImg}" style="width:70px; margin-top:5px;">
+    </td>
 
                 <!-- CONTENIDO -->
                 <td style="width:70%; padding-left:5px;">
@@ -860,7 +870,12 @@ $logoUrl = setting('logo')
         // GUARDAR
         // =========================
         $('#btnGuardarFinal').click(function() {
+            let codigo = $('#codigoqr').val();
 
+            if (!codigo) {
+                Swal.fire('Error', 'No se generó el código QR', 'error');
+                return;
+            }
             // 🔒 evitar múltiples clicks
             if ($(this).data('loading')) return;
 
@@ -1100,7 +1115,7 @@ $logoUrl = setting('logo')
             }
 
         });
+
     });
 </script>
-
 <?= $this->endSection() ?>

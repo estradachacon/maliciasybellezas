@@ -35,9 +35,20 @@
             </td>
 
             <td class="text-center">
-                <span class="badge bg-success badge-estado">
-                    Activo
-                </span>
+                <?php if (!empty($p->estado)): ?>
+
+                    <?php if ($p->estado == 'activo'): ?>
+                        <span class="badge bg-success badge-estado">
+                            Activo
+                        </span>
+
+                    <?php elseif ($p->estado == 'pendiente'): ?>
+                        <span class="badge bg-warning badge-estado">
+                            Inactivo
+                        </span>
+                    <?php endif; ?>
+
+                <?php endif; ?>
             </td>
 
             <td class="text-center">

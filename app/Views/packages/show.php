@@ -162,7 +162,7 @@
 
                     </div>
 
-                    <!-- 🟡 COLUMNA DERECHA (FOTO) -->
+                    <!-- COLUMNA DERECHA (FOTO) -->
                     <div class="col-md-4">
                         <div class="p-3 border rounded text-center h-100" style="position: sticky; top:20px; border-radius:12px;">
 
