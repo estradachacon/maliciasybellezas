@@ -105,6 +105,7 @@ class PackageController extends BaseController
     {
         return view('packages/new');
     }
+
     public function generarEtiqueta()
     {
         $settingModel = new \App\Models\SettingModel();
@@ -210,13 +211,13 @@ class PackageController extends BaseController
                 'hora_fin'             => $this->request->getPost('hora_fin') ?: null,
                 'destino'              => $this->request->getPost('destino'),
                 'encomendista_nombre'  => $this->request->getPost('encomendista_nombre'),
+                'tipo_venta' => $this->request->getPost('tipo_venta') ?? 'detalle',
+                'estado1'    => 'pendiente',
             ];
-
+            
             $data['total'] = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
-
-            // =========================
+            
             // FOTO
-            // =========================
             $file = $this->request->getFile('foto');
 
             if ($file && $file->isValid() && !$file->hasMoved()) {
@@ -234,9 +235,7 @@ class PackageController extends BaseController
                 $data['foto'] = $nombre;
             }
 
-            // =========================
             // INSERT
-            // =========================
             if (!$model->insert($data)) {
                 return $this->response->setJSON([
                     'status' => 'error',

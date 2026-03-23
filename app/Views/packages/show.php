@@ -83,41 +83,82 @@
                             <div class="info-sub">
                                 <?= esc($paquete->cliente_telefono) ?>
                             </div>
-                        </div>
 
-                        <!-- ENTREGA -->
-                        <div class="card-section mb-3">
-                            <div class="info-label">Fecha de entrega</div>
-                            <div class="info-value">
-                                <?= date('d/m/Y', strtotime($paquete->dia_entrega)) ?>
-                            </div>
-
-                            <div class="info-label mt-2">Horario</div>
+                            <div class="info-label mt-2">Tipo de venta</div>
                             <div class="info-sub">
-                                <?= $paquete->hora_inicio ?> - <?= $paquete->hora_fin ?>
+                                <?= ucfirst($paquete->tipo_venta ?? 'detalle') ?>
                             </div>
                         </div>
 
-                        <!-- DESTINO -->
                         <div class="card-section mb-3">
-                            <div class="info-label">Destino</div>
-                            <div class="info-value">
-                                <?= esc($paquete->destino) ?>
-                            </div>
+                            <div class="row">
 
-                            <div class="info-label mt-2">Encomendista</div>
-                            <div class="info-sub">
-                                <?= esc($paquete->encomendista_nombre ?: '—') ?>
+                                <!-- 📅 COLUMNA IZQUIERDA -->
+                                <div class="col-md-6">
+                                    <div class="info-label">Fecha de entrega</div>
+                                    <div class="info-value">
+                                        <?= date('d/m/Y', strtotime($paquete->dia_entrega)) ?>
+                                    </div>
+
+                                    <div class="info-label mt-2">Horario</div>
+                                    <div class="info-sub">
+                                        <?= $paquete->hora_inicio ?> - <?= $paquete->hora_fin ?>
+                                    </div>
+                                </div>
+
+                                <!-- 📍 COLUMNA DERECHA -->
+                                <div class="col-md-6">
+                                    <div class="info-label">Destino</div>
+                                    <div class="info-value">
+                                        <?= esc($paquete->destino) ?>
+                                    </div>
+
+                                    <div class="info-label mt-2">Encomendista</div>
+                                    <div class="info-sub">
+                                        <?= esc($paquete->encomendista_nombre ?: '—') ?>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
+                        <?php
+                        function badgeColor($estado)
+                        {
+                            return match ($estado) {
+                                'pagado' => 'success',
+                                'pendiente' => 'warning',
+                                'cancelado' => 'danger',
+                                'entregado' => 'primary',
+                                'en_ruta' => 'info',
+                                default => 'secondary'
+                            };
+                        }
+                        ?>
 
-                        <!-- TOTAL -->
-                        <div class="card-section total-box text-end">
-                            <div class="info-label">Total</div>
-                            <div class="total-value">
-                                $<?= number_format($paquete->total, 2) ?>
+                        <!-- ESTADOS -->
+                        <?php if (!empty($paquete->estado1) || !empty($paquete->estado2)): ?>
+                            <div class="card-section mb-3">
+
+                                <?php if (!empty($paquete->estado1)): ?>
+                                    <div class="info-label">Estado de Paquete</div>
+                                    <div>
+                                        <span class="badge bg-<?= badgeColor($paquete->estado1) ?>">
+                                            <?= esc($paquete->estado1) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($paquete->estado2)): ?>
+                                    <div class="info-label mt-2">Estado secundario</div>
+                                    <div>
+                                        <span class="badge bg-<?= badgeColor($paquete->estado2) ?>">
+                                            <?= esc($paquete->estado2) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
                             </div>
-                        </div>
+                        <?php endif; ?>
 
                     </div>
 

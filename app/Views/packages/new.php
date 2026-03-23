@@ -331,18 +331,40 @@ $logoUrl = setting('logo')
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-12 mb-2 mt-2">
-                            <div class="switch-container">
+                        <div class="row mb-2 mt-2 col-md-12">
 
-                                <span id="estadoTexto" class="estado activo">Cobrar total</span>
+                            <!-- 🔹 SWITCH CANCELADO -->
+                            <div class="col-md-6">
+                                <div class="switch-container">
+                                    Remunerar paquete:
 
-                                <label class="switch">
-                                    <input type="checkbox" id="cancelado">
-                                    <span class="slider"></span>
-                                </label>
+                                    <span id="estadoTexto" class="estado activo">Cobrar total</span>
 
-                                <span class="estado cancelado">Paq. Cancelado</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="cancelado">
+                                        <span class="slider"></span>
+                                    </label>
+
+                                    <span class="estado cancelado">Paq. Cancelado</span>
+                                </div>
                             </div>
+
+                            <!-- 🔹 SWITCH TIPO VENTA -->
+                            <div class="col-md-6">
+                                <div class="switch-container">
+                                    Venta tipo:
+
+                                    <span id="tipoVentaTexto" class="estado activo">Detalle</span>
+
+                                    <label class="switch">
+                                        <input type="checkbox" id="tipo_venta">
+                                        <span class="slider"></span>
+                                    </label>
+
+                                    <span class="estado cancelado">Mayoreo</span>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="col-md-12 text-end">
@@ -852,6 +874,9 @@ $logoUrl = setting('logo')
             btn.prop('disabled', true);
 
             let formData = new FormData($('#formPaquete')[0]);
+            // Tipo de venta
+            let tipoVenta = $('#tipo_venta').is(':checked') ? 'mayoreo' : 'detalle';
+            formData.append('tipo_venta', tipoVenta);
 
             if (imagenWebp) {
                 formData.append('foto', imagenWebp);
@@ -1059,7 +1084,22 @@ $logoUrl = setting('logo')
             }
 
         });
+        $('#tipo_venta').change(function() {
 
+            let detalle = $('#tipoVentaTexto');
+            let mayoreo = $(this).closest('.switch-container').find('.estado.cancelado');
+
+            if (this.checked) {
+                // 👉 MAYOREO
+                detalle.css('opacity', '0.3');
+                mayoreo.css('opacity', '1');
+            } else {
+                // 👉 DETALLE
+                detalle.css('opacity', '1');
+                mayoreo.css('opacity', '0.3');
+            }
+
+        });
     });
 </script>
 

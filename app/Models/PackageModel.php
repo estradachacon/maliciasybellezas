@@ -9,9 +9,9 @@ class PackageModel extends Model
     protected $table = 'paquetes';
     protected $primaryKey = 'id';
 
-    protected $returnType = 'object'; 
+    protected $returnType = 'object';
 
-    protected $useTimestamps = true; 
+    protected $useTimestamps = true;
 
     protected $allowedFields = [
         'cliente_nombre',
@@ -24,7 +24,10 @@ class PackageModel extends Model
         'precio',
         'envio',
         'total',
-        'foto'
+        'foto',
+        'tipo_venta',
+        'estado1',
+        'estado2'
     ];
 
     // (Opcional pero recomendado)
