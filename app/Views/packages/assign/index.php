@@ -40,7 +40,7 @@
         margin-top: 5px;
     }
 
-    .item-paquete:active {  
+    .item-paquete:active {
         transform: scale(0.98);
     }
 
@@ -154,6 +154,19 @@
 
     .resumen-item strong {
         font-size: 16px;
+    }
+
+    .estado {
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .estado.ruta {
+        color: #28a745;
+    }
+
+    .estado.casillero {
+        color: #007bff;
     }
 </style>
 
@@ -320,7 +333,8 @@
                             codigoqr: p.codigoqr,
                             cliente: p.cliente_nombre,
                             destino: p.destino,
-                            valor: parseFloat(p.total || 0)
+                            valor: parseFloat(p.total || 0),
+                            estado: 'ruta' // 👈 default
                         });
 
                         render();
@@ -423,7 +437,7 @@
             <div class="item-left">
                 <div class="item-cliente">${p.cliente}</div>
                 <div class="item-destino">${p.destino}</div>
-                <small class="text-muted">${p.estado || 'Sin estado'}</small>
+                <small class="text-muted">${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}</small>
             </div>
 
             <div class="item-right">
@@ -451,20 +465,21 @@
     function configurar(index) {
 
         Swal.fire({
-            title: 'Configurar paquete',
-            input: 'select',
-            inputOptions: {
-                ruta: 'En ruta',
-                casillero: 'En casillero'
-            },
-            inputPlaceholder: 'Seleccione estado',
+            title: 'Estado del paquete',
             showCancelButton: true,
-            confirmButtonText: 'Guardar'
+            showDenyButton: true,
+            confirmButtonText: 'En ruta',
+            denyButtonText: 'En casillero',
+            cancelButtonText: 'Cancelar'
         }).then((result) => {
 
-            if (!result.isConfirmed) return;
-
-            paquetes[index].estado = result.value;
+            if (result.isConfirmed) {
+                paquetes[index].estado = 'ruta';
+            } else if (result.isDenied) {
+                paquetes[index].estado = 'casillero';
+            } else {
+                return;
+            }
 
             render();
         });
