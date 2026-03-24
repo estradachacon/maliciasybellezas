@@ -49,8 +49,6 @@ $logoUrl = setting('logo')
 
     /* ===== ETIQUETA ===== */
     .etiqueta {
-        width: 4in;
-        height: 2in;
         border: 1px solid #000;
         font-family: Arial, sans-serif;
         font-size: 8px;
@@ -694,19 +692,17 @@ $logoUrl = setting('logo')
 
             //MiniPreview
             $('#miniPreview').html(`
-    <div>
+            <div>
 
-<div class="etiqueta" style=" transform: scale(1.4);">
-
-        <table style="width:100%;">
-
-<tr>
-    <!-- LOGO + QR -->
-<td style="width:30%; text-align:center; vertical-align:top;">
-    ${logo ? `
-        <img src="${logo}" style="width:100%; max-height:80px; object-fit:contain; transform: scale(1.1);">
-    ` : ``}
-</td>
+                <div class="etiqueta" style=" transform: scale(1.4);">
+                        <table style="width:100%;">
+                <tr>
+                    <!-- LOGO + QR -->
+                <td style="width:30%; text-align:center; vertical-align:top;">
+                    ${logo ? `
+                        <img src="${logo}" style="width:100%; max-height:80px; object-fit:contain; transform: scale(1.1);">
+                    ` : ``}
+                </td>
                 <!-- CONTENIDO -->
                 <td style="width:80%; padding-left:5px;">
 
