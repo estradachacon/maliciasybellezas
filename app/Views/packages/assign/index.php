@@ -192,7 +192,7 @@
     let scanning = false;
 
     document.getElementById('btnCamara').addEventListener('click', async () => {
-        inputQR.blur(); 
+        inputQR.blur();
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
@@ -243,11 +243,12 @@
                         if (paquetes.some(x => x.id == p.id)) {
 
                             Swal.fire({
+                                toast: true,
+                                position: 'top',
                                 icon: 'warning',
-                                title: 'Duplicado',
-                                text: 'Este paquete ya fue agregado',
-                                timer: 1200,
-                                showConfirmButton: false
+                                title: 'Ya agregado',
+                                showConfirmButton: false,
+                                timer: 1000
                             });
 
                             return;
@@ -263,7 +264,18 @@
 
                         render();
 
-                        // ✅ solo si fue exitoso
+                        // 🔥 ALERTA DE ÉXITO
+                        Swal.fire({
+                            toast: true,
+                            position: 'top',
+                            icon: 'success',
+                            title: 'Agregado',
+                            showConfirmButton: false,
+                            timer: 500,
+                            timerProgressBar: false
+                        });
+
+                        // 🔥 animación visual
                         animacionCheck();
 
                     })
@@ -407,9 +419,12 @@
                 if (res.status !== 'ok') {
                     vibrar();
                     Swal.fire({
+                        toast: true,
+                        position: 'top',
                         icon: 'error',
-                        title: 'Error',
-                        text: res.msg
+                        title: 'No encontrado',
+                        showConfirmButton: false,
+                        timer: 1200
                     });
                     return;
                 }
