@@ -40,7 +40,7 @@
         margin-top: 5px;
     }
 
-    .item-paquete:active {
+    .item-paquete:active {  
         transform: scale(0.98);
     }
 
@@ -48,6 +48,7 @@
         color: #dc3545;
         font-size: 18px;
         cursor: pointer;
+        margin-top: 4px;
     }
 
     .sticky-bottom {
@@ -130,9 +131,29 @@
         font-size: 14px;
     }
 
-    .remove-btn {
-        font-size: 18px;
-        margin-top: 4px;
+    .resumen-paquetes {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .resumen-item {
+        flex: 1;
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    }
+
+    .resumen-item small {
+        display: block;
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    .resumen-item strong {
+        font-size: 16px;
     }
 </style>
 
@@ -150,10 +171,7 @@
             <div class="card-body">
 
                 <!-- QR INPUT -->
-                <div class="mb-3">
-                    <input type="text" id="inputQR" class="form-control qr-input"
-                        placeholder="Escanea o escribe el código QR">
-                </div>
+
                 <button id="btnCamara" class="btn btn-dark mb-2 w-100">
                     Abrir cámara
                 </button>
@@ -188,6 +206,16 @@
                         Cerrar ✕
                     </button>
                 </div>
+                <div class="resumen-paquetes mb-2">
+                    <div class="resumen-item">
+                        <small>Total paquetes</small>
+                        <strong id="totalPaquetes">0</strong>
+                    </div>
+                    <div class="resumen-item">
+                        <small>Total $</small>
+                        <strong id="totalDinero">$0.00</strong>
+                    </div>
+                </div>
                 <div id="listaPaquetes" class="lista-paquetes"></div>
 
                 <div id="emptyState" class="text-center text-muted mt-3">
@@ -205,17 +233,8 @@
         <div class="card shadow-sm mb-3">
             <div class="card-body">
 
-                <label>Encomendista</label>
-                <input type="text" id="encomendista" class="form-control mb-2">
-
                 <label>Flete total</label>
                 <input type="number" id="fleteTotal" class="form-control mb-2" step="0.01">
-
-                <label>Tipo</label>
-                <select id="tipo" class="form-control mb-3">
-                    <option value="en_transito">En tránsito</option>
-                    <option value="en_casillero">En casillero</option>
-                </select>
 
                 <button id="btnProcesar" class="btn btn-success w-100">
                     Procesar paquetes
@@ -234,7 +253,7 @@
     let scanning = false;
 
     document.getElementById('btnCamara').addEventListener('click', async () => {
-        inputQR.blur();
+
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
@@ -306,7 +325,7 @@
 
                         render();
 
-                        // 🔥 ALERTA DE ÉXITO
+                        // ALERTA DE ÉXITO
                         Swal.fire({
                             toast: true,
                             position: 'top',
@@ -329,30 +348,8 @@
             }
         );
     });
-    const inputQR = document.getElementById('inputQR');
     const emptyState = document.getElementById('emptyState');
     const lista = document.getElementById('listaPaquetes');
-
-    // AUTOFOCUS CONSTANTE
-    setInterval(() => {
-        if (!document.getElementById('scannerContainer').style.display ||
-            document.getElementById('scannerContainer').style.display === 'none') {
-            inputQR.focus();
-        }
-    }, 500);
-
-    // ESCANEAR
-    inputQR.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-
-            let codigo = this.value.trim();
-            if (!codigo) return;
-
-            buscarPaquete(codigo);
-            this.value = '';
-        }
-    });
 
     function animacionCheck() {
 
@@ -401,95 +398,6 @@
         }, 30);
     }
 
-    function procesarQR(qr) {
-
-        fetch("<?= base_url('packages-assign/buscar') ?>", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'codigoqr=' + encodeURIComponent(qr)
-            })
-            .then(res => res.json())
-            .then(res => {
-
-                if (res.status !== 'ok') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: res.msg
-                    });
-                    return;
-                }
-
-                let p = res.data;
-
-                if (paquetes.some(x => x.id == p.id)) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Duplicado',
-                        text: 'Este paquete ya fue agregado',
-                        timer: 1200,
-                        showConfirmButton: false
-                    });
-                    return;
-                }
-
-                paquetes.push({
-                    id: p.id,
-                    codigoqr: p.codigoqr,
-                    cliente: p.cliente_nombre,
-                    destino: p.destino,
-                    valor: parseFloat(p.total || 0)
-                });
-
-                render();
-            });
-    }
-
-    function buscarPaquete(qr) {
-
-        fetch("<?= base_url('packages-assign/buscar') ?>", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'codigoqr=' + encodeURIComponent(qr)
-            })
-            .then(res => res.json())
-            .then(res => {
-
-                if (res.status !== 'ok') {
-                    vibrar();
-                    Swal.fire({
-                        toast: true,
-                        position: 'top',
-                        icon: 'error',
-                        title: 'No encontrado',
-                        showConfirmButton: false,
-                        timer: 1200
-                    });
-                    return;
-                }
-
-                let p = res.data;
-
-                if (paquetes.some(x => x.id == p.id)) {
-                    alert('Duplicado');
-                    return;
-                }
-
-                paquetes.push({
-                    id: p.id,
-                    codigoqr: p.codigoqr,
-                    cliente: p.cliente_nombre,
-                    destino: p.destino,
-                    valor: parseFloat(p.total || 0)
-                });
-
-                render();
-            });
-    }
 
     // RENDER
     function render() {
@@ -503,7 +411,11 @@
 
         emptyState.style.display = 'none';
 
+        let total = 0;
+
         paquetes.forEach((p, i) => {
+
+            total += p.valor;
 
             lista.innerHTML += `
         <div class="item-paquete">
@@ -511,15 +423,50 @@
             <div class="item-left">
                 <div class="item-cliente">${p.cliente}</div>
                 <div class="item-destino">${p.destino}</div>
+                <small class="text-muted">${p.estado || 'Sin estado'}</small>
             </div>
 
             <div class="item-right">
                 <div class="item-valor">$${p.valor.toFixed(2)}</div>
-                <span class="remove-btn" onclick="eliminar(${i})">×</span>
+
+                <div class="d-flex gap-2 mt-1">
+                    <button class="btn btn-sm btn-light"
+                        onclick="configurar(${i})">
+                        ⚙
+                    </button>
+
+                    <span class="remove-btn" onclick="eliminar(${i})">×</span>
+                </div>
             </div>
 
         </div>
         `;
+        });
+
+        // 🔥 actualizar resumen
+        document.getElementById('totalPaquetes').innerText = paquetes.length;
+        document.getElementById('totalDinero').innerText = '$' + total.toFixed(2);
+    }
+
+    function configurar(index) {
+
+        Swal.fire({
+            title: 'Configurar paquete',
+            input: 'select',
+            inputOptions: {
+                ruta: 'En ruta',
+                casillero: 'En casillero'
+            },
+            inputPlaceholder: 'Seleccione estado',
+            showCancelButton: true,
+            confirmButtonText: 'Guardar'
+        }).then((result) => {
+
+            if (!result.isConfirmed) return;
+
+            paquetes[index].estado = result.value;
+
+            render();
         });
     }
 
@@ -554,9 +501,7 @@
         }
 
         let data = {
-            encomendista: document.getElementById('encomendista').value,
             flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
-            tipo: document.getElementById('tipo').value,
             paquetes: paquetes
         };
 
