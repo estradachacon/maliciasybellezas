@@ -49,8 +49,10 @@ class PackageController extends BaseController
         $paquetes = $builder->paginate(10);
         $pager = $builder->pager;
         if ($this->request->isAJAX()) {
+            $html = view('packages/_cards', ['paquetes' => $paquetes]);
+
             return $this->response->setJSON([
-                'tbody' => view('packages/_tbody', ['paquetes' => $paquetes]),
+                'html' => view('packages/_cards', ['paquetes' => $paquetes]),
                 'pager' => $pager->links('default', 'bitacora_pagination')
             ]);
         }
@@ -260,6 +262,8 @@ class PackageController extends BaseController
                     ' | Total: $' . number_format($data['total'], 2),
                 $session->get('id')
             );
+            
+            addPackLog($session->get('id'), 'Paquete creado');
 
             return $this->response->setJSON([
                 'status' => 'ok'

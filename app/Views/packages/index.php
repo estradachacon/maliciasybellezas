@@ -2,11 +2,39 @@
 <?= $this->section('content') ?>
 
 <style>
-    .badge-estado {
-        font-size: 0.7rem;
-        padding: 4px 10px;
-        border-radius: 8px;
+    .paquete-card {
+        border-radius: 14px;
+        transition: 0.2s;
     }
+
+    .paquete-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .paquete-card {
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+        background: #f4f1f8ea;
+    }
+
+    /* hover solo en desktop */
+    @media (hover: hover) {
+        .paquete-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    /* efecto al pasar mouse (desktop) */
+    .paquete-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    .paquete-card {
+    border-left: 4px solid #f4f1f8ea;
+}
 </style>
 
 <div class="row">
@@ -22,7 +50,7 @@
 
                     <?php if (tienePermiso('exportar_paquetes_a_excel')): ?>
                         <a href="#" id="btnExportar" class="btn btn-success btn-sm mr-2">
-                            📥 Exportar Excel
+                            📥 Excel
                         </a>
                     <?php endif; ?>
 
@@ -62,33 +90,9 @@
                     </div>
 
                 </div>
-
-                <table class="table table-bordered table-striped table-sm align-middle">
-                    <colgroup>
-                        <col style="width: 5%;">
-                        <col style="width: 29%;">
-                        <col style="width: 29%;">
-                        <col style="width: 12%;">
-                        <col style="width: 10%;">
-                        <col style="width: 8%;">
-                        <col style="width: 7%;">
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Cliente</th>
-                            <th>Destino</th>
-                            <th>Entrega</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Menú</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <?= view('packages/_tbody', ['paquetes' => $paquetes]) ?>
-                    </tbody>
-                </table>
+                <div class="row g-2" id="contenedorPaquetes">
+                    <?= view('packages/_cards', ['paquetes' => $paquetes]) ?>
+                </div>
                 <div id="pagerContainer">
                     <?= $pager->links('default', 'bitacora_pagination') ?>
                 </div>
@@ -192,7 +196,7 @@
             })
             .then(r => r.json())
             .then(data => {
-                $('tbody').html(data.tbody);
+                $('#contenedorPaquetes').html(data.html);
                 $('#pagerContainer').html(data.pager);
             });
     }
@@ -230,7 +234,7 @@
             })
             .then(r => r.json())
             .then(data => {
-                $('tbody').html(data.tbody);
+                $('#contenedorPaquetes').html(data.html);
                 $('#pagerContainer').html(data.pager);
             });
     });
