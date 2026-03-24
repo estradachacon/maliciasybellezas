@@ -694,7 +694,7 @@ $logoUrl = setting('logo')
             $('#miniPreview').html(`
             <div>
 
-                <div class="etiqueta" style=" transform: scale(1.4);">
+                <div class="etiqueta">
                         <table style="width:100%;">
                 <tr>
                     <!-- LOGO + QR -->
