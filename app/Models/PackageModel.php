@@ -28,7 +28,8 @@ class PackageModel extends Model
         'tipo_venta',
         'estado1',
         'estado2',
-        'codigoqr'
+        'codigoqr',
+        'packlog'
     ];
 
     // (Opcional pero recomendado)
