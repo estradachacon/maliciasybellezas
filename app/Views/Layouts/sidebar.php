@@ -139,7 +139,9 @@
                             <?php if (tienePermiso('ver_tracking')): ?>
                                 <a class="nav-link" href="/tracking">Seguimiento de paquetes</a>
                             <?php endif; ?>
-
+                        <?php if (tienePermiso('depositar_por_codigo')): ?>
+                                <a class="nav-link" href="/packages-assign">Seguimiento de paquetes</a>
+                            <?php endif; ?>
                         </nav>
                     </div>
                 <?php endif; ?>

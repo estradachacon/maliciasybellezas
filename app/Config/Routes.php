@@ -143,9 +143,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     $routes->get('packages/quickload', 'PackageController::quickLoad');
     $routes->post('packages/quickstore', 'PackageController::quickStore');
-    $routes->post('packages/updateFlete','PackageController::updateFlete');
-    $routes->post('packages/updatePagoParcial','PackageController::updatePagoParcial');
-    $routes->post('packages/updateFleteCompleto','PackageController::updateFleteCompleto');
+    $routes->post('packages/updateFlete', 'PackageController::updateFlete');
+    $routes->post('packages/updatePagoParcial', 'PackageController::updatePagoParcial');
+    $routes->post('packages/updateFleteCompleto', 'PackageController::updateFleteCompleto');
     $routes->get('paquetes/etiqueta', 'PackageController::generarEtiqueta');
 
     $routes->post('packages-setDestino', 'PackageController::setDestino');
@@ -200,4 +200,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('paquetes/guardar', 'PackageController::guardar');
     $routes->get('packages/generar-codigo', 'PackageController::generarCodigo');
     $routes->get('packages-exportar', 'PackageController::exportar');
+
+    //Ruta para mantenimiento y carga por QR
+    $routes->group('packages-assign', function ($routes) {
+        $routes->get('/', 'PackagesAssign::index');
+        $routes->post('buscar', 'PackagesAssign::buscarPorQR');
+        $routes->post('guardar', 'PackagesAssign::guardar');
+    });
 });
