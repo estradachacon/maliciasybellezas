@@ -46,7 +46,7 @@ class PackageController extends BaseController
                 ->where('DATE(dia_entrega) <=', $fecha_fin);
         }
         $builder = $builder->orderBy('id', 'DESC');
-        $paquetes = $builder->paginate(10);
+        $paquetes = $builder->paginate(12);
         $pager = $builder->pager;
         if ($this->request->isAJAX()) {
             $html = view('packages/_cards', ['paquetes' => $paquetes]);

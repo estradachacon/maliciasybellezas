@@ -51,6 +51,22 @@ class PackagesAssign extends Controller
             ]);
         }
 
+        // 🔥 VALIDAR SI YA ESTÁ ASIGNADO
+        $existe = $this->db->table('package_deposit_details')
+            ->select('deposit_id')
+            ->where('package_id', $paquete->id)
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getRow();
+
+        if ($existe) {
+            return $this->response->setJSON([
+                'status' => 'used',
+                'msg' => 'Este paquete ya fue asignado',
+                'deposit_id' => $existe->deposit_id
+            ]);
+        }
+
         return $this->response->setJSON([
             'status' => 'ok',
             'data' => $paquete
