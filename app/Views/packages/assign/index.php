@@ -341,7 +341,7 @@
                             cliente: p.cliente_nombre,
                             destino: p.destino,
                             valor: parseFloat(p.total || 0),
-                            estado: 'ruta' // 👈 default
+                            estado: 'ruta' 
                         });
 
                         render();
@@ -357,7 +357,7 @@
                             timerProgressBar: false
                         });
 
-                        // 🔥 animación visual
+                        // animación visual
                         animacionCheck();
 
                     })

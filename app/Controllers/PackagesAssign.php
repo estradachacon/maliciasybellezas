@@ -103,6 +103,9 @@ class PackagesAssign extends Controller
             $porcentaje = $totalValor > 0 ? ($p['valor'] / $totalValor) : 0;
             $fleteAsignado = $porcentaje * $fleteTotal;
 
+            // 🔥 estado dinámico desde frontend
+            $tipo = $p['estado'] === 'casillero' ? 'en_casillero' : 'en_ruta';
+
             $detalles[] = [
                 'deposit_id' => $depositId,
                 'package_id' => $p['id'],
@@ -114,11 +117,14 @@ class PackagesAssign extends Controller
                 'foto' => $p['foto'] ?? null
             ];
 
-            // UPDATE PACKAGE
+            // UPDATE correcto según tu modelo
             $this->packageModel->update($p['id'], [
-                'estado' => 'depositado',
-                'sub_estado' => $tipo
+                'estado1' => 'depositado',
+                'estado2' => $tipo
             ]);
+
+            // LOG POR CADA PAQUETE
+            addPackLog($p['id'], 'Asignado a encomendista (' . $tipo . ') por QR');
         }
 
         // 2. DETALLE MASIVO
@@ -133,8 +139,6 @@ class PackagesAssign extends Controller
                 'msg' => 'Error al guardar'
             ]);
         }
-        
-        addPackLog($p['id'], 'Asignado a Encomendista por QR');
         // OK
         return $this->response->setJSON([
             'status' => 'ok',
