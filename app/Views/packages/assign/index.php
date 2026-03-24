@@ -437,7 +437,9 @@
             <div class="item-left">
                 <div class="item-cliente">${p.cliente}</div>
                 <div class="item-destino">${p.destino}</div>
-                <small class="text-muted">${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}</small>
+                <small class="estado ${p.estado}">
+                    ${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}
+                </small>
             </div>
 
             <div class="item-right">
