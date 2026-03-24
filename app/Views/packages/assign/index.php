@@ -114,6 +114,19 @@
                         ">
                         <canvas id="checkCanvas" width="150" height="150"></canvas>
                     </div>
+                    <button id="btnCerrarCamara" style="
+                        position:absolute;
+                        top:15px;
+                        right:15px;
+                        z-index:20;
+                        background:#dc3545;
+                        color:white;
+                        border:none;
+                        padding:10px 15px;
+                        border-radius:8px;
+                    ">
+                        ✕ Cerrar
+                    </button>
                 </div>
                 <!-- TABLA -->
                 <div class="table-responsive">
@@ -195,16 +208,66 @@
 
                 if (!scanning) return;
 
-                scanning = false; // evita doble lectura rápida
+                scanning = false;
 
-                procesarQR(decodedText);
+                fetch("<?= base_url('packages-assign/buscar') ?>", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'codigoqr=' + encodeURIComponent(decodedText)
+                    })
+                    .then(res => res.json())
+                    .then(res => {
 
-                animacionCheck();
+                        if (res.status !== 'ok') {
 
-                setTimeout(() => {
-                    scanning = true;
-                }, 1200);
+                            // 🔥 AQUÍ VA EL BONUS
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'QR no válido',
+                                text: 'No se encontró el paquete',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
 
+                            return;
+                        }
+
+                        let p = res.data;
+
+                        if (paquetes.some(x => x.id == p.id)) {
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Duplicado',
+                                text: 'Este paquete ya fue agregado',
+                                timer: 1200,
+                                showConfirmButton: false
+                            });
+
+                            return;
+                        }
+
+                        paquetes.push({
+                            id: p.id,
+                            codigoqr: p.codigoqr,
+                            cliente: p.cliente_nombre,
+                            destino: p.destino,
+                            valor: parseFloat(p.total || 0)
+                        });
+
+                        renderTabla();
+
+                        // ✅ solo si fue exitoso
+                        animacionCheck();
+
+                    })
+                    .finally(() => {
+                        setTimeout(() => {
+                            scanning = true;
+                        }, 1200);
+                    });
             }
         );
     });
@@ -288,14 +351,24 @@
             .then(res => {
 
                 if (res.status !== 'ok') {
-                    alert(res.msg);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.msg
+                    });
                     return;
                 }
 
                 let p = res.data;
 
                 if (paquetes.some(x => x.id == p.id)) {
-                    alert('Duplicado');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Duplicado',
+                        text: 'Este paquete ya fue agregado',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
                     return;
                 }
 
@@ -325,7 +398,11 @@
 
                 if (res.status !== 'ok') {
                     vibrar();
-                    alert(res.msg);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.msg
+                    });
                     return;
                 }
 
@@ -383,12 +460,29 @@
         paquetes.splice(i, 1);
         render();
     }
+    document.getElementById('btnCerrarCamara').addEventListener('click', cerrarCamara);
 
+    async function cerrarCamara() {
+        try {
+            if (html5QrCode) {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        document.getElementById('scannerContainer').style.display = 'none';
+    }
     // GUARDAR
     document.getElementById('btnProcesar').addEventListener('click', function() {
 
         if (paquetes.length === 0) {
-            alert('Sin paquetes');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin paquetes',
+                text: 'Agrega al menos uno'
+            });
             return;
         }
 
@@ -409,10 +503,18 @@
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'ok') {
-                    alert('Guardado');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Guardado',
+                        text: 'Paquetes procesados'
+                    }).then(() => location.reload());
                     location.reload();
                 } else {
-                    alert(res.msg);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.msg
+                    });
                 }
             });
 
