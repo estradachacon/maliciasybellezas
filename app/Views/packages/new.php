@@ -243,20 +243,20 @@ $logoUrl = setting('logo')
     }
 
     /* 📱 MODO CELULAR */
-    @media (max-width: 768px) {
+@media (max-width: 768px) {
 
-        #miniPreview {
-            width: 100%;
-            padding: 10px;
-        }
-
-        #miniPreview .etiqueta {
-            transform: scale(0.95);
-            /* casi tamaño completo */
-            transform-origin: top center;
-        }
-
+    #miniPreview {
+        width: 100%;
+        overflow: hidden;
     }
+
+    #miniPreview .etiqueta {
+        width: 100%;
+        height: auto;
+        transform: none; /* 🔥 quita escalas raras */
+    }
+
+}
 
     #miniPreview {
         width: 50%;
