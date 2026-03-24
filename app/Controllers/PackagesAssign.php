@@ -70,7 +70,7 @@ class PackagesAssign extends Controller
         }
 
         $paquetes = $data['paquetes'] ?? [];
-        $fleteTotal = $data['flete_total'] ?? 0;
+        $fleteTotal = floatval($data['flete_total'] ?? 0);
 
         if (empty($paquetes)) {
             return $this->response->setJSON([
@@ -79,10 +79,9 @@ class PackagesAssign extends Controller
             ]);
         }
 
-        // TRANSACCIÓN
         $this->db->transStart();
 
-        // 1. CABECERA
+        // CABECERA
         $depositId = $this->depositModel->insert([
             'flete_total' => $fleteTotal,
             'cantidad_paquetes' => count($paquetes),
@@ -90,53 +89,115 @@ class PackagesAssign extends Controller
             'usuario_id' => session('id')
         ]);
 
-        // CALCULAR FLETE
-        $totalValor = array_sum(array_column($paquetes, 'valor'));
-
-        $detalles = [];
+        // 🔥 SEPARAR
+        $paquetesConValor = [];
+        $paquetesSinValor = [];
 
         foreach ($paquetes as $p) {
-
-            $porcentaje = $totalValor > 0 ? ($p['valor'] / $totalValor) : 0;
-            $fleteAsignado = $porcentaje * $fleteTotal;
-
-            // 🔥 estado dinámico desde frontend
-            $tipo = $p['estado'] === 'casillero' ? 'en_casillero' : 'en_ruta';
-
-            $detalles[] = [
-                'deposit_id' => $depositId,
-                'package_id' => $p['id'],
-                'codigo_qr' => $p['codigoqr'],
-                'valor_paquete' => $p['valor'],
-                'porcentaje' => $porcentaje * 100,
-                'flete_asignado' => $fleteAsignado,
-                'nuevo_estado' => $tipo,
-                'foto' => $p['foto'] ?? null
-            ];
-
-            // UPDATE correcto según tu modelo
-            $this->packageModel->update($p['id'], [
-                'estado1' => 'depositado',
-                'estado2' => $tipo
-            ]);
-
-            // LOG POR CADA PAQUETE
-            addPackLog($p['id'], 'Asignado a encomendista (' . $tipo . ') por QR');
+            if (floatval($p['valor']) > 0) {
+                $paquetesConValor[] = $p;
+            } else {
+                $paquetesSinValor[] = $p;
+            }
         }
 
-        // 2. DETALLE MASIVO
+        $costoFijo = 3;
+        $detalles = [];
+
+        $todosSinValor = count($paquetesConValor) === 0;
+
+        // 🔥 CASO 1: TODOS SIN VALOR
+        if ($todosSinValor) {
+
+            $cantidad = count($paquetes);
+            $fleteUnitario = $cantidad > 0 ? $fleteTotal / $cantidad : 0;
+
+            foreach ($paquetes as $p) {
+
+                $tipo = $p['estado'] === 'casillero' ? 'en_casillero' : 'en_ruta';
+
+                $detalles[] = [
+                    'deposit_id' => $depositId,
+                    'package_id' => $p['id'],
+                    'codigo_qr' => $p['codigoqr'],
+                    'valor_paquete' => 0,
+                    'porcentaje' => 0,
+                    'flete_asignado' => round($fleteUnitario, 2),
+                    'nuevo_estado' => $tipo,
+                    'foto' => $p['foto'] ?? null
+                ];
+
+                $this->packageModel->update($p['id'], [
+                    'estado1' => 'depositado',
+                    'estado2' => $tipo
+                ]);
+
+                addPackLog(
+                    $p['id'],
+                    'Asignado (' . $tipo . ') - Flete: $' . number_format($fleteUnitario, 2)
+                );
+            }
+        } else {
+
+            // 🔥 CASO MIXTO / CON VALOR
+
+            $totalSinValor = count($paquetesSinValor) * $costoFijo;
+            $fleteRestante = $fleteTotal - $totalSinValor;
+
+            if ($fleteRestante < 0) {
+                $fleteRestante = 0;
+            }
+
+            $totalValor = array_sum(array_column($paquetesConValor, 'valor'));
+
+            foreach ($paquetes as $p) {
+
+                $valor = floatval($p['valor']);
+                $tipo = $p['estado'] === 'casillero' ? 'en_casillero' : 'en_ruta';
+
+                if ($valor <= 0) {
+                    $fleteAsignado = $costoFijo;
+                    $porcentaje = 0;
+                } else {
+                    $porcentaje = $totalValor > 0 ? ($valor / $totalValor) : 0;
+                    $fleteAsignado = $porcentaje * $fleteRestante;
+                }
+
+                $detalles[] = [
+                    'deposit_id' => $depositId,
+                    'package_id' => $p['id'],
+                    'codigo_qr' => $p['codigoqr'],
+                    'valor_paquete' => $valor,
+                    'porcentaje' => $porcentaje * 100,
+                    'flete_asignado' => round($fleteAsignado, 2),
+                    'nuevo_estado' => $tipo,
+                    'foto' => $p['foto'] ?? null
+                ];
+
+                $this->packageModel->update($p['id'], [
+                    'estado1' => 'depositado',
+                    'estado2' => $tipo
+                ]);
+
+                addPackLog(
+                    $p['id'],
+                    'Asignado (' . $tipo . ') - Flete: $' . number_format($fleteAsignado, 2)
+                );
+            }
+        }
+
+        // INSERT MASIVO
         $this->detailModel->insertBatch($detalles);
 
         $this->db->transComplete();
 
-        // ERROR
         if ($this->db->transStatus() === false) {
             return $this->response->setJSON([
                 'status' => 'error',
                 'msg' => 'Error al guardar'
             ]);
         }
-        // OK
+
         return $this->response->setJSON([
             'status' => 'ok',
             'deposit_id' => $depositId
