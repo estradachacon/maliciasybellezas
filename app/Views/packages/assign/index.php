@@ -190,14 +190,13 @@
     let paquetes = [];
     let html5QrCode;
     let scanning = false;
-
+    
     document.getElementById('btnCamara').addEventListener('click', async () => {
         inputQR.blur();
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
-        const lista = document.querySelector('#tablaPaquetes tbody');
-
+        
         scanning = true;
 
         await html5QrCode.start({
@@ -290,6 +289,7 @@
     });
     const inputQR = document.getElementById('inputQR');
     const emptyState = document.getElementById('emptyState');
+    const lista = document.querySelector('#tablaPaquetes tbody');
 
     // AUTOFOCUS CONSTANTE
     setInterval(() => {
