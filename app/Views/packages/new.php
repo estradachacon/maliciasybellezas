@@ -241,17 +241,37 @@ $logoUrl = setting('logo')
     #miniPreview>div {
         pointer-events: none;
     }
-#miniPreview {
-    width: 50%;
-    margin: 0 auto; /* centrado */
-    display: flex;
-    justify-content: center;
-}
 
-#miniPreview .etiqueta {
-    transform: scale(1); /* puedes ajustar si quieres más grande */
-    transform-origin: top center;
-}
+    /* 📱 MODO CELULAR */
+    @media (max-width: 768px) {
+
+        #miniPreview {
+            width: 100%;
+            padding: 10px;
+        }
+
+        #miniPreview .etiqueta {
+            transform: scale(0.95);
+            /* casi tamaño completo */
+            transform-origin: top center;
+        }
+
+    }
+
+    #miniPreview {
+        width: 50%;
+        margin: 0 auto;
+        /* centrado */
+        display: flex;
+        justify-content: center;
+    }
+
+    #miniPreview .etiqueta {
+        transform: scale(1);
+        /* puedes ajustar si quieres más grande */
+        transform-origin: top center;
+    }
+
     #video {
         border-radius: 15px;
         transition: transform 0.2s;
