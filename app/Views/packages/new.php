@@ -243,20 +243,26 @@ $logoUrl = setting('logo')
     }
 
     /* 📱 MODO CELULAR */
-@media (max-width: 768px) {
+    @media (max-width: 768px) {
 
-    #miniPreview {
-        width: 100%;
-        overflow: hidden;
+        #miniPreview {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #miniPreview .etiqueta {
+            width: 100%;
+            height: auto;
+            transform: none;
+            /* 🔥 quita escalas raras */
+        }
+
+        .switch-container {
+            justify-content: center;
+            flex-wrap: wrap;
+            text-align: center;
+        }
     }
-
-    #miniPreview .etiqueta {
-        width: 100%;
-        height: auto;
-        transform: none; /* 🔥 quita escalas raras */
-    }
-
-}
 
     #miniPreview {
         width: 50%;
@@ -413,18 +419,6 @@ $logoUrl = setting('logo')
                 <button id="btnVolver" class="btn btn-outline-secondary">
                     ← Volver
                 </button>
-                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
-
-                    <span class="fw-bold">📷 Cámara</span>
-
-                    <label class="switch">
-                        <input type="checkbox" id="modoArchivo">
-                        <span class="slider"></span>
-                    </label>
-
-                    <span class="fw-bold">📁 Archivo</span>
-
-                </div>
 
                 <small id="hintCamara" class="text-muted d-block text-center mb-2">
                     Presione la imagen para reiniciar cámara
@@ -451,7 +445,18 @@ $logoUrl = setting('logo')
                 <button type="button" id="btnCapturar" class="btn btn-dark w-100 mt-2">
                     📸 Capturar foto
                 </button>
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
 
+                    <span class="fw-bold">📷 Cámara</span>
+
+                    <label class="switch">
+                        <input type="checkbox" id="modoArchivo">
+                        <span class="slider"></span>
+                    </label>
+
+                    <span class="fw-bold">📁 Archivo</span>
+
+                </div>
                 <canvas id="canvas" style="display:none;"></canvas>
                 <input type="file" id="fileFoto" accept="image/*" style="display:none;">
                 <img id="previewFoto"
