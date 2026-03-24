@@ -436,6 +436,7 @@ $logoUrl = setting('logo')
                     🖨️ Imprimir
                 </button>
             </div>
+
             <!-- FOTO -->
             <div class="text-center">
                 <video id="video" autoplay playsinline class="video-camara"></video>
@@ -445,7 +446,7 @@ $logoUrl = setting('logo')
                 <button type="button" id="btnCapturar" class="btn btn-dark w-100 mt-2">
                     📸 Capturar foto
                 </button>
-                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-2 mt-2">
 
                     <span class="fw-bold">📷 Cámara</span>
 
