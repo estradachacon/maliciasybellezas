@@ -218,4 +218,34 @@ class PackagesAssign extends Controller
             'deposit_id' => $depositId
         ]);
     }
+    public function show($id)
+    {
+        // Obtener cabecera del depósito
+        $deposit = $this->depositModel->find($id);
+
+        if (!$deposit) {
+            return redirect()->to(base_url('packages-assign'))
+                ->with('error', 'Seguimiento no encontrado');
+        }
+
+        // Obtener detalle con info del paquete (join)
+        $detalles = $this->detailModel->obtenerConPaquete($id);
+
+        // (Opcional) recalcular totales por seguridad
+        $totalValor = 0;
+        $totalFlete = 0;
+
+        foreach ($detalles as $d) {
+            $totalValor += $d->valor_paquete;
+            $totalFlete += $d->flete_asignado;
+        }
+
+        // Enviar a la vista
+        return view('packages/assign/show', [
+            'deposit'      => $deposit,
+            'detalles'     => $detalles,
+            'totalValor'   => $totalValor,
+            'totalFlete'   => $totalFlete
+        ]);
+    }
 }

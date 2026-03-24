@@ -207,4 +207,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->post('buscar', 'PackagesAssign::buscarPorQR');
         $routes->post('guardar', 'PackagesAssign::guardar');
     });
+    $routes->get('packages-assignation/', 'PackagesAssign::table');
+    $routes->get('packages-assignation/(:num)', 'PackagesAssign::show/$1');
 });

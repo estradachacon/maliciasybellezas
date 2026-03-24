@@ -38,12 +38,15 @@ class PackageDepositDetailModel extends Model
     public function obtenerConPaquete($deposit_id)
     {
         return $this->select('
-                package_deposit_details.*,
-                packages.cliente_nombre,
-                packages.destino
-            ')
-            ->join('packages', 'packages.id = package_deposit_details.package_id')
-            ->where('deposit_id', $deposit_id)
+            d.*,
+            p.cliente_nombre,
+            p.destino
+        ')
+            ->from('package_deposit_details d')
+            ->join('paquetes p', 'p.id = d.package_id', 'left')
+            ->where('d.deposit_id', $deposit_id)
+            ->groupBy('d.package_id') 
+            ->orderBy('d.id', 'DESC')
             ->findAll();
     }
 }

@@ -9,6 +9,54 @@
         font-weight: 600;
     }
 
+    .log-box {
+        max-height: 220px;
+        overflow-y: auto;
+        font-size: 12px;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 10px;
+        border-radius: 10px;
+        font-family: monospace;
+    }
+
+    .estado-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+
+    /* variantes */
+    .estado-depositado {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .estado-en_ruta {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .estado-pendiente {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .estado-cancelado {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .estado-default {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
     .info-value {
         font-size: 18px;
         font-weight: 700;
@@ -47,20 +95,57 @@
     <div class="col-md-12">
         <div class="card shadow-sm">
 
-            <!-- HEADER -->
-            <div class="card-header d-flex">
+            <div class="card-header">
 
-                <div>
-                    <h4 class="mb-0">
-                        Paquete
-                        <span class="badge bg-primary ms-2 text-white">
-                            #<?= $paquete->id ?>
-                        </span>
-                    </h4>
+                <div class="d-flex justify-content-between flex-wrap">
 
-                    <small class="text-muted">
-                        Registro de envío
-                    </small>
+                    <!-- IZQUIERDA -->
+                    <div>
+                        <h4 class="mb-0">
+                            Paquete
+                            <span class="badge bg-primary ms-2 text-white">
+                                #<?= $paquete->id ?>
+                            </span>
+                        </h4>
+
+                        <small class="text-muted">
+                            Registro de envío
+                        </small>
+                    </div>
+
+                    <!-- DERECHA (PANEL ESTADOS) -->
+                    <div class="mt-3 mt-md-0" style="min-width:250px; max-width:320px;">
+
+                        <div class="border rounded px-3 py-2 bg-light">
+
+                            <!-- ESTADO PRINCIPAL -->
+                            <?php if (!empty($paquete->estado1)): ?>
+                                <div class="d-flex align-items-center mb-1">
+                                    <small class="text-muted">Estado</small>
+
+                                    <span class="badge ml-auto px-3 py-1 text-white"
+                                        style="background: #0dcaf0;">
+                                        <?= esc($paquete->estado1) ?>
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- ESTADO SECUNDARIO -->
+                            <?php if (!empty($paquete->estado2)): ?>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted">Ubicación</small>
+
+                                    <span class="badge ml-auto px-3 py-1 text-white"
+                                        style="background: #198754;">
+                                        <?= esc($paquete->estado2) ?>
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -121,44 +206,49 @@
 
                             </div>
                         </div>
+                        <!-- 🧾 LOG DEL PAQUETE -->
+                        <?php if (!empty($paquete->packlog)): ?>
+                            <div class="card-section mb-3">
+
+                                <div class="info-label mb-2">Historial del paquete</div>
+
+                                <div style="
+                                                    max-height:200px;
+                                                    overflow-y:auto;
+                                                    font-size:12px;
+                                                    background:#f8f9fa;
+                                                    padding:10px;
+                                                    border-radius:8px;
+                                                ">
+                                    <?= nl2br(esc($paquete->packlog)) ?>
+                                </div>
+
+                            </div>
+                        <?php endif; ?>
                         <?php
                         function badgeColor($estado)
                         {
                             return match ($estado) {
-                                'pagado' => 'success',
+                                'pagado' => 'success text-white',
+                                'depositado' => 'info',
                                 'pendiente' => 'warning',
-                                'cancelado' => 'danger',
+                                'cancelado' => 'danger text-white',
                                 'entregado' => 'primary',
-                                'en_ruta' => 'info',
+                                'en_ruta' => 'success text-white',
                                 default => 'secondary'
                             };
                         }
+                        function estadoClass($estado)
+                        {
+                            return match ($estado) {
+                                'depositado' => 'estado-depositado',
+                                'en_ruta' => 'estado-en_ruta',
+                                'pendiente' => 'estado-pendiente',
+                                'cancelado' => 'estado-cancelado',
+                                default => 'estado-default'
+                            };
+                        }
                         ?>
-
-                        <!-- ESTADOS -->
-                        <?php if (!empty($paquete->estado1) || !empty($paquete->estado2)): ?>
-                            <div class="card-section mb-3">
-
-                                <?php if (!empty($paquete->estado1)): ?>
-                                    <div class="info-label">Estado de Paquete</div>
-                                    <div>
-                                        <span class="badge bg-<?= badgeColor($paquete->estado1) ?>">
-                                            <?= esc($paquete->estado1) ?>
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
-
-                                <?php if (!empty($paquete->estado2)): ?>
-                                    <div class="info-label mt-2">Estado secundario</div>
-                                    <div>
-                                        <span class="badge bg-<?= badgeColor($paquete->estado2) ?>">
-                                            <?= esc($paquete->estado2) ?>
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
-
-                            </div>
-                        <?php endif; ?>
 
                     </div>
 

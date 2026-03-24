@@ -135,40 +135,8 @@
                             <?php if (tienePermiso('ver_paquetes')): ?>
                                 <a class="nav-link" href="/packages">Lista de paquetes</a>
                             <?php endif; ?>
-
-                            <?php if (tienePermiso('ver_tracking')): ?>
-                                <a class="nav-link" href="/tracking">Seguimiento de paquetes</a>
-                            <?php endif; ?>
-                        <?php if (tienePermiso('depositar_por_codigo')): ?>
+                            <?php if (tienePermiso('depositar_por_codigo')): ?>
                                 <a class="nav-link" href="/packages-assign">Seguimiento de paquetes</a>
-                            <?php endif; ?>
-                        </nav>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (
-                    tienePermiso('remunerar_paquetes') ||
-                    tienePermiso('devolver_paquetes') ||
-                    tienePermiso('remunerar_paquetes_por_cuenta')
-                ): ?>
-                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#treasury"
-                        aria-expanded="false" aria-controls="treasury">
-                        <div class="sb-nav-link-icon"><i class="fa-solid fa-wallet"></i></div>
-                        Remuneraciones
-                        <div class="sb-sidenav-collapse-arrow"><i class="fa-solid fa-angle-down"></i></div>
-                    </a>
-                    <div class="collapse" id="treasury" aria-labelledby="headingOne" data-parent="#sidenavAccordion">
-                        <nav class="sb-sidenav-menu-nested nav" id="navAccordionTreasury">
-                            <?php if (tienePermiso('remunerar_paquetes')): ?>
-                                <a class="nav-link" href="/remu/create">Remunerar paquetes</a>
-                            <?php endif; ?>
-
-                            <?php if (tienePermiso('remunerar_paquetes_por_cuenta')): ?>
-                                <a class="nav-link" href="/remuaccount/create">Remunerar paquetes por cuenta</a>
-                            <?php endif; ?>
-
-                            <?php if (tienePermiso('devolver_paquetes')): ?>
-                                <a class="nav-link" href="/packages/return">Devolución de paquetes</a>
                             <?php endif; ?>
                         </nav>
                     </div>
