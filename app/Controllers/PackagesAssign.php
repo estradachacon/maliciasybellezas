@@ -28,7 +28,6 @@ class PackagesAssign extends Controller
         return view('packages/assign/index'); // crea este view luego
     }
 
-    // Buscar paquete por QR
     public function buscarPorQR()
     {
         $qr = $this->request->getPost('codigoqr');
