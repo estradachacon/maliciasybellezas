@@ -5,25 +5,30 @@ if (!function_exists('addPackLog')) {
     function addPackLog($packageId, $mensaje)
     {
         $db = \Config\Database::connect();
+        $builder = $db->table('paquetes');
 
         // Obtener log actual
-        $builder = $db->table('paquetes');
-        $paquete = $builder->select('packlog')->where('id', $packageId)->get()->getRow();
+        $paquete = $builder
+            ->select('packlog')
+            ->where('id', $packageId)
+            ->get()
+            ->getRow();
 
         $logActual = $paquete->packlog ?? '';
 
-        // Fecha bonita
+        // Fecha
         $fecha = date('Y-m-d H:i:s');
 
-        // Usuario (opcional)
-        $usuario = session('usuario') ?? 'Sistema';
+        // 🔥 USUARIO CORRECTO
+        $session = session();
+        $usuario = $session->get('user_name') ?? 'Sistema';
 
         // Nuevo log
         $nuevo = "[{$fecha}] ({$usuario}) {$mensaje}";
 
-        // Concatenar
+        // Concatenar (mejor con \n)
         $logFinal = $logActual
-            ? $logActual . '<br>' . $nuevo
+            ? $logActual . "\n" . $nuevo
             : $nuevo;
 
         // Guardar
