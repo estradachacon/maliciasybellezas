@@ -264,7 +264,6 @@ $logoUrl = setting('logo')
     }
 
     #miniPreview {
-        width: 50%;
         margin: 0 auto;
         /* centrado */
         display: flex;
