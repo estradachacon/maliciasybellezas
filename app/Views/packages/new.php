@@ -59,8 +59,6 @@ $logoUrl = setting('logo')
         justify-content: space-between;
         padding: 2px;
         position: relative;
-        /* 🔥 NECESARIO */
-        /* 🔥 bajar padding */
     }
 
     /* CONTENEDOR */
@@ -240,21 +238,20 @@ $logoUrl = setting('logo')
         transform: translateX(24px);
     }
 
-    #miniPreview .etiqueta {
-        width: 262pt;
-        height: 110pt;
-        margin: 4pt auto;
-        padding: 5pt;
-        border: 2px solid #000;
-        border-radius: 4%;
-        font-family: sans-serif;
-        font-size: 9pt;
-    }
-
     #miniPreview>div {
         pointer-events: none;
     }
+#miniPreview {
+    width: 50%;
+    margin: 0 auto; /* centrado */
+    display: flex;
+    justify-content: center;
+}
 
+#miniPreview .etiqueta {
+    transform: scale(1); /* puedes ajustar si quieres más grande */
+    transform-origin: top center;
+}
     #video {
         border-radius: 15px;
         transition: transform 0.2s;
@@ -671,7 +668,7 @@ $logoUrl = setting('logo')
 
             //MiniPreview
             $('#miniPreview').html(`
-    <div style="zoom:1.2;">
+    <div>
 
     <div class="etiqueta">
 
