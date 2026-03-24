@@ -244,15 +244,16 @@ $logoUrl = setting('logo')
     @media (max-width: 768px) {
 
         #miniPreview {
+            max-width: 400px;
             width: 100%;
             overflow: hidden;
         }
 
         #miniPreview .etiqueta {
+            max-width: 400px;
             width: 100%;
             height: auto;
             transform: none;
-            /* 🔥 quita escalas raras */
         }
 
         .switch-container {
