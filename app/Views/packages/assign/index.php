@@ -40,6 +40,10 @@
         margin-top: 5px;
     }
 
+    .item-paquete:active {
+        transform: scale(0.98);
+    }
+
     .remove-btn {
         color: #dc3545;
         font-size: 18px;
@@ -77,6 +81,58 @@
 
     #checkOverlay {
         display: none;
+    }
+
+    .lista-paquetes {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .item-paquete {
+        background: #fff;
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .item-left {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .item-cliente {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .item-destino {
+        font-size: 12px;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+    }
+
+    .item-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .item-valor {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .remove-btn {
+        font-size: 18px;
+        margin-top: 4px;
     }
 </style>
 
@@ -129,24 +185,10 @@
                         padding:10px 15px;
                         border-radius:8px;
                     ">
-                        ✕ Cerrar
+                        Cerrar ✕
                     </button>
                 </div>
-                <!-- TABLA -->
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="tablaPaquetes">
-                        <thead>
-                            <tr>
-                                <th>QR</th>
-                                <th>Cliente</th>
-                                <th>Destino</th>
-                                <th>Valor</th>
-                                <th width="50"></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <div id="listaPaquetes" class="lista-paquetes"></div>
 
                 <div id="emptyState" class="text-center text-muted mt-3">
                     No hay paquetes agregados
@@ -190,13 +232,13 @@
     let paquetes = [];
     let html5QrCode;
     let scanning = false;
-    
+
     document.getElementById('btnCamara').addEventListener('click', async () => {
         inputQR.blur();
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
-        
+
         scanning = true;
 
         await html5QrCode.start({
@@ -282,14 +324,14 @@
                     .finally(() => {
                         setTimeout(() => {
                             scanning = true;
-                        }, 700);
+                        }, 500);
                     });
             }
         );
     });
     const inputQR = document.getElementById('inputQR');
     const emptyState = document.getElementById('emptyState');
-    const lista = document.querySelector('#tablaPaquetes tbody');
+    const lista = document.getElementById('listaPaquetes');
 
     // AUTOFOCUS CONSTANTE
     setInterval(() => {
@@ -464,15 +506,19 @@
         paquetes.forEach((p, i) => {
 
             lista.innerHTML += `
-        <tr>
-            <td>${p.codigoqr}</td>
-            <td>${p.cliente}</td>
-            <td>${p.destino}</td>
-            <td>$${p.valor.toFixed(2)}</td>
-            <td class="text-center">
+        <div class="item-paquete">
+            
+            <div class="item-left">
+                <div class="item-cliente">${p.cliente}</div>
+                <div class="item-destino">${p.destino}</div>
+            </div>
+
+            <div class="item-right">
+                <div class="item-valor">$${p.valor.toFixed(2)}</div>
                 <span class="remove-btn" onclick="eliminar(${i})">×</span>
-            </td>
-        </tr>
+            </div>
+
+        </div>
         `;
         });
     }
