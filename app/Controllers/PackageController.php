@@ -263,7 +263,7 @@ class PackageController extends BaseController
                 $session->get('id')
             );
             
-            addPackLog($session->get('id'), 'Paquete creado');
+            addPackLog($id, 'Paquete creado');
 
             return $this->response->setJSON([
                 'status' => 'ok'
