@@ -71,8 +71,6 @@ class PackagesAssign extends Controller
 
         $paquetes = $data['paquetes'] ?? [];
         $fleteTotal = $data['flete_total'] ?? 0;
-        $encomendista = $data['encomendista'] ?? '';
-        $tipo = $data['tipo'] ?? 'en_transito'; // o en_casillero
 
         if (empty($paquetes)) {
             return $this->response->setJSON([
@@ -86,7 +84,6 @@ class PackagesAssign extends Controller
 
         // 1. CABECERA
         $depositId = $this->depositModel->insert([
-            'encomendista_nombre' => $encomendista,
             'flete_total' => $fleteTotal,
             'cantidad_paquetes' => count($paquetes),
             'fecha' => date('Y-m-d H:i:s'),

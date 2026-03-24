@@ -528,19 +528,7 @@
             flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
             paquetes: paquetes
         };
-        Swal.fire({
-            title: 'Payload',
-            html: `<div style="
-        text-align:left;
-        max-height:300px;
-        overflow:auto;
-        font-size:11px;
-    ">
-        <pre>${JSON.stringify(data, null, 2)}</pre>
-    </div>`,
-            width: '90%'
-        });
-        return;
+        
         fetch("<?= base_url('packages-assign/guardar') ?>", {
                 method: 'POST',
                 headers: {
