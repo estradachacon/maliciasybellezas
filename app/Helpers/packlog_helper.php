@@ -7,7 +7,7 @@ if (!function_exists('addPackLog')) {
         $db = \Config\Database::connect();
 
         // Obtener log actual
-        $builder = $db->table('packages');
+        $builder = $db->table('paquetes');
         $paquete = $builder->select('packlog')->where('id', $packageId)->get()->getRow();
 
         $logActual = $paquete->packlog ?? '';
