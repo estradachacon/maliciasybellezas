@@ -696,23 +696,19 @@ $logoUrl = setting('logo')
             $('#miniPreview').html(`
     <div>
 
-    <div class="etiqueta">
+<div class="etiqueta" style=" transform: scale(1.4);">
 
         <table style="width:100%;">
 
 <tr>
     <!-- LOGO + QR -->
-    <td style="width:30%; text-align:center; vertical-align:top;">
-
-        ${logo ? `
-            <img src="${logo}" style="width:100%; max-height:50px; object-fit:contain;">
-        ` : ``}
-
-        <img src="${qrImg}" style="width:70px; margin-top:5px;">
-    </td>
-
+<td style="width:30%; text-align:center; vertical-align:top;">
+    ${logo ? `
+        <img src="${logo}" style="width:100%; max-height:80px; object-fit:contain; transform: scale(1.1);">
+    ` : ``}
+</td>
                 <!-- CONTENIDO -->
-                <td style="width:70%; padding-left:5px;">
+                <td style="width:80%; padding-left:5px;">
 
                     <!-- HEADER -->
                     <table style="width:100%; border-bottom:1px solid #000; margin-bottom:2px;">
