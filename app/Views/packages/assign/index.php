@@ -196,6 +196,7 @@
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
+        const lista = document.querySelector('#tablaPaquetes tbody');
 
         scanning = true;
 
@@ -400,7 +401,7 @@
                     valor: parseFloat(p.total || 0)
                 });
 
-                renderTabla();
+                render();
             });
     }
 
@@ -463,18 +464,15 @@
         paquetes.forEach((p, i) => {
 
             lista.innerHTML += `
-            <div class="paquete-card">
-                <div class="paquete-header">
-                    <span>${p.codigoqr}</span>
-                    <span class="remove-btn" onclick="eliminar(${i})">×</span>
-                </div>
-
-                <div class="paquete-body">
-                    ${p.cliente}<br>
-                    ${p.destino}<br>
-                    <b>$${p.valor.toFixed(2)}</b>
-                </div>
-            </div>
+        <tr>
+            <td>${p.codigoqr}</td>
+            <td>${p.cliente}</td>
+            <td>${p.destino}</td>
+            <td>$${p.valor.toFixed(2)}</td>
+            <td class="text-center">
+                <span class="remove-btn" onclick="eliminar(${i})">×</span>
+            </td>
+        </tr>
         `;
         });
     }
@@ -526,6 +524,7 @@
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'ok') {
+                    Swal.close();
                     Swal.fire({
                         icon: 'success',
                         title: 'Guardado',
