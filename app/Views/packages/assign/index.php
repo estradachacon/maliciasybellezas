@@ -523,8 +523,15 @@
         };
 Swal.fire({
     title: 'Payload',
-    html: `<pre style="text-align:left">${JSON.stringify(data, null, 2)}</pre>`,
-    width: '600px'
+    html: `<div style="
+        text-align:left;
+        max-height:300px;
+        overflow:auto;
+        font-size:11px;
+    ">
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+    </div>`,
+    width: '90%'
 });
 return;
         fetch("<?= base_url('packages-assign/guardar') ?>", {
