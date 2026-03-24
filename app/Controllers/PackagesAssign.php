@@ -133,7 +133,8 @@ class PackagesAssign extends Controller
                 'msg' => 'Error al guardar'
             ]);
         }
-
+        
+        addPackLog($p['id'], 'Asignado a Encomendista por QR');
         // OK
         return $this->response->setJSON([
             'status' => 'ok',

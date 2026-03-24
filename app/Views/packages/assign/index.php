@@ -78,6 +78,7 @@
     #reader {
         width: 100%;
         height: 100%;
+        overflow: hidden;
     }
 
     #checkOverlay {
@@ -167,6 +168,12 @@
 
     .estado.casillero {
         color: #007bff;
+    }
+
+    #reader video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
     }
 </style>
 
@@ -521,9 +528,9 @@
             flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
             paquetes: paquetes
         };
-Swal.fire({
-    title: 'Payload',
-    html: `<div style="
+        Swal.fire({
+            title: 'Payload',
+            html: `<div style="
         text-align:left;
         max-height:300px;
         overflow:auto;
@@ -531,9 +538,9 @@ Swal.fire({
     ">
         <pre>${JSON.stringify(data, null, 2)}</pre>
     </div>`,
-    width: '90%'
-});
-return;
+            width: '90%'
+        });
+        return;
         fetch("<?= base_url('packages-assign/guardar') ?>", {
                 method: 'POST',
                 headers: {
