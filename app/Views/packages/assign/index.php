@@ -305,19 +305,34 @@
                     .then(res => res.json())
                     .then(res => {
 
-                        if (res.status !== 'ok') {
+                        if (res.status === 'empty') {
+                            return; // silencioso o pequeño aviso
+                        }
 
-                            // 🔥 AQUÍ VA EL BONUS
+                        if (res.status === 'not_found') {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'QR no válido',
-                                text: 'No se encontró el paquete',
+                                title: 'QR inválido',
+                                text: res.msg,
                                 timer: 1500,
                                 showConfirmButton: false
                             });
-
                             return;
                         }
+
+                        if (res.status === 'used') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Ya asignado',
+                                html: `
+                Este paquete ya está en la asignación:<br>
+                <b>#${res.deposit_id}</b>
+            `
+                            });
+                            return;
+                        }
+
+                        if (res.status !== 'ok') return;
 
                         let p = res.data;
 
@@ -341,7 +356,7 @@
                             cliente: p.cliente_nombre,
                             destino: p.destino,
                             valor: parseFloat(p.total || 0),
-                            estado: 'ruta' 
+                            estado: 'ruta'
                         });
 
                         render();
@@ -528,7 +543,7 @@
             flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
             paquetes: paquetes
         };
-        
+
         fetch("<?= base_url('packages-assign/guardar') ?>", {
                 method: 'POST',
                 headers: {
