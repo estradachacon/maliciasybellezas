@@ -11,6 +11,10 @@
         border: none;
     }
 
+    .swal2-container {
+        z-index: 10000 !important;
+    }
+
     .qr-input {
         font-size: 20px;
         padding: 14px;
@@ -72,7 +76,7 @@
     }
 
     #checkOverlay {
-        display: flex;
+        display: none;
     }
 </style>
 
@@ -188,7 +192,7 @@
     let scanning = false;
 
     document.getElementById('btnCamara').addEventListener('click', async () => {
-
+        inputQR.blur(); 
         document.getElementById('scannerContainer').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
@@ -257,7 +261,7 @@
                             valor: parseFloat(p.total || 0)
                         });
 
-                        renderTabla();
+                        render();
 
                         // ✅ solo si fue exitoso
                         animacionCheck();
@@ -272,11 +276,15 @@
         );
     });
     const inputQR = document.getElementById('inputQR');
-    const lista = document.getElementById('listaPaquetes');
     const emptyState = document.getElementById('emptyState');
 
     // AUTOFOCUS CONSTANTE
-    setInterval(() => inputQR.focus(), 500);
+    setInterval(() => {
+        if (!document.getElementById('scannerContainer').style.display ||
+            document.getElementById('scannerContainer').style.display === 'none') {
+            inputQR.focus();
+        }
+    }, 500);
 
     // ESCANEAR
     inputQR.addEventListener('keypress', function(e) {
