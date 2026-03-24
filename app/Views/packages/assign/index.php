@@ -364,7 +364,7 @@
                     .finally(() => {
                         setTimeout(() => {
                             scanning = true;
-                        }, 500);
+                        }, 650);
                     });
             }
         );
