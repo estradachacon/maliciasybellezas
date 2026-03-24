@@ -282,7 +282,7 @@
                     .finally(() => {
                         setTimeout(() => {
                             scanning = true;
-                        }, 800);
+                        }, 700);
                     });
             }
         );
