@@ -63,7 +63,9 @@ function statusBadge($status)
         'Activo'  => 'success',
         'Inactivo'  => 'danger',
         'Efectivo'  => 'success',
-        'Banco'  => 'info'
+        'Banco'  => 'info',
+        'depositado' => 'info',
+        'en_ruta' => 'success',
     ];
 
     $color = $map[$status] ?? 'secondary';
