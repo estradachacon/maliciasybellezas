@@ -32,9 +32,10 @@
         transform: translateY(-4px);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
+
     .paquete-card {
-    border-left: 4px solid #f4f1f8ea;
-}
+        border-left: 4px solid #f4f1f8ea;
+    }
 </style>
 
 <div class="row">
@@ -101,6 +102,16 @@
         </div>
     </div>
 </div>
+<!-- MODAL IMAGEN -->
+<div class="modal fade" id="modalImagen" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-center">
+            <div class="modal-body p-2">
+                <img id="imagenGrande" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     let fp;
 
@@ -160,6 +171,11 @@
     });
 </script>
 <script>
+    function verImagen(src) {
+        document.getElementById('imagenGrande').src = src;
+        $('#modalImagen').modal('show'); // Bootstrap 4
+    }
+
     function cargarPaquetes(url = null) {
 
         let cliente = $('#clienteFiltro').val();

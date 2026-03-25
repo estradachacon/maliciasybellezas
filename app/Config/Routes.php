@@ -140,6 +140,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     // Módulo de mantenimiento de paquetes
     $route['upload-paquete'] = 'PackageController/subirImagen';
     $routes->post('packages/store', 'PackageController::store');
+    $routes->post('paquetes/actualizar-estado', 'PackageController::actualizarEstado');
 
     $routes->get('packages/quickload', 'PackageController::quickLoad');
     $routes->post('packages/quickstore', 'PackageController::quickStore');

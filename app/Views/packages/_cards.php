@@ -7,11 +7,16 @@
             <div class="card-body p-3">
 
                 <!-- HEADER -->
-                <div class="d-flex justify-content-between mb-2">
+                <div class="d-flex justify-content-between">
+
                     <span class="fw-bold text-primary">#<?= $p->id ?></span>
 
-                    <?= statusBadge($p->estado1 ?? '') ?>
-                    <?= statusBadge($p->estado2 ?? '') ?>
+                    <div class="d-flex flex-column align-items-end">
+                        <div class="mb-1">
+                            <?= statusBadge($p->estado1 ?? '') ?>
+                        </div>
+                        <?= statusBadge($p->estado2 ?? '') ?>
+                    </div>
                 </div>
 
                 <!-- CLIENTE -->
@@ -50,10 +55,20 @@
             </div>
 
             <!-- FOOTER -->
-            <div class="card-footer bg-white border-0 d-flex justify-content-end">
+            <div class="card-footer bg-white border-0 d-flex justify-content-between">
 
+                <!-- 👁 VER FOTO -->
+                <?php if (!empty($p->foto)): ?>
+                    <button
+                        class="btn btn-sm btn-outline-secondary"
+                        onclick="verImagen('<?= base_url('upload/paquetes/' . $p->foto) ?>')">
+                        📷 Ver foto
+                    </button>
+                <?php endif; ?>
+
+                <!-- DETALLES -->
                 <a href="<?= base_url('packages/' . $p->id) ?>" class="btn btn-sm btn-primary">
-                    Ver
+                    Detalles
                 </a>
 
             </div>

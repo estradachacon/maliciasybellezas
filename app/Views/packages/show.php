@@ -112,35 +112,62 @@
                             Registro de envío
                         </small>
                     </div>
+                    <div class="mt-3 mt-md-0 d-flex justify-content-end">
 
-                    <!-- DERECHA (PANEL ESTADOS) -->
-                    <div class="mt-3 mt-md-0" style="min-width:250px; max-width:320px;">
+                        <div class="d-flex" style="gap:10px;">
+                            <!-- 🔄 BOX ACTUALIZAR -->
+                            <?php if (
+                                !empty($tieneAsignacion) &&
+                                $paquete->estado1 !== 'entregado' &&
+                                tienePermiso('actualizar_estado_paquete_en_detalle')
+                            ): ?>
+                                <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
 
-                        <div class="border rounded px-3 py-2 bg-light">
+                                    <small class="text-muted d-block mb-2">Actualizar</small>
 
-                            <!-- ESTADO PRINCIPAL -->
-                            <?php if (!empty($paquete->estado1)): ?>
-                                <div class="d-flex align-items-center mb-1">
-                                    <small class="text-muted">Estado</small>
+                                    <form action="<?= base_url('paquetes/actualizar-estado') ?>" method="post">
+                                        <input type="hidden" name="paquete_id" value="<?= $paquete->id ?>">
 
-                                    <span class="badge ml-auto px-3 py-1 text-white"
-                                        style="background: #0dcaf0;">
-                                        <?= esc($paquete->estado1) ?>
-                                    </span>
+                                        <select name="nuevo_estado" class="form-control form-control-sm mb-2" required>
+                                            <option value="">Seleccionar</option>
+                                            <option value="reenvio">Reenvío</option>
+                                            <option value="entregado">Entregado</option>
+                                            <option value="no_retirado">No retirado</option>
+                                        </select>
+
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                                            Actualizar
+                                        </button>
+                                    </form>
+
                                 </div>
                             <?php endif; ?>
+                            <!-- 📦 BOX ESTADOS -->
+                            <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
 
-                            <!-- ESTADO SECUNDARIO -->
-                            <?php if (!empty($paquete->estado2)): ?>
-                                <div class="d-flex align-items-center">
-                                    <small class="text-muted">Ubicación</small>
+                                <?php if (!empty($paquete->estado1)): ?>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <small class="text-muted">Estado</small>
 
-                                    <span class="badge ml-auto px-3 py-1 text-white"
-                                        style="background: #198754;">
-                                        <?= esc($paquete->estado2) ?>
-                                    </span>
-                                </div>
-                            <?php endif; ?>
+                                        <span class="badge ml-auto px-2 py-1 text-white"
+                                            style="background: #0dcaf0;">
+                                            <?= esc($paquete->estado1) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($paquete->estado2)): ?>
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted">Ubicación</small>
+
+                                        <span class="badge ml-auto px-2 py-1 text-white"
+                                            style="background: #198754;">
+                                            <?= esc($paquete->estado2) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
+                            </div>
 
                         </div>
 
@@ -148,71 +175,79 @@
 
                 </div>
 
-            </div>
+                <div class="card-body">
 
-            <div class="card-body">
+                    <div class="row">
 
-                <div class="row">
+                        <!-- 🔵 COLUMNA IZQUIERDA -->
+                        <div class="col-md-8">
 
-                    <!-- 🔵 COLUMNA IZQUIERDA -->
-                    <div class="col-md-8">
-
-                        <!-- CLIENTE -->
-                        <div class="card-section mb-3">
-                            <div class="info-label">Cliente</div>
-                            <div class="info-value">
-                                <?= esc($paquete->cliente_nombre) ?>
-                            </div>
-
-                            <div class="info-label mt-2">Teléfono</div>
-                            <div class="info-sub">
-                                <?= esc($paquete->cliente_telefono) ?>
-                            </div>
-
-                            <div class="info-label mt-2">Tipo de venta</div>
-                            <div class="info-sub">
-                                <?= ucfirst($paquete->tipo_venta ?? 'detalle') ?>
-                            </div>
-                        </div>
-
-                        <div class="card-section mb-3">
-                            <div class="row">
-
-                                <!-- 📅 COLUMNA IZQUIERDA -->
-                                <div class="col-md-6">
-                                    <div class="info-label">Fecha de entrega</div>
-                                    <div class="info-value">
-                                        <?= date('d/m/Y', strtotime($paquete->dia_entrega)) ?>
-                                    </div>
-
-                                    <div class="info-label mt-2">Horario</div>
-                                    <div class="info-sub">
-                                        <?= $paquete->hora_inicio ?> - <?= $paquete->hora_fin ?>
-                                    </div>
-                                </div>
-
-                                <!-- 📍 COLUMNA DERECHA -->
-                                <div class="col-md-6">
-                                    <div class="info-label">Destino</div>
-                                    <div class="info-value">
-                                        <?= esc($paquete->destino) ?>
-                                    </div>
-
-                                    <div class="info-label mt-2">Encomendista</div>
-                                    <div class="info-sub">
-                                        <?= esc($paquete->encomendista_nombre ?: '—') ?>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                        <!-- 🧾 LOG DEL PAQUETE -->
-                        <?php if (!empty($paquete->packlog)): ?>
+                            <!-- CLIENTE -->
                             <div class="card-section mb-3">
+                                <div class="row">
 
-                                <div class="info-label mb-2">Historial del paquete</div>
+                                    <!-- IZQUIERDA -->
+                                    <div class="col-md-6">
+                                        <div class="info-label">Cliente</div>
+                                        <div class="info-value">
+                                            <?= esc($paquete->cliente_nombre) ?>
+                                        </div>
 
-                                <div style="
+                                        <div class="info-label mt-1">Teléfono</div>
+                                        <div class="info-sub">
+                                            <?= esc($paquete->cliente_telefono) ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- DERECHA -->
+                                    <div class="col-md-6">
+                                        <div class="info-label">Tipo de venta</div>
+                                        <div class="info-sub">
+                                            <?= ucfirst($paquete->tipo_venta ?? 'detalle') ?>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="card-section mb-3">
+                                <div class="row">
+
+                                    <!-- 📅 COLUMNA IZQUIERDA -->
+                                    <div class="col-md-6">
+                                        <div class="info-label">Fecha de entrega</div>
+                                        <div class="info-value">
+                                            <?= date('d/m/Y', strtotime($paquete->dia_entrega)) ?>
+                                        </div>
+
+                                        <div class="info-label mt-1">Horario</div>
+                                        <div class="info-sub">
+                                            <?= $paquete->hora_inicio ?> - <?= $paquete->hora_fin ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- 📍 COLUMNA DERECHA -->
+                                    <div class="col-md-6">
+                                        <div class="info-label">Destino</div>
+                                        <div class="info-value">
+                                            <?= esc($paquete->destino) ?>
+                                        </div>
+
+                                        <div class="info-label mt-1">Encomendista</div>
+                                        <div class="info-sub">
+                                            <?= esc($paquete->encomendista_nombre ?: '—') ?>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <!-- 🧾 LOG DEL PAQUETE -->
+                            <?php if (!empty($paquete->packlog)): ?>
+                                <div class="card-section mb-1">
+
+                                    <div class="info-label mb-1">Historial del paquete</div>
+
+                                    <div style="
                                                     max-height:200px;
                                                     overflow-y:auto;
                                                     font-size:12px;
@@ -220,54 +255,56 @@
                                                     padding:10px;
                                                     border-radius:8px;
                                                 ">
-                                    <?= nl2br(esc($paquete->packlog)) ?>
-                                </div>
+                                        <?= nl2br(esc($paquete->packlog)) ?>
+                                    </div>
 
-                            </div>
-                        <?php endif; ?>
-                        <?php
-                        function badgeColor($estado)
-                        {
-                            return match ($estado) {
-                                'pagado' => 'success text-white',
-                                'depositado' => 'info',
-                                'pendiente' => 'warning',
-                                'cancelado' => 'danger text-white',
-                                'entregado' => 'primary',
-                                'en_ruta' => 'success text-white',
-                                default => 'secondary'
-                            };
-                        }
-                        function estadoClass($estado)
-                        {
-                            return match ($estado) {
-                                'depositado' => 'estado-depositado',
-                                'en_ruta' => 'estado-en_ruta',
-                                'pendiente' => 'estado-pendiente',
-                                'cancelado' => 'estado-cancelado',
-                                default => 'estado-default'
-                            };
-                        }
-                        ?>
-
-                    </div>
-
-                    <!-- COLUMNA DERECHA (FOTO) -->
-                    <div class="col-md-4">
-                        <div class="p-3 border rounded text-center h-100" style="position: sticky; top:20px; border-radius:12px;">
-
-                            <div class="info-label mb-2">Foto del paquete</div>
-
-                            <?php if (!empty($paquete->foto)): ?>
-                                <img src="<?= base_url('upload/paquetes/' . $paquete->foto) ?>"
-                                    class="img-fluid rounded shadow-sm"
-                                    style="max-height:350px; cursor:pointer;"
-                                    onclick="verImagen(this.src)">
-                            <?php else: ?>
-                                <div class="text-muted">
-                                    Sin imagen
                                 </div>
                             <?php endif; ?>
+                            <?php
+                            function badgeColor($estado)
+                            {
+                                return match ($estado) {
+                                    'pagado' => 'success text-white',
+                                    'depositado' => 'info',
+                                    'pendiente' => 'warning',
+                                    'cancelado' => 'danger text-white',
+                                    'entregado' => 'primary',
+                                    'en_ruta' => 'success text-white',
+                                    default => 'secondary'
+                                };
+                            }
+                            function estadoClass($estado)
+                            {
+                                return match ($estado) {
+                                    'depositado' => 'estado-depositado',
+                                    'en_ruta' => 'estado-en_ruta',
+                                    'pendiente' => 'estado-pendiente',
+                                    'cancelado' => 'estado-cancelado',
+                                    default => 'estado-default'
+                                };
+                            }
+                            ?>
+
+                        </div>
+
+                        <!-- COLUMNA DERECHA (FOTO) -->
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded text-center h-100" style="position: sticky; top:20px; border-radius:12px;">
+
+                                <div class="info-label mb-2">Foto del paquete</div>
+
+                                <?php if (!empty($paquete->foto)): ?>
+                                    <img src="<?= base_url('upload/paquetes/' . $paquete->foto) ?>"
+                                        class="img-fluid rounded shadow-sm"
+                                        style="max-height:350px; cursor:pointer;"
+                                        onclick="verImagen(this.src)">
+                                <?php else: ?>
+                                    <div class="text-muted">
+                                        Sin imagen
+                                    </div>
+                                <?php endif; ?>
+
+                            </div>
 
                         </div>
 
@@ -278,26 +315,24 @@
             </div>
 
         </div>
-
     </div>
-</div>
 
-<!-- MODAL IMAGEN -->
-<div class="modal fade" id="modalImagen" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content bg-dark text-center">
-            <div class="modal-body p-2">
-                <img id="imagenGrande" class="img-fluid rounded">
+    <!-- MODAL IMAGEN -->
+    <div class="modal fade" id="modalImagen" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark text-center">
+                <div class="modal-body p-2">
+                    <img id="imagenGrande" class="img-fluid rounded">
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-    function verImagen(src) {
-        $('#imagenGrande').attr('src', src);
-        new bootstrap.Modal(document.getElementById('modalImagen')).show();
-    }
-</script>
+    <script>
+        function verImagen(src) {
+            $('#imagenGrande').attr('src', src);
+            new bootstrap.Modal(document.getElementById('modalImagen')).show();
+        }
+    </script>
 
-<?= $this->endSection() ?>
+    <?= $this->endSection() ?>

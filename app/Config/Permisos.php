@@ -31,7 +31,16 @@ class Permisos extends BaseConfig
             'ver_paquetes',
             'exportar_paquetes_a_excel',
             'ver_asignaciones',
-            'depositar_por_codigo',            
+            'depositar_por_codigo',  
+            'actualizar_estado_paquete_en_detalle'          
+        ],
+
+        'Finanzas' => [
+            'ver_transacciones',
+            'ver_cuentas',
+            'crear_cuenta',
+            'registrar_gasto',
+            'registrar_transferencia',
         ],
         
         /*

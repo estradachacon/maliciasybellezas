@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PackageModel;
+use App\Models\PackageDepositDetailModel;
 use App\Models\SellerModel;
 use App\Models\SettledPointModel;
 use Dompdf\Dompdf;
@@ -65,6 +66,7 @@ class PackageController extends BaseController
     public function show($id)
     {
         $model = new PackageModel();
+        $depositModel = new PackageDepositDetailModel();
 
         $paquete = $model->find($id);
 
@@ -72,11 +74,53 @@ class PackageController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Paquete no encontrado");
         }
 
+        // 🔥 verificar si tiene asignación
+        $asignacion = $depositModel
+            ->where('package_id', $id)
+            ->first();
+
         return view('packages/show', [
-            'paquete' => $paquete
+            'paquete' => $paquete,
+            'tieneAsignacion' => !empty($asignacion)
         ]);
     }
+    public function actualizarEstado()
+    {
+        $paqueteId = $this->request->getPost('paquete_id');
+        $estado    = $this->request->getPost('nuevo_estado');
 
+        $model = new PackageModel();
+
+        // mapa de estados
+        $map = [
+            'reenvio'      => 'Cliente solicitó reenvío',
+            'entregado'    => 'Entregado',
+            'no_retirado'  => 'No retirado',
+        ];
+
+        if (!isset($map[$estado])) {
+            return redirect()->back()->with('error', 'Estado inválido');
+        }
+
+        // 🔎 validar existencia
+        $paquete = $model->find($paqueteId);
+
+        if (!$paquete) {
+            return redirect()->back()->with('error', 'Paquete no encontrado');
+        }
+
+        // ✅ actualizar estado
+        $model->update($paqueteId, [
+            'estado1' => $estado
+        ]);
+
+        // 🧾 log bonito
+        $mensaje = "Estado actualizado a: " . $map[$estado];
+
+        addPackLog($paqueteId, $mensaje);
+
+        return redirect()->back()->with('success', 'Estado actualizado correctamente');
+    }
     public function new()
     {
         $codigo = $this->generarCodigoInterno();
@@ -262,7 +306,7 @@ class PackageController extends BaseController
                     ' | Total: $' . number_format($data['total'], 2),
                 $session->get('id')
             );
-            
+
             addPackLog($id, 'Paquete creado');
 
             return $this->response->setJSON([
