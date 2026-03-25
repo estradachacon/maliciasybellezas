@@ -6,7 +6,6 @@ use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PackageModel;
 use App\Models\PackageDepositDetailModel;
-use App\Models\SellerModel;
 use App\Models\SettledPointModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -19,14 +18,12 @@ use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 class PackageController extends BaseController
 {
     protected $packageModel;
-    protected $sellerModel;
     protected $settledPointModel;
     protected $packages;
     public function __construct()
     {
         $this->packageModel = new PackageModel();
         $this->settledPointModel = new SettledPointModel();
-        $this->sellerModel = new SellerModel();
         $this->packages = new PackageModel();
     }
 
