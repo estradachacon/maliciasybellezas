@@ -363,7 +363,7 @@
 
                     await navigator.share({
                         title: 'Paquete',
-                        text: 'Mira este paquete',
+                        text: 'Paquete compartido desde Malicias y Bellezas',
                         files: [file]
                     });
 
