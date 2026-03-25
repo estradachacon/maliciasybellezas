@@ -36,6 +36,29 @@
     .paquete-card {
         border-left: 4px solid #f4f1f8ea;
     }
+
+    .paquete-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.watermark-check {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    font-size: 120px;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.watermark-entregado {
+    color: #0dcaf0; /* celeste */
+}
+
+.watermark-remunerado {
+    color: #198754; /* verde */
+}
 </style>
 
 <div class="row">

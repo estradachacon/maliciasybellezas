@@ -3,8 +3,21 @@
     <div class="col-12 col-md-6 col-lg-4">
 
         <div class="card shadow-sm h-100 border-0 paquete-card">
+            <?php
+            $estado = strtolower($p->estado1 ?? '');
+            $remunerado = strtolower($p->estado2 ?? '') === 'remunerado'; // ajusta si aplica
+            ?>
 
-            <div class="card-body p-2"> <!-- 🔥 menos padding -->
+            <?php if ($remunerado): ?>
+                <div class="watermark-check watermark-remunerado">
+                    ✔
+                </div>
+            <?php elseif ($estado === 'entregado'): ?>
+                <div class="watermark-check watermark-entregado">
+                    ✔
+                </div>
+            <?php endif; ?>
+            <div class="card-body p-2">
 
                 <!-- HEADER -->
                 <div class="d-flex justify-content-between mb-1">

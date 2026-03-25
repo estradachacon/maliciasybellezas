@@ -115,7 +115,7 @@
                     <div class="mt-3 mt-md-0 d-flex justify-content-end">
 
                         <div class="d-flex" style="gap:10px;">
-                            <!-- 🔄 BOX ACTUALIZAR -->
+                            <!-- BOX ACTUALIZAR -->
                             <?php if (
                                 !empty($tieneAsignacion) &&
                                 $paquete->estado1 !== 'entregado' &&
@@ -123,7 +123,7 @@
                             ): ?>
                                 <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
 
-                                    <small class="text-muted d-block mb-2">Actualizar</small>
+                                    <small class="text-muted d-block mb-2">Actualizar estado</small>
 
                                     <form action="<?= base_url('paquetes/actualizar-estado') ?>" method="post">
                                         <input type="hidden" name="paquete_id" value="<?= $paquete->id ?>">
@@ -144,14 +144,23 @@
                             <?php endif; ?>
                             <!-- 📦 BOX ESTADOS -->
                             <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
-
+                                <?php
+                                function estadoTexto($estado)
+                                {
+                                    return match ($estado) {
+                                        'depositado' => 'En encomendista',
+                                        'en_ruta'    => 'En ruta',
+                                        default      => ucfirst(str_replace('_', ' ', $estado))
+                                    };
+                                }
+                                ?>
                                 <?php if (!empty($paquete->estado1)): ?>
                                     <div class="d-flex align-items-center mb-1">
                                         <small class="text-muted">Estado</small>
 
                                         <span class="badge ml-auto px-2 py-1 text-white"
                                             style="background: #0dcaf0;">
-                                            <?= esc($paquete->estado1) ?>
+                                            <?= esc(estadoTexto($paquete->estado1)) ?>
                                         </span>
                                     </div>
                                 <?php endif; ?>
@@ -162,7 +171,7 @@
 
                                         <span class="badge ml-auto px-2 py-1 text-white"
                                             style="background: #198754;">
-                                            <?= esc($paquete->estado2) ?>
+                                            <?= esc(estadoTexto($paquete->estado2)) ?>
                                         </span>
                                     </div>
                                 <?php endif; ?>
@@ -298,6 +307,13 @@
                                         class="img-fluid rounded shadow-sm"
                                         style="max-height:350px; cursor:pointer;"
                                         onclick="verImagen(this.src)">
+                                    <?php if (!empty($paquete->foto)): ?>
+                                        <button
+                                            class="btn btn-sm btn-outline-primary mt-2 w-100"
+                                            onclick="compartirImagen('<?= base_url('upload/paquetes/' . $paquete->foto) ?>')">
+                                            📤 Compartir imagen
+                                        </button>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <div class="text-muted">
                                         Sin imagen
@@ -332,6 +348,44 @@
         function verImagen(src) {
             $('#imagenGrande').attr('src', src);
             new bootstrap.Modal(document.getElementById('modalImagen')).show();
+        }
+        async function compartirImagen(url) {
+            try {
+                // 🔥 Intentar usar Web Share API (Android / móviles)
+                if (navigator.share) {
+
+                    // Convertir imagen a archivo
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const file = new File([blob], "paquete.jpg", {
+                        type: blob.type
+                    });
+
+                    await navigator.share({
+                        title: 'Paquete',
+                        text: 'Mira este paquete',
+                        files: [file]
+                    });
+
+                } else {
+                    // 💻 PC → descargar imagen
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'paquete.jpg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+            } catch (error) {
+                console.error('Error al compartir:', error);
+
+                // fallback descarga
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'paquete.jpg';
+                link.click();
+            }
         }
     </script>
 
