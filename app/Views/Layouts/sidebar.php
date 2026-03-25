@@ -143,11 +143,11 @@
                 <?php endif; ?>
 
                 <?php if (
-                    tienePermiso('ver_vendedores')
+                    tienePermiso('ver_encomendistas')
                 ): ?>
-                    <a class="nav-link" href="/sellers">
+                    <a class="nav-link" href="/encomendistas">
                         <div class="sb-nav-link-icon"><i class="fa-solid fa-address-book"></i></div>
-                        Vendedores
+                        Encomendistas
                     </a>
                 <?php endif; ?>
 

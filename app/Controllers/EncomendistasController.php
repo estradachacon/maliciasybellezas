@@ -4,62 +4,61 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
-use App\Models\SellerModel;
+use App\Models\EncomendistasModel;
 
-class SellerController extends BaseController
+class EncomendistasController extends BaseController
 {
-    protected $sellerModel;
+    protected $EncomendistasModel;
 
     public function __construct()
     {
-        $this->sellerModel = new SellerModel();
+        $this->EncomendistasModel = new EncomendistasModel();
     }
 
     public function index()
     {
-        $chk = requerirPermiso('ver_vendedores');
+        $chk = requerirPermiso('ver_encomendistas');
         if ($chk !== true) return $chk;
 
         $q = trim($this->request->getGet('q') ?? '');
         $alpha = trim($this->request->getGet('alpha') ?? '');
         $perPage = intval($this->request->getGet('perPage') ?? 10);
 
-        $builder = $this->sellerModel;
+        $builder = $this->EncomendistasModel;
 
         // BÚSQUEDA GENERAL
         if ($q !== '') {
             $builder = $builder
                 ->groupStart()
-                ->like('seller', $q)
-                ->orLike('tel_seller', $q)
+                ->like('encomendista_name', $q)
                 ->orLike('id', $q)
                 ->groupEnd();
         }
 
         // FILTRO ALFABÉTICO
         if ($alpha !== '') {
-            $builder = $builder->like('seller', $alpha, 'after');
+            $builder = $builder->like('encomendista_name', $alpha, 'after');
         }
 
         $data = [
             'q' => $q,
             'alpha' => $alpha,
             'perPage' => $perPage,
-            'sellers' => $builder->paginate($perPage),
+            'encomendistas' => $builder->paginate($perPage),
             'pager' => $builder->pager,
         ];
 
-        return view('sellers/index', $data);
+        return view('encomendistas/index', $data);
     }
 
 
 
     public function new()
     {
-        $chk = requerirPermiso('crear_vendedor');
+        $chk = requerirPermiso('crear_encomendista');
         if ($chk !== true) return $chk;
 
-        return view('sellers/create');
+        return view('encomendistas/create');
     }
 
     public function create()
@@ -67,47 +66,43 @@ class SellerController extends BaseController
         helper(['form']);
         $session = session();
         $rules = [
-            'seller' => 'required|min_length[3]',
-            'tel_seller' => 'permit_empty|min_length[8]'
+            'encomendista_name' => 'required|min_length[3]'
         ];
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $this->sellerModel->save([
-            'seller' => $this->request->getPost('seller'),
-            'tel_seller' => $this->request->getPost('tel_seller')
+        $this->EncomendistasModel->save([
+            'encomendista_name' => $this->request->getPost('encomendista_name')
         ]);
 
         registrar_bitacora(
-            'Crear vendedor',
-            'Vendedores',
-            'Se creó un nuevo vendedor con ID ' . esc($this->sellerModel->insertID()) . '.',
+            'Crear encomendista',
+            'Encomendistas',
+            'Se creó un nuevo encomendista con ID ' . esc($this->EncomendistasModel->insertID()) . '.',
             $session->get('user_id')
         );
 
-        return redirect()->to('/sellers')->with('success', 'Vendedor creado correctamente.');
+        return redirect()->to('/encomendistas')->with('success', 'Encomendista creado correctamente.');
     }
 
     public function edit($id)
     {
-        $chk = requerirPermiso('editar_vendedor');
+        $chk = requerirPermiso('editar_encomendista');
         if ($chk !== true) return $chk;
 
-        // 1. Obtener la caja a editar
-        $seller = $this->sellerModel->find($id);
+        // Obtener encomendista
+        $encomendista = $this->EncomendistasModel->find($id);
 
-        if (!$seller) {
-            return redirect()->to('/sellers')->with('error', 'Vendedor no encontrado.');
+        if (!$encomendista) {
+            return redirect()->to('/encomendistas')
+                ->with('error', 'Encomendista no encontrado.');
         }
 
-        $data = [
-            'sellers' => $seller,
-        ];
-
-        // Se asume que tienes una vista en 'seller/edit'
-        return view('sellers/edit', $data);
+        return view('encomendistas/edit', [
+            'encomendista' => $encomendista
+        ]);
     }
 
     /**
@@ -118,33 +113,35 @@ class SellerController extends BaseController
     {
         helper(['form']);
         $session = session();
-        // 1. Definir las reglas de validación (deben coincidir con tu modelo, o definirlas aquí)
+
+        // Validación
         if (
             !$this->validate([
-                'seller' => 'required|min_length[3]|max_length[100]',
-                'tel_seller' => 'required|numeric',
+                'encomendista_name' => 'required|min_length[3]|max_length[100]'
             ])
         ) {
-            // 2. Si la validación falla, redirigir de vuelta al formulario con los errores
             return redirect()->back()
-                ->withInput() // Mantiene los datos que el usuario ingresó
-                ->with('errors', $this->validator->getErrors()); // Envía los errores a la vista
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
         }
 
-        // 3. Si la validación es exitosa, se procede a la actualización
+        // Datos
         $data = [
-            'seller' => $this->request->getPost('seller'),
-            'tel_seller' => $this->request->getPost('tel_seller'),
+            'encomendista_name' => $this->request->getPost('encomendista_name')
         ];
 
-        $this->sellerModel->update($id, $data);
+        // Update
+        $this->EncomendistasModel->update($id, $data);
+
         registrar_bitacora(
-            'Se editó vendedor',
-            'Vendedores',
-            'Se editó el vendedor con ID ' . esc($id) . '.',
+            'Editar encomendista',
+            'Encomendistas',
+            'Se editó el encomendista con ID ' . esc($id) . '.',
             $session->get('user_id')
         );
-        return redirect()->to('/sellers')->with('success', 'Vendedor actualizado exitosamente.');
+
+        return redirect()->to('/encomendistas')
+            ->with('success', 'Encomendista actualizado correctamente.');
     }
 
     public function delete()

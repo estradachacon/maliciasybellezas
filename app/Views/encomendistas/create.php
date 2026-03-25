@@ -5,7 +5,7 @@
     <div class="col-md-12">
         <div class="card shadow-sm">
             <div class="card-header d-flex">
-                <h4 class="mb-3">Nuevo Vendedor</h4>
+                <h4 class="mb-3">Nuevo encomendista</h4>
             </div>  
             <div class="card-body">
                 <?php if (session()->getFlashdata('errors')): ?>
@@ -18,23 +18,13 @@
                     </div>
                 <?php endif; ?>
 
-                <form id="sellerForm" action="<?= base_url('sellers') ?>" method="post" novalidate>
-                    <?= csrf_field() ?>
+                <form id="encomendistaForm" action="<?= base_url('encomendistas') ?>" method="post" novalidate>
 
                     <div class="mb-3">
-                        <label for="seller" class="form-label">Nombre del Vendedor</label>
-                        <input type="text" name="seller" id="seller" class="form-control" minlength="3" required>
+                        <label for="encomendista_name" class="form-label">Nombre del Encomendista</label>
+                        <input type="text" name="encomendista_name" id="encomendista_name" class="form-control" minlength="3" required>
                         <div class="invalid-feedback">
                             El nombre debe tener al menos 3 caracteres.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="tel_seller" class="form-label">Teléfono</label>
-                        <input type="text" name="tel_seller" id="tel_seller" class="form-control" pattern="^[0-9]{8,}$"
-                            title="El teléfono debe tener al menos 8 dígitos" required> <!-- ✅ ahora es obligatorio -->
-                        <div class="invalid-feedback">
-                            El teléfono debe tener al menos 8 dígitos.
                         </div>
                     </div>
 
@@ -48,7 +38,7 @@
 <script>
     (() => {
         'use strict';
-        const form = document.getElementById('sellerForm');
+        const form = document.getElementById('encomendistaForm');
 
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {

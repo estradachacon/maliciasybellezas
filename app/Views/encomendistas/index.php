@@ -4,9 +4,9 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header d-flex">
-                <h4 class="header-title">Listado de Vendedores</h4>
-                <?php if (tienePermiso('crear_vendedor')): ?>
-                    <a class="btn btn-primary btn-sm ml-auto" href="<?= base_url('sellers/new') ?>"><i
+                <h4 class="header-title">Listado de Encomendistas</h4>
+                <?php if (tienePermiso('crear_encomendista')): ?>
+                    <a class="btn btn-primary btn-sm ml-auto" href="<?= base_url('encomendistas/new') ?>"><i
                             class="fa-solid fa-plus"></i> Nuevo</a>
                 <?php endif; ?>
             </div>
@@ -15,9 +15,9 @@
                 <div class="row mb-3 align-items-end">
 
                     <div class="col-md-10">
-                        <label for="searchInput">Buscar vendedor</label>
+                        <label for="searchInput">Buscar encomendista</label>
                         <div class="input-group">
-                            <input type="text" id="searchInput" class="form-control" placeholder="Nombre, teléfono o ID"
+                            <input type="text" id="searchInput" class="form-control" placeholder="Nombre o ID"
                                 value="<?= esc($q ?? '') ?>">
                             <div class="input-group-append">
                                 <span class="input-group-text" id="loading-spinner" style="display: none;">
@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 <div id="table-container">
-                    <?= $this->include('sellers/_seller_table') ?>
+                    <?= $this->include('encomendistas/_encom_table') ?>
                 </div>
 
             </div>

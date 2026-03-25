@@ -4,29 +4,28 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class SellerModel extends Model
+class EncomendistasModel extends Model
 {
-    protected $table = 'sellers';
+    protected $table = 'encomendistas';
     protected $primaryKey = 'id';
     protected $returnType = 'object';
     protected $useTimestamps = true;
 
     protected $allowedFields = [
-        'seller',
-        'tel_seller',
+        'encomendista_name',
         'created_at',
         'updated_at'
     ];
 
 
-public function searchSellers($term)
+public function searchEncomendista($term)
 {
     if (!$term || trim($term) === '') {
-        return []; // 👈 Select2 suele pedir esto antes de escribir
+        return []; 
     }
 
-    return $this->like('seller', $term)
-                ->select('id, seller')
+    return $this->like('encomendista_name', $term)
+                ->select('id, encomendista_name')
                 ->findAll(20);
 }
 

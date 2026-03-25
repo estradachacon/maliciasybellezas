@@ -2,25 +2,23 @@
     <thead>
         <tr>
             <th class="col-1">ID</th>
-            <th class="col-7">Vendedor</th>
-            <th class="col-2">Teléfono</th>
+            <th class="col-7">Nombre</th>
             <th class="col-1">Acciones</th>
         </tr>
     </thead>
     <tbody>
-        <?php if (!empty($sellers)): ?>
-            <?php foreach ($sellers as $seller): ?>
+        <?php if (!empty($encomendistas)): ?>
+            <?php foreach ($encomendistas as $encomendista): ?>
                 <tr>
-                    <td class="text-center"><?= esc($seller->id) ?></td>
-                    <td><?= esc($seller->seller) ?></td>
-                    <td class="text-center"><?= esc($seller->tel_seller) ?></td>
+                    <td class="text-center"><?= esc($encomendista->id) ?></td>
+                    <td><?= esc($encomendista->encomendista_name) ?></td>
                     <td>
-                        <?php if (tienePermiso('editar_vendedor')): ?>
-                            <a href="<?= base_url('sellers/edit/' . $seller->id) ?>" class="btn btn-sm btn-info"><i
+                        <?php if (tienePermiso('editar_encomendista')): ?>
+                            <a href="<?= base_url('encomendistas/edit/' . $encomendista->id) ?>" class="btn btn-sm btn-info"><i
                                     class="fa-solid fa-edit"></i></a>
                         <?php endif; ?>
                         <?php if (tienePermiso('eliminar_vendedor')): ?>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="<?= $seller->id ?>">
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="<?= $encomendista->id ?>">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         <?php endif; ?>
@@ -29,7 +27,7 @@
             <?php endforeach; ?>
         <?php else: ?>
             <tr>
-                <td colspan="4" class="text-center">No hay vendedores registrados<?= !empty($q) ? ' para la búsqueda "' . esc($q) . '"' : '' ?></td>
+                <td colspan="4" class="text-center">No hay encomendistas registrados<?= !empty($q) ? ' para la búsqueda "' . esc($q) . '"' : '' ?></td>
             </tr>
         <?php endif; ?>
     </tbody>

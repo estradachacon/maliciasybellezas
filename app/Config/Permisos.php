@@ -42,7 +42,13 @@ class Permisos extends BaseConfig
             'registrar_gasto',
             'registrar_transferencia',
         ],
-        
+
+        'Encomendistas' => [
+            'ver_encomendistas',
+            'crear_encomendista',
+            'editar_encomendista',
+        ],
+
         /*
         'Finanzas' => [
             'ver_transacciones',
