@@ -135,8 +135,8 @@
                             <?php if (tienePermiso('ver_paquetes')): ?>
                                 <a class="nav-link" href="/packages">Lista de paquetes</a>
                             <?php endif; ?>
-                            <?php if (tienePermiso('depositar_por_codigo')): ?>
-                                <a class="nav-link" href="/packages-assign">Seguimiento de paquetes</a>
+                            <?php if (tienePermiso('ver_asignaciones')): ?>
+                                <a class="nav-link" href="/packages-assignation">Asignación de paquetes</a>
                             <?php endif; ?>
                         </nav>
                     </div>

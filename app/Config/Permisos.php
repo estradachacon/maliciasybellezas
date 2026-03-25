@@ -30,7 +30,8 @@ class Permisos extends BaseConfig
             'crear_paquetes',
             'ver_paquetes',
             'exportar_paquetes_a_excel',
-            'depositar_por_codigo',
+            'ver_asignaciones',
+            'depositar_por_codigo',            
         ],
         
         /*

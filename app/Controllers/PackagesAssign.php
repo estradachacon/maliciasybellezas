@@ -248,4 +248,48 @@ class PackagesAssign extends Controller
             'totalFlete'   => $totalFlete
         ]);
     }
+    public function table()
+    {
+        $model = new PackageDepositModel();
+
+        $builder = $model;
+
+        // FILTROS
+        $nombre = $this->request->getGet('nombre');
+        $fecha  = $this->request->getGet('fecha');
+
+        if ($nombre) {
+            $builder = $builder->like('encomendista_nombre', $nombre);
+        }
+
+        if ($fecha) {
+            $builder = $builder->where('DATE(fecha)', $fecha);
+        }
+
+        // PAGINACIÓN
+        $deposits = $builder
+            ->orderBy('id', 'DESC')
+            ->paginate(10);
+
+        $pager = $model->pager;
+
+        // AJAX RESPONSE
+        if ($this->request->isAJAX()) {
+
+            $tbody = view('packages_assignation/_table_body', [
+                'deposits' => $deposits
+            ]);
+
+            return $this->response->setJSON([
+                'tbody' => $tbody,
+                'pager' => $pager->links('default', 'bootstrap_full')
+            ]);
+        }
+
+        // VIEW NORMAL
+        return view('packages/assign/table', [
+            'deposits' => $deposits,
+            'pager'    => $pager
+        ]);
+    }
 }
