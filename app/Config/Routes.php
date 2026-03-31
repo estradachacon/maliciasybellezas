@@ -107,11 +107,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     // Módulo de mantenimiento de vendedores
     $routes->presenter('encomendistas', ['controller' => 'EncomendistasController', 'only' => ['index', 'new', 'create', 'edit', 'update']]);
-    $routes->get('sellers-search', 'SellerController::search');
-    $routes->post('sellers/delete', 'SellerController::delete');
-    $routes->post('sellers/create-ajax', 'SellerController::createAjax');
-    $routes->get('sellers/searchAjax', 'SellerController::searchAjax');
-    $routes->get('sellers/filter-for-packages', 'SellerController::filterForPackages');
+    $routes->get('encomendistas-buscar', 'EncomendistasController::search');
+    $routes->post('encomendistas/delete', 'EncomendistasController::delete');
+    $routes->post('encomendistas-create-ajax', 'EncomendistasController::createAjax');
+    $routes->get('encomendistas/searchAjax', 'EncomendistasController::searchAjax');
+    $routes->get('encomendistas/filter-for-packages', 'EncomendistasController::filterForPackages');
 
     // Módulo de mantenimiento de puntos fijos
     $routes->presenter('settledpoint', ['controller' => 'SettledPointController', 'only' => ['index', 'new', 'create', 'edit', 'update']]);
@@ -210,4 +210,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     });
     $routes->get('packages-assignation/', 'PackagesAssign::table');
     $routes->get('packages-assignation/(:num)', 'PackagesAssign::show/$1');
+
+    // Módulo de mantenimiento de inventarios
+    $routes->get('inventory', 'InventoryController::index');
+    $routes->post('productos/create', 'ProductosController::create');
+    $routes->get('productos/get/(:num)', 'ProductosController::get/$1');
+    $routes->post('productos/update/(:num)', 'ProductosController::update/$1');
 });

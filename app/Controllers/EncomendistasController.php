@@ -183,60 +183,49 @@ class EncomendistasController extends BaseController
 
     public function search()
     {
-        $term = $this->request->getGet('q');
+        $term = $this->request->getGet('term');
 
-        $model = new SellerModel();
-        $sellers = $model->searchSellers($term);
+        $model = new EncomendistasModel();
+        $data = $model->searchEncomendista($term);
 
-        // Formato que Select2 necesita
-        $results = array_map(function ($s) {
-            return [
-                'id'   => $s->id,      // 👈 Ahora se enviará el ID real
-                'text' => $s->seller   // 👈 Lo que verá el usuario
-
-            ];
-        }, $sellers);
-
-        return $this->response->setJSON($results);
+        return $this->response->setJSON(
+            array_map(function ($e) {
+                return [
+                    'id' => $e->id,
+                    'text' => $e->encomendista_name
+                ];
+            }, $data)
+        );
     }
 
     public function createAjax()
     {
-        $sellerModel = new SellerModel();
-        $session = session();
-        $data = [
-            'seller' => $this->request->getPost('seller'),
-            'tel_seller' => $this->request->getPost('tel_seller'),
-        ];
+        $model = new EncomendistasModel();
 
-        if (empty($data['seller'])) {
+        $nombre = trim($this->request->getPost('encomendista_name'));
+
+        if (!$nombre) {
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'El nombre del vendedor es obligatorio.'
+                'message' => 'El nombre es obligatorio.'
             ]);
         }
 
         try {
-            $id = $sellerModel->insert($data);
 
-            if (!$id) {
-                throw new \Exception('No se pudo guardar el vendedor.');
-            }
-            registrar_bitacora(
-                'Creación de vendedor',
-                'Paquetería',
-                'Se creó el vendedor ' . esc($data['seller']) . ' en el registro de paquete.',
-                $session->get('user_id')
-            );
+            $id = $model->insert([
+                'encomendista_name' => $nombre
+            ]);
 
             return $this->response->setJSON([
                 'status' => 'success',
                 'data' => [
                     'id' => $id,
-                    'text' => $data['seller']
+                    'text' => $nombre
                 ]
             ]);
         } catch (\Throwable $e) {
+
             return $this->response->setJSON([
                 'status' => 'error',
                 'message' => $e->getMessage()
@@ -245,34 +234,31 @@ class EncomendistasController extends BaseController
     }
     public function searchAjax()
     {
-        // Obtenemos el término de búsqueda y la página actual
         $q = trim($this->request->getGet('q') ?? '');
-        $perPage = intval($this->request->getGet('perPage') ?? 10); // Mantener el límite de paginación
+        $perPage = intval($this->request->getGet('perPage') ?? 10);
 
-        $builder = $this->sellerModel;
+        $model = new EncomendistasModel();
 
-        // BÚSQUEDA GENERAL
+        $builder = $model;
+
+        // 🔍 BÚSQUEDA
         if ($q !== '') {
             $builder = $builder
                 ->groupStart()
-                ->like('seller', $q)
-                ->orLike('tel_seller', $q)
+                ->like('encomendista_name', $q)
                 ->orLike('id', $q)
                 ->groupEnd();
         }
 
-        // Si necesitas ordenar, hazlo aquí antes de paginar:
+        // 🔽 ORDEN
         $builder = $builder->orderBy('id', 'DESC');
 
         $data = [
             'q' => $q,
-            'sellers' => $builder->paginate($perPage),
+            'encomendistas' => $builder->paginate($perPage),
             'pager' => $builder->pager,
-            // No pasamos 'perPage' ni 'alpha' ya que esta función solo refresca la tabla.
         ];
 
-        // Importante: Devolvemos una vista parcial que solo contiene la tabla.
-        // Tienes que crear esta nueva vista.
-        return view('sellers/_seller_table', $data);
+        return view('encomendistas/_table', $data);
     }
 }

@@ -6,6 +6,19 @@ $logoUrl = setting('logo')
     : '';
 ?>
 <style>
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        /* altura estándar Bootstrap */
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        /* centra texto */
+        padding-left: .75rem;
+    }
+
     #overlayPreview {
         position: fixed;
         top: 0;
@@ -315,7 +328,7 @@ $logoUrl = setting('logo')
                         </div>
 
                         <div class="col-md-6">
-                            <label>Teléfono</label>
+                            <label>Teléfono (8 a 15 dígitos)</label>
                             <input type="text" name="cliente_telefono" class="form-control" required>
                         </div>
 
@@ -339,7 +352,9 @@ $logoUrl = setting('logo')
 
                         <div class="col-md-12 mt-2">
                             <label>Encomendista</label>
-                            <input type="text" name="encomendista_nombre" class="form-control" required>
+                            <div class="d-flex gap-2">
+                                <select id="encomendista_id" name="encomendista_id" class="form-control" required></select>
+                            </div>
                         </div>
 
                         <div class="col-md-12 mt-3">
@@ -483,6 +498,22 @@ $logoUrl = setting('logo')
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalEncomendista" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Nuevo Encomendista</h5>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="nuevoEncomendista" class="form-control" placeholder="Nombre">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success" id="guardarEncomendista">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         /* Variables globales */
@@ -515,7 +546,7 @@ $logoUrl = setting('logo')
             let telefono = $('[name="cliente_telefono"]').val().trim();
             let fecha = $('[name="dia_entrega"]').val();
             let destino = $('[name="destino"]').val().trim();
-            let encomendista = $('[name="encomendista_nombre"]').val().trim();
+            let encomendista = $('#encomendista_id').val();
             let total = limpiarNumero($('#total').val());
             let cancelado = $('#cancelado').is(':checked');
 
@@ -524,7 +555,7 @@ $logoUrl = setting('logo')
 
             if (!telefono) {
                 errores.push('Debe ingresar el teléfono');
-            } else if (!/^\d{8}$/.test(telefono)) {
+            } else if (!/^\d{8,15}$/.test(telefono)) {
                 errores.push('El teléfono debe tener 8 dígitos');
             }
 
@@ -532,7 +563,7 @@ $logoUrl = setting('logo')
 
             if (!destino) errores.push('Debe ingresar destino');
 
-            if (!encomendista) errores.push('Debe ingresar encomendista');
+            if (!encomendista) errores.push('Debe seleccionar encomendista');
 
             if (!cancelado && total <= 0) {
                 errores.push('Debe ingresar un total o marcar como cancelado');
@@ -595,7 +626,7 @@ $logoUrl = setting('logo')
             // quitar estado previo
             input.removeClass('is-valid is-invalid');
 
-            if (val.length === 8) {
+            if (val.length >= 8 && val.length <= 15) {
                 input.addClass('is-valid');
             } else if (val.length > 0) {
                 input.addClass('is-invalid');
@@ -689,6 +720,12 @@ $logoUrl = setting('logo')
             let codigo = $('#codigoqr').val();
             let urlQR = codigo;
             let qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(urlQR)}`;
+            let textoEncomendista = $('#encomendista_id option:selected').text();
+
+            let data = $('#formPaquete').serialize() +
+                '&encomendista_nombre=' + encodeURIComponent(textoEncomendista);
+
+            window.open("<?= base_url('paquetes/etiqueta') ?>?" + data, '_blank');
 
             //MiniPreview
             $('#miniPreview').html(`
@@ -737,7 +774,7 @@ $logoUrl = setting('logo')
                                 <b>Fecha:</b> ${dia}
                             </td>
                             <td style="width:60%;">
-                                <b>Encomend:</b> ${p.encomendista_nombre || '—'}
+                                <b>Encomend:</b> ${textoEncomendista || '—'}
                             </td>
                         </tr>
                     </table>
@@ -1112,6 +1149,87 @@ $logoUrl = setting('logo')
                 // 🔥 recalcular solo al volver
                 calcularTotal();
             }
+
+        });
+        $('#encomendista_id').select2({
+            placeholder: 'Buscar encomendista...',
+            width: '100%',
+            ajax: {
+                url: '<?= base_url('encomendistas-buscar') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+
+                    let results = data;
+
+                    // 🔥 si no hay resultados → opción crear
+                    if (results.length === 0) {
+                        let term = $('.select2-search__field').val();
+
+                        results.push({
+                            id: '__new__',
+                            text: `➕ Crear "${term}"`,
+                            newTag: true
+                        });
+                    }
+
+                    return {
+                        results
+                    };
+                }
+            }
+        });
+        $('#encomendista_id').on('select2:select', function(e) {
+
+            let data = e.params.data;
+
+            if (data.id === '__new__') {
+
+                let term = $('.select2-search__field').val();
+
+                // 🔥 abrir modal con nombre precargado
+                $('#nuevoEncomendista').val(term);
+                $('#modalEncomendista').modal('show');
+
+                // 🔥 limpiar selección fake
+                $('#encomendista_id').val(null).trigger('change');
+            }
+
+        });
+        $('#btnNuevoEncomendista').click(function() {
+            $('#nuevoEncomendista').val('');
+            $('#modalEncomendista').modal('show');
+        });
+        $('#guardarEncomendista').click(function() {
+
+            let nombre = $('#nuevoEncomendista').val().trim();
+
+            if (!nombre) {
+                Swal.fire('Error', 'Ingrese nombre', 'warning');
+                return;
+            }
+
+            $.post('<?= base_url('encomendistas-create-ajax') ?>', {
+                encomendista_name: nombre
+            }, function(res) {
+
+                if (res.status === 'success') {
+
+                    let newOption = new Option(res.data.text, res.data.id, true, true);
+                    $('#encomendista_id').append(newOption).trigger('change');
+
+                    $('#modalEncomendista').modal('hide');
+
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+
+            }, 'json');
 
         });
         $('#tipo_venta').change(function() {

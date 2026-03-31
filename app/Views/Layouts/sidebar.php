@@ -143,6 +143,15 @@
                 <?php endif; ?>
 
                 <?php if (
+                    tienePermiso('ver_inventario')
+                ): ?>
+                    <a class="nav-link" href="/inventory">
+                        <div class="sb-nav-link-icon"><i class="fa-solid fa-address-book"></i></div>
+                        Ver inventario
+                    </a>
+                <?php endif; ?>
+
+                <?php if (
                     tienePermiso('ver_encomendistas')
                 ): ?>
                     <a class="nav-link" href="/encomendistas">
