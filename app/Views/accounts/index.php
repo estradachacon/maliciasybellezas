@@ -7,7 +7,7 @@
                 <h4 class="header-title">Listado de Cuentas</h4>
                 <?php if (tienePermiso('registrar_transferencia')): ?>
                     <button class="btn btn-warning btn-sm ml-auto" data-toggle="modal" data-target="#transferModal">
-                        <i class="fa-solid fa-exchange-alt"></i> Realizar Transferencia
+                        <i class="fa-solid fa-exchange-alt"></i> Registrar Transferencia
                     </button>
                 <?php endif; ?>
                 <?php if (tienePermiso('crear_cuenta')): ?>

@@ -177,6 +177,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     // Rutas para el módulo de transacciones
     $routes->get('transactions', 'TransactionsController::index');
     $routes->post('transactions/addSalida', 'TransactionsController::addSalida');
+    $routes->get('accounts-listAjax', 'AccountController::listAjax');
 
     //Rutas para el mantenimiento de roles 
     $routes->presenter('roles', ['controller' => 'RoleController', 'only' => ['index', 'new', 'create', 'edit', 'update']]);
@@ -213,7 +214,26 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     // Módulo de mantenimiento de inventarios
     $routes->get('inventory', 'InventoryController::index');
-    $routes->post('productos/create', 'ProductosController::create');
-    $routes->get('productos/get/(:num)', 'ProductosController::get/$1');
-    $routes->post('productos/update/(:num)', 'ProductosController::update/$1');
+    $routes->get('inventario', 'InventarioController::index');
+    $routes->post('inventario/store', 'InventarioController::store');
+    $routes->get('inventario/searchAjax', 'InventarioController::searchAjax');
+    $routes->get('inventario/(:num)', 'InventarioController::ver/$1');
+    $routes->get('productos/searchAjaxSelect', 'ProductosController::searchAjaxSelect');
+    $routes->post('productos/storeAjax', 'ProductosController::storeAjax');
+
+    // Módulo de mantenimiento de proveedores
+    $routes->get('proveedores', 'ProveedorController::index');
+    $routes->post('proveedores/store', 'ProveedorController::store');
+    $routes->post('proveedores/storeAjax', 'ProveedorController::storeAjax');
+    $routes->get('proveedores/searchAjax', 'ProveedorController::searchAjax');
+    $routes->post('proveedores/update', 'ProveedorController::update');
+    $routes->get('proveedores/searchAjaxSelect', 'ProveedorController::searchAjaxSelect');
+
+    // Módulo de mantenimiento de compras
+    $routes->group('compras', function ($routes) {
+        $routes->get('/', 'CompraController::index');
+        $routes->get('create', 'CompraController::create');
+        $routes->post('store', 'CompraController::store');
+        $routes->get('(:num)', 'CompraController::show/$1');
+    });
 });

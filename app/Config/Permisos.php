@@ -34,10 +34,22 @@ class Permisos extends BaseConfig
             'depositar_por_codigo',  
             'actualizar_estado_paquete_en_detalle'          
         ],
+
         'Inventario' => [
             'ver_inventario',
             'crear_producto',
         ],
+
+        'Compras' => [
+            'ver_compras',
+            'ingresar_compra',
+        ],
+
+        'Proveedores' => [
+            'ver_proveedores',
+            'crear_proveedor',
+        ],
+
         'Finanzas' => [
             'ver_transacciones',
             'ver_cuentas',

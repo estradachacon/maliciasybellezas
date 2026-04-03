@@ -378,4 +378,32 @@ class AccountController extends BaseController
             ]);
         }
     }
+    public function listAjax()
+{
+    $accountModel = new AccountModel();
+
+    $q = $this->request->getGet('term'); // 🔥 CAMBIA q → term
+
+    $builder = $accountModel
+        ->select('id, name, balance')
+        ->where('is_active', 1);
+
+    if (!empty($q)) {
+        $builder->like('name', $q);
+    }
+
+    $data = $builder->findAll();
+
+    $results = [];
+
+    foreach ($data as $row) {
+        $results[] = [
+            'id' => $row->id,
+            'text' => $row->name, // 🔥 CLAVE
+            'balance' => $row->balance
+        ];
+    }
+
+    return $this->response->setJSON($results);
+}
 }

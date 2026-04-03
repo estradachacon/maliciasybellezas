@@ -4,108 +4,80 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
-use App\Models\ProductosModel;
+use App\Models\ProductoModel;
 use App\Models\BranchModel;
 
 class ProductosController extends BaseController
 {
-    public function get($id)
+    public function searchAjaxSelect()
     {
-        $model = new ProductosModel();
+        $model = new ProductoModel();
 
-        return $this->response->setJSON(
-            $model->find($id)
-        );
+        $q = $this->request->getGet('term');
+
+        $productos = $model
+            ->like('nombre', $q)
+            ->findAll(10);
+
+        return $this->response->setJSON(array_map(function ($p) {
+            return [
+                'id' => $p->id,
+                'text' => $p->nombre,
+                'precio' => $p->precio,
+                'imagen' => $p->imagen
+            ];
+        }, $productos));
     }
-    public function update($id)
+    public function storeAjax()
     {
-        $model = new ProductosModel();
+        $model = new ProductoModel();
 
-        $data = [
-            'nombre' => trim($this->request->getPost('nombre')),
-            'proveedor' => trim($this->request->getPost('proveedor')),
-            'costo_inicial' => $this->request->getPost('costo_inicial'),
-            'precio_venta' => $this->request->getPost('precio_venta'),
-        ];
+        $nombre = trim($this->request->getPost('nombre'));
 
-        if (!$data['nombre']) {
+        if (!$nombre) {
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'Nombre requerido'
+                'message' => 'El nombre es obligatorio'
             ]);
         }
 
-        $model->update($id, $data);
+        $imagen = $this->request->getFile('imagen');
+        $nombreImagen = null;
+
+        if ($imagen && $imagen->isValid() && !$imagen->hasMoved()) {
+
+            // 🔥 nombre único
+            $nombreImagen = uniqid() . '.webp';
+
+            // mover temporal
+            $tempPath = WRITEPATH . 'uploads/' . $imagen->getName();
+            $imagen->move(WRITEPATH . 'uploads');
+
+            // 🔥 convertir a webp
+            $source = imagecreatefromstring(file_get_contents($tempPath));
+            imagewebp($source, FCPATH . 'upload/productos/' . $nombreImagen, 80);
+
+            imagedestroy($source);
+            unlink($tempPath);
+        }
+
+        $id = $model->insert([
+            'nombre' => $nombre,
+            'marca' => $this->request->getPost('marca'),
+            'presentacion' => $this->request->getPost('presentacion'),
+            'precio' => $this->request->getPost('precio') ?? 0,
+            'descripcion' => $this->request->getPost('descripcion'),
+            'imagen' => $nombreImagen
+        ]);
 
         return $this->response->setJSON([
-            'status' => 'success'
+            'status' => 'success',
+            'producto' => [
+                'id' => $id,
+                'nombre' => $nombre,
+                'precio' => $this->request->getPost('precio') ?? 0,
+                'imagen' => $nombreImagen
+            ]
         ]);
-    }
-    public function create()
-    {
-        try {
-
-            $productoModel = new ProductosModel();
-            $branchModel = new BranchModel();
-
-            $data = [
-                'nombre' => trim($this->request->getPost('nombre')),
-                'proveedor' => trim($this->request->getPost('proveedor')),
-                'costo_inicial' => $this->request->getPost('costo_inicial') ?? 0,
-                'precio_venta' => $this->request->getPost('precio_venta'),
-                'estado' => 1
-            ];
-
-            if (!$data['nombre']) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Nombre requerido'
-                ]);
-            }
-
-            if (!$data['precio_venta'] || $data['precio_venta'] <= 0) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Precio inválido'
-                ]);
-            }
-
-            $existe = $productoModel->where('nombre', $data['nombre'])->first();
-
-            if ($existe) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'El producto ya existe'
-                ]);
-            }
-
-            $productoId = $productoModel->insert($data);
-
-            if (!$productoId) {
-                throw new \Exception('Error al insertar producto');
-            }
-
-            // 🔥 INVENTARIO
-            $branches = $branchModel->findAll();
-            $db = \Config\Database::connect();
-
-            foreach ($branches as $b) {
-                $db->table('inventario')->insert([
-                    'producto_id' => $productoId,
-                    'sucursal_id' => $b->id,
-                    'stock' => 0
-                ]);
-            }
-
-            return $this->response->setJSON([
-                'status' => 'success'
-            ]);
-        } catch (\Throwable $e) {
-
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ]);
-        }
     }
 }

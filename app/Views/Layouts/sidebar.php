@@ -142,15 +142,33 @@
                     </div>
                 <?php endif; ?>
 
-                <?php if (
-                    tienePermiso('ver_inventario')
-                ): ?>
-                    <a class="nav-link" href="/inventory">
-                        <div class="sb-nav-link-icon"><i class="fa-solid fa-address-book"></i></div>
-                        Ver inventario
+                <?php if (tienePermiso('ver_inventario')): ?>
+                    <a class="nav-link" href="/inventario">
+                        <div class="sb-nav-link-icon">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                        Inventario
                     </a>
                 <?php endif; ?>
 
+                <?php if (tienePermiso('ver_compras')): ?>
+                    <a class="nav-link" href="/compras">
+                        <div class="sb-nav-link-icon">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                        </div>
+                        Compras
+                    </a>
+                <?php endif; ?>
+
+                <?php if (tienePermiso('ver_proveedores')): ?>
+                    <a class="nav-link" href="/proveedores">
+                        <div class="sb-nav-link-icon">
+                            <i class="fa-solid fa-truck"></i>
+                        </div>
+                        Proveedores
+                    </a>
+                <?php endif; ?>
+                
                 <?php if (
                     tienePermiso('ver_encomendistas')
                 ): ?>

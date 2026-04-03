@@ -1,0 +1,944 @@
+<?= $this->extend('Layouts/mainbody') ?>
+<?= $this->section('content') ?>
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+
+    /* estilo general inputs */
+    #productosTable input,
+    #productosTable .select2-selection {
+        border: none !important;
+        border-bottom: 1px solid #ccc !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        font-size: 14px;
+    }
+
+    /* focus estilo odoo */
+    #productosTable input:focus,
+    #productosTable .select2-selection:focus {
+        border-bottom: 2px solid #007bff !important;
+        outline: none;
+    }
+
+    /* select2 fix altura */
+    .select2-container--default .select2-selection--single {
+        height: 34px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* quitar flecha fea */
+    .select2-selection__arrow {
+        display: none;
+    }
+
+    /* hover fila tipo odoo */
+    #productosTable tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    /* inputs centrados visualmente */
+    #productosTable td {
+        padding: 6px 8px;
+    }
+
+    #productosTable {
+        font-size: 14px;
+    }
+
+    #productosTable th {
+        font-weight: 600;
+        font-size: 13px;
+        color: #666;
+        background: #f8f9fa;
+    }
+
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        /* altura estándar Bootstrap */
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        /* centra texto */
+        padding-left: .75rem;
+    }
+
+    .add-line-link {
+        color: #007bff;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .add-line-link:hover {
+        text-decoration: underline;
+        color: #0056b3;
+    }
+
+    .ver-img-btn {
+        border: none;
+        background: transparent;
+        color: #007bff;
+    }
+
+    .ver-img-btn:hover {
+        color: #0056b3;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-12">
+
+        <div class="card">
+
+            <!-- HEADER -->
+            <div class="card-header d-flex">
+                <h4 class="header-title">Nueva Compra</h4>
+
+                <a href="<?= base_url('compras') ?>" class="btn btn-secondary btn-sm ml-auto">
+                    Volver
+                </a>
+            </div>
+
+            <div class="card-body">
+
+                <!--FORM -->
+                <form id="compraForm">
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-2">
+                            <label>Fecha de compra</label>
+                            <input type="date" name="fecha_compra" id="fecha_compra"
+                                class="form-control"
+                                value="<?= date('Y-m-d') ?>">
+                        </div>
+
+                        <!-- Proveedor -->
+                        <div class="col-md-4">
+                            <label>Proveedor</label>
+                            <select id="proveedor_id" name="proveedor_id" class="form-control" required></select>
+                        </div>
+
+                        <!-- Sucursal -->
+                        <div class="col-md-4">
+                            <label>Sucursal receptora</label>
+                            <select name="branch_id" class="form-control">
+                                <?php foreach ($branches ?? [] as $b): ?>
+                                    <option value="<?= $b->id ?>">
+                                        <?= $b->branch_name ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12 mt-2">
+                            <label>Observación</label>
+                            <textarea name="observacion" id="observacion" class="form-control" rows="2"
+                                placeholder="Notas de la compra..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 📦 TABLA PRODUCTOS -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="productosTable">
+
+                            <thead>
+                                <tr>
+                                    <th style="width:5%">#</th>
+                                    <th style="width:40%">Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Costo</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody></tbody>
+
+                        </table>
+                    </div>
+
+                    <div class="mt-2">
+                        <a href="#" id="addRowBtn" class="add-line-link">
+                            <i class="fa fa-plus"></i> Agregar línea
+                        </a>
+                    </div>
+
+                    <!-- TOTAL -->
+                    <div class="text-right mt-3">
+                        <h4>Total: $<span id="totalCompra">0.00</span></h4>
+                    </div>
+                    <!-- 💰 PAGOS -->
+                    <div class="mt-4">
+
+                        <h5 class="mb-2">Pagos</h5>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="pagosTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:5%">#</th>
+                                        <th>Método</th>
+                                        <th>Cuenta</th>
+                                        <th>Monto</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <a href="#" id="addPagoBtn" class="add-line-link">
+                            <i class="fa fa-plus"></i> Agregar pago
+                        </a>
+
+                        <div class="text-right mt-2">
+                            <b>Total Pagado: $<span id="totalPagado">0.00</span></b>
+                        </div>
+
+                    </div>
+                    <!-- BOTÓN -->
+                    <div class="mt-3 text-right">
+                        <button type="submit" class="btn btn-success">
+                            Guardar Compra
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+<div class="modal fade" id="modalProveedor">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Nuevo Proveedor</h5>
+            </div>
+
+            <div class="modal-body">
+                <label>Nombre</label>
+                <input type="text" name="nombre" id="edit_nombre" class="form-control" required>
+            </div>
+
+            <div class="modal-body">
+                <label>Teléfono</label>
+                <input type="number" name="telefono" id="edit_telefono" class="form-control" step="1">
+            </div>
+
+            <div class="modal-body">
+                <label>Dirección</label>
+                <textarea name="direccion" id="edit_direccion" class="form-control"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-success" id="guardarProveedor">Guardar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="productoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Producto</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <form id="productoForm" enctype="multipart/form-data">
+
+                <div class="modal-body">
+
+                    <div class="row">
+
+                        <!-- Nombre -->
+                        <div class="col-md-6">
+                            <label>Nombre</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+
+                        <!-- Marca -->
+                        <div class="col-md-6">
+                            <label>Marca</label>
+                            <input type="text" name="marca" class="form-control">
+                        </div>
+
+                        <!-- Presentación -->
+                        <div class="col-md-6 mt-2">
+                            <label>Presentación</label>
+                            <input type="text" name="presentacion" class="form-control">
+                        </div>
+
+                        <!-- Precio -->
+                        <div class="col-md-6 mt-2">
+                            <label>Precio</label>
+                            <input type="number" step="0.01" name="precio" class="form-control" required>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="col-md-12 mt-2">
+                            <label>Descripción</label>
+                            <textarea name="descripcion" class="form-control"></textarea>
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <label>Imagen del producto</label>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <img id="previewImg" style="max-width:200px; margin-top:10px; display:none;">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        Guardar
+                    </button>
+
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="imagenProductoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-body text-center">
+                <img id="imagenProductoPreview" style="max-width:100%; border-radius:10px;">
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+    let currentRow = null;
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pagosTable = document.querySelector('#pagosTable tbody');
+        const totalPagadoEl = document.getElementById('totalPagado');
+
+        function addPagoRow() {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+        <td class="row-index text-center"></td>
+
+        <td>
+            <select class="form-control metodo">
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+            </select>
+        </td>
+
+        <td>
+            <select class="form-control cuenta-select"></select>
+        </td>
+
+        <td>
+            <input type="number" class="form-control monto" step="0.01">
+        </td>
+
+        <td>
+            <button class="btn btn-danger btn-sm removePago">
+                <i class="fa fa-trash"></i>
+            </button>
+        </td>
+    `;
+
+            pagosTable.appendChild(row);
+            actualizarIndicesPagos();
+            bindPagoEvents(row);
+        }
+
+        function actualizarIndicesPagos() {
+            document.querySelectorAll('#pagosTable tbody tr').forEach((row, index) => {
+                row.querySelector('.row-index').innerText = index + 1;
+            });
+        }
+
+        function bindPagoEvents(row) {
+
+            const monto = row.querySelector('.monto');
+
+            // 🔥 SELECT2 CUENTAS (usa tu endpoint)
+            $(row).find('.cuenta-select').select2({
+                placeholder: 'Buscar cuenta...',
+                width: '100%',
+                ajax: {
+                    url: '<?= base_url('cuentas/accounts-listAjax') ?>',
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({
+                        term: params.term
+                    }),
+                    processResults: data => ({
+                        results: data
+                    })
+                }
+            });
+
+            monto.addEventListener('input', calcularTotalPagado);
+
+            row.querySelector('.removePago').addEventListener('click', function() {
+                row.remove();
+                actualizarIndicesPagos();
+                calcularTotalPagado();
+            });
+        }
+
+        function calcularTotalPagado() {
+            let total = 0;
+
+            document.querySelectorAll('.monto').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+
+            totalPagadoEl.innerText = total.toFixed(2);
+        }
+
+        document.getElementById('addPagoBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            addPagoRow();
+        });
+
+        // iniciar con 1 pago
+        addPagoRow();
+
+        const productos = <?= json_encode($productos) ?>;
+        const table = document.querySelector('#productosTable tbody');
+        const totalCompra = document.getElementById('totalCompra');
+
+        function addRow() {
+
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+            <td class="row-index text-center"></td>
+            <td>
+                <select class="form-control producto-select"></select>
+            </td>
+
+            <td>
+                <input type="number" class="form-control cantidad" value="" min="1">
+            </td>
+
+            <td>
+                <input type="number" class="form-control precio" step="0.01">
+            </td>
+
+            <td>
+                <input type="text" class="form-control total" readonly>
+            </td>
+
+            <td class="text-right">
+
+                <button type="button" class="btn btn-light btn-sm ver-img-btn d-none">
+                    <i class="fa fa-eye"></i>
+                </button>
+
+                <button type="button" class="btn btn-danger btn-sm removeRow">
+                    <i class="fa fa-trash"></i>
+                </button>
+
+            </td>
+        `;
+
+            table.appendChild(row);
+            actualizarIndices();
+            bindRowEvents(row);
+        }
+
+        function actualizarIndices() {
+            document.querySelectorAll('#productosTable tbody tr').forEach((row, index) => {
+                row.querySelector('.row-index').innerText = index + 1;
+            });
+        }
+
+        function renderAddRowLine() {
+            const existing = document.querySelector('.add-row-line');
+            if (existing) existing.remove();
+
+            const tr = document.createElement('tr');
+            tr.classList.add('add-row-line');
+
+            tr.innerHTML = `
+                <td colspan="6">
+                    <a href="#" class="add-line-link">
+                        <i class="fa fa-plus"></i> Agregar línea
+                    </a>
+                </td>
+            `;
+
+            tr.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault();
+                addRow();
+            });
+
+            table.appendChild(tr);
+        }
+
+        function bindRowEvents(row) {
+
+            const select = row.querySelector('.producto-select');
+            const cantidad = row.querySelector('.cantidad');
+            const precio = row.querySelector('.precio');
+            const total = row.querySelector('.total');
+
+            $(select).on('select2:select', function(e) {
+
+                let data = e.params.data;
+
+                if (data.id === '__new__') {
+                    currentRow = row;
+
+                    let term = $('.select2-search__field').val();
+
+                    $('#productoModal').modal('show');
+                    $('input[name="nombre"]').val(term);
+                    return;
+                }
+
+                // 🎯 RESALTAR FILA
+                row.style.backgroundColor = '#eef6ff';
+
+                // 🎯 BOTÓN VER IMAGEN
+                const btnImg = row.querySelector('.ver-img-btn');
+
+                if (data.imagen) {
+                    btnImg.classList.remove('d-none');
+
+                    let imgUrl = "<?= base_url('upload/productos/') ?>/" + data.imagen;
+
+                    btnImg.onclick = function() {
+                        document.getElementById('imagenProductoPreview').src = imgUrl;
+                        $('#imagenProductoModal').modal('show');
+                    };
+
+                } else {
+                    btnImg.classList.add('d-none');
+                }
+
+                // 🎯 PRECIO (como lo dejaste)
+                let sugerido = data.precio || 0;
+                precio.value = '';
+                cantidad.focus();
+            });
+
+            $(select).select2({
+                language: 'es',
+                minimumInputLength: 1,
+                placeholder: 'Buscar producto...',
+                width: '100%',
+                ajax: {
+                    url: '<?= base_url('productos/searchAjaxSelect') ?>',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            term: params.term
+                        };
+                    },
+                    processResults: function(data) {
+
+                        let results = data;
+
+                        if (results.length === 0) {
+                            let term = $(select).data('select2').dropdown.$search.val();
+
+                            results.push({
+                                id: '__new__',
+                                text: `➕ Crear "${term}"`,
+                                newTag: true
+                            });
+                        }
+
+                        return {
+                            results
+                        };
+                    }
+                }
+            });
+
+            cantidad.addEventListener('input', calcularFila);
+            precio.addEventListener('input', calcularFila);
+
+            row.querySelector('.removeRow').addEventListener('click', function() {
+                row.remove();
+                actualizarIndices();
+                calcularTotal();
+            });
+
+            function calcularFila() {
+                const t = (cantidad.value * precio.value) || 0;
+                total.value = t.toFixed(2);
+                calcularTotal();
+            }
+        }
+
+        function calcularTotal() {
+            let total = 0;
+
+            document.querySelectorAll('.total').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+
+            totalCompra.innerText = total.toFixed(2);
+        }
+
+        document.getElementById('addRowBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            addRow();
+        });
+
+        // iniciar con una fila
+        actualizarIndices();
+        addRow();
+
+        // 🧾 SUBMIT
+        document.getElementById('compraForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const proveedor_id = this.proveedor_id.value;
+            const proveedor_text = $('#proveedor_id option:selected').text();
+            const branch_id = this.branch_id.value;
+            const branch_text = this.branch_id.options[this.branch_id.selectedIndex]?.text;
+            const observacion = document.getElementById('observacion').value;
+            const fecha_compra = document.getElementById('fecha_compra').value;
+
+            let errores = [];
+            let productosData = [];
+            let totalCompra = 0;
+
+            let pagosData = [];
+            let totalPagado = 0;
+
+            // 🔥 VALIDACIONES BASE
+            if (!proveedor_id) errores.push('Debe seleccionar proveedor');
+            if (!branch_id) errores.push('Debe seleccionar sucursal');
+
+            // 🔥 PRODUCTOS
+            document.querySelectorAll('#productosTable tbody tr').forEach((row, index) => {
+
+                const producto_id = row.querySelector('.producto-select').value;
+                const producto_text = $(row).find('.producto-select option:selected').text();
+
+                const cantidad = parseFloat(row.querySelector('.cantidad').value);
+                const precio = parseFloat(row.querySelector('.precio').value);
+
+                if (!producto_id) {
+                    errores.push(`Fila ${index + 1}: falta producto`);
+                    return;
+                }
+
+                if (!cantidad || cantidad <= 0) {
+                    errores.push(`Fila ${index + 1}: cantidad inválida`);
+                }
+
+                if (!precio || precio <= 0) {
+                    errores.push(`Fila ${index + 1}: precio inválido`);
+                }
+
+                const total = cantidad * precio;
+                totalCompra += total;
+
+                productosData.push({
+                    producto_id,
+                    producto_text,
+                    cantidad,
+                    precio,
+                    total
+                });
+
+            });
+
+            if (productosData.length === 0) {
+                errores.push('Debe agregar al menos un producto');
+            }
+
+            // 🔥 PAGOS (DESPUÉS de calcular totalCompra)
+            document.querySelectorAll('#pagosTable tbody tr').forEach((row, index) => {
+
+                const metodo = row.querySelector('.metodo').value;
+                const cuenta_id = $(row).find('.cuenta-select').val();
+                const monto = parseFloat(row.querySelector('.monto').value);
+
+                if (!monto || monto <= 0) {
+                    errores.push(`Pago ${index + 1}: monto inválido`);
+                    return;
+                }
+
+                totalPagado += monto;
+
+                pagosData.push({
+                    metodo_pago: metodo,
+                    cuenta_id: cuenta_id,
+                    monto: monto
+                });
+            });
+
+            // 🔥 VALIDACIÓN FINAL
+            if (totalPagado !== totalCompra) {
+                errores.push(`Los pagos ($${totalPagado.toFixed(2)}) no cuadran con el total ($${totalCompra.toFixed(2)})`);
+            }
+
+            // ❌ SI HAY ERRORES
+            if (errores.length > 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validación',
+                    html: errores.map(e => `• ${e}`).join('<br>')
+                });
+                return;
+            }
+
+            // ✅ FETCH
+            fetch("<?= base_url('compras/store') ?>", {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        proveedor_id,
+                        branch_id,
+                        observacion,
+                        fecha_compra,
+                        productos: productosData,
+                        pagos: pagosData
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+
+                    if (data.status === 'success') {
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Compra registrada',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        setTimeout(() => {
+                            window.location.href = "<?= base_url('compras') ?>";
+                        }, 1500);
+
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+
+                })
+                .catch(() => {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                });
+
+        });
+
+        $('#proveedor_id').on('select2:select', function(e) {
+
+            let data = e.params.data;
+
+            if (data.id === '__new__') {
+
+                let term = data.text.replace('➕ Crear "', '').replace('"', '');
+
+                $('#edit_nombre').val(term);
+                $('#modalProveedor').modal('show');
+            }
+
+        });
+
+        $('#proveedor_id').select2({
+            language: 'es',
+            placeholder: 'Buscar proveedor...',
+            width: '100%',
+            minimumInputLength: 1,
+            ajax: {
+                url: '<?= base_url('proveedores/searchAjaxSelect') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data, params) {
+
+                    let results = data;
+
+                    if (!results || results.length === 0) {
+
+                        let term = params.term || '';
+
+                        results = [{
+                            id: '__new__',
+                            text: `➕ Crear "${term}"`,
+                            newTag: true
+                        }];
+                    }
+
+                    return {
+                        results: results
+                    };
+                }
+            }
+        });
+
+        $('#guardarProveedor').click(function() {
+
+            let nombre = $('#edit_nombre').val().trim();
+            let telefono = $('#edit_telefono').val().trim();
+            let direccion = $('#edit_direccion').val().trim();
+
+            if (!nombre) {
+                Swal.fire('Error', 'Ingrese nombre', 'warning');
+                return;
+            }
+
+            const btn = $(this);
+            btn.prop('disabled', true).text('Guardando...');
+
+            $.post('<?= base_url('proveedores/storeAjax') ?>', {
+                nombre: nombre,
+                telefono: telefono,
+                direccion: direccion
+            }, function(res) {
+
+                btn.prop('disabled', false).text('Guardar');
+
+                if (res.status === 'success') {
+
+                    let newOption = new Option(nombre, res.id, true, true);
+
+                    $('#proveedor_id')
+                        .append(newOption)
+                        .trigger('change');
+
+                    $('#proveedor_id').trigger({
+                        type: 'select2:select',
+                        params: {
+                            data: {
+                                id: res.id,
+                                text: nombre
+                            }
+                        }
+                    });
+
+                    $('#modalProveedor').modal('hide');
+
+                    // limpiar modal
+                    $('#edit_nombre').val('');
+                    $('#edit_telefono').val('');
+                    $('#edit_direccion').val('');
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Proveedor creado',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                } else {
+                    Swal.fire('Error', res.message || 'Error al guardar', 'error');
+                }
+
+            }, 'json').fail(() => {
+
+                btn.prop('disabled', false).text('Guardar');
+                Swal.fire('Error', 'Error de conexión', 'error');
+
+            });
+
+        });
+    });
+</script>
+<script>
+    document.getElementById('productoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const form = this;
+        const btn = form.querySelector('button[type="submit"]');
+
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+
+        const formData = new FormData(form);
+
+        fetch("<?= base_url('productos/storeAjax') ?>", {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+
+                btn.disabled = false;
+                btn.innerText = 'Guardar';
+
+                if (data.status === 'success') {
+
+                    let producto = data.producto;
+
+                    let newOption = new Option(
+                        producto.nombre,
+                        producto.id,
+                        true,
+                        true
+                    );
+
+                    if (!currentRow) {
+                        Swal.fire('Error', 'No se encontró la fila', 'error');
+                        return;
+                    }
+
+                    let select = $(currentRow).find('.producto-select');
+
+                    select.append(newOption).trigger('change');
+
+                    // 🔥 setear precio automáticamente
+                    $(currentRow).find('.precio').val(producto.precio || 0).trigger('input');
+
+                    $('#productoModal').modal('hide');
+                    form.reset();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Producto creado',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerText = 'Guardar';
+
+                Swal.fire('Error', 'Error de conexión', 'error');
+            });
+    });
+</script>
+<?= $this->endSection() ?>
