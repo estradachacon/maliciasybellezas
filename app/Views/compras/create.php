@@ -186,7 +186,6 @@
                                 <thead>
                                     <tr>
                                         <th style="width:5%">#</th>
-                                        <th>Método</th>
                                         <th>Cuenta</th>
                                         <th>Monto</th>
                                         <th></th>
@@ -344,14 +343,6 @@
         <td class="row-index text-center"></td>
 
         <td>
-            <select class="form-control metodo">
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
-            </select>
-        </td>
-
-        <td>
             <select class="form-control cuenta-select"></select>
         </td>
 
@@ -386,7 +377,7 @@
                 placeholder: 'Buscar cuenta...',
                 width: '100%',
                 ajax: {
-                    url: '<?= base_url('cuentas/accounts-listAjax') ?>',
+                    url: '<?= base_url('accounts-listAjax') ?>',
                     dataType: 'json',
                     delay: 250,
                     data: params => ({
@@ -679,7 +670,6 @@
             // 🔥 PAGOS (DESPUÉS de calcular totalCompra)
             document.querySelectorAll('#pagosTable tbody tr').forEach((row, index) => {
 
-                const metodo = row.querySelector('.metodo').value;
                 const cuenta_id = $(row).find('.cuenta-select').val();
                 const monto = parseFloat(row.querySelector('.monto').value);
 
@@ -691,14 +681,13 @@
                 totalPagado += monto;
 
                 pagosData.push({
-                    metodo_pago: metodo,
                     cuenta_id: cuenta_id,
                     monto: monto
                 });
             });
 
             // 🔥 VALIDACIÓN FINAL
-            if (totalPagado !== totalCompra) {
+            if (Math.abs(totalPagado - totalCompra) > 0.01) {
                 errores.push(`Los pagos ($${totalPagado.toFixed(2)}) no cuadran con el total ($${totalCompra.toFixed(2)})`);
             }
 
@@ -712,46 +701,82 @@
                 return;
             }
 
-            // ✅ FETCH
-            fetch("<?= base_url('compras/store') ?>", {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        proveedor_id,
-                        branch_id,
-                        observacion,
-                        fecha_compra,
-                        productos: productosData,
-                        pagos: pagosData
+            // 🧾 PREVIEW ANTES DE GUARDAR
+            let resumenHTML = `
+    <div style="text-align:left; font-size:14px">
+
+        <div><b>Proveedor:</b> ${proveedor_text}</div>
+        <div><b>Sucursal:</b> ${branch_text}</div>
+        <div><b>Fecha:</b> ${fecha_compra}</div>
+        <div><b># Productos:</b> ${productosData.length}</div>
+
+        <hr>
+
+        <div><b>Total compra:</b> $${totalCompra.toFixed(2)}</div>
+        <div><b>Total pagado:</b> $${totalPagado.toFixed(2)}</div>
+
+        <hr>
+
+        <div style="color:${Math.abs(totalPagado - totalCompra) <= 0.01 ? 'green' : 'red'}">
+            <b>${Math.abs(totalPagado - totalCompra) <= 0.01 ? '✔ Cuadrado' : '✖ Diferencia detectada'}</b>
+        </div>
+
+    </div>
+`;
+
+            Swal.fire({
+                title: 'Confirmar compra',
+                html: resumenHTML,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Revisar',
+            }).then((result) => {
+
+                if (!result.isConfirmed) return;
+
+                // ✅ AQUÍ recién guardamos
+                fetch("<?= base_url('compras/store') ?>", {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            proveedor_id,
+                            branch_id,
+                            observacion,
+                            fecha_compra,
+                            productos: productosData,
+                            pagos: pagosData
+                        })
                     })
-                })
-                .then(res => res.json())
-                .then(data => {
+                    .then(res => res.json())
+                    .then(data => {
 
-                    if (data.status === 'success') {
+                        if (data.status === 'success') {
 
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Compra registrada',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Compra registrada',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
 
-                        setTimeout(() => {
-                            window.location.href = "<?= base_url('compras') ?>";
-                        }, 1500);
+                            setTimeout(() => {
+                                window.location.href = "<?= base_url('compras') ?>";
+                            }, 1500);
 
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
 
-                })
-                .catch(() => {
-                    Swal.fire('Error', 'Error de conexión', 'error');
-                });
+                    })
+                    .catch(() => {
+                        Swal.fire('Error', 'Error de conexión', 'error');
+                    });
+
+            });
 
         });
 

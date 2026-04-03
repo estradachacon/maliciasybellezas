@@ -235,5 +235,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->get('create', 'CompraController::create');
         $routes->post('store', 'CompraController::store');
         $routes->get('(:num)', 'CompraController::show/$1');
+        $routes->get('searchAjax', 'CompraController::searchAjax');
     });
 });

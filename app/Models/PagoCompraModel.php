@@ -16,11 +16,8 @@ class PagoCompraModel extends Model
 
     protected $allowedFields = [
         'compra_id',
-        'metodo_pago',
         'cuenta_id',
         'monto',
-        'referencia',
-        'fecha_pago',
     ];
 
     protected $useTimestamps = true;

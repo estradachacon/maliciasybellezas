@@ -315,30 +315,78 @@
                             <!-- 📊 KARDEX -->
                             <div class="tab-pane fade" id="kardex">
 
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
+                                <!-- 🔍 FILTROS -->
+                                <div class="row mb-2">
 
-                                        <thead>
+                                    <div class="col-md-3">
+                                        <select id="filtroTipo" class="form-control form-control-sm">
+                                            <option value="">Todos</option>
+                                            <option value="entrada">Entradas</option>
+                                            <option value="salida">Salidas</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <input type="date" id="filtroFechaDesde" class="form-control form-control-sm">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <input type="date" id="filtroFechaHasta" class="form-control form-control-sm">
+                                    </div>
+
+                                </div>
+
+                                <!-- 🔥 CONTENEDOR CON SCROLL -->
+                                <div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:6px;">
+
+                                    <table class="table table-sm table-hover mb-0">
+
+                                        <thead style="position: sticky; top:0; background:white; z-index:1;">
                                             <tr>
-                                                <th>Fecha</th>
+                                                <th>Fecha de registro</th>
                                                 <th>Tipo</th>
                                                 <th>Cantidad</th>
                                                 <th>Origen</th>
+                                                <th></th>
                                             </tr>
                                         </thead>
 
-                                        <tbody>
+                                        <tbody id="kardexBody">
+
                                             <?php foreach ($movimientos as $m): ?>
-                                                <tr>
+                                                <tr data-tipo="<?= $m->tipo ?>" data-fecha="<?= date('Y-m-d', strtotime($m->created_at)) ?>">
+
                                                     <td><?= date('d/m/Y H:i', strtotime($m->created_at)) ?></td>
-                                                    <td><?= ucfirst($m->tipo) ?></td>
+
+                                                    <td>
+                                                        <span class="badge <?= $m->tipo == 'entrada' ? 'badge-success' : 'badge-danger' ?>">
+                                                            <?= ucfirst($m->tipo) ?>
+                                                        </span>
+                                                    </td>
+
                                                     <td><?= $m->cantidad ?></td>
-                                                    <td><?= $m->origen ?></td>
+
+                                                    <td><?= ucfirst($m->origen) ?></td>
+
+                                                    <td class="text-right">
+
+                                                        <?php if ($m->origen == 'compra'): ?>
+                                                            <a href="<?= base_url('compras/' . $m->origen_id) ?>"
+                                                                class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                        <?php endif; ?>
+
+                                                        <!-- puedes agregar más tipos aquí -->
+                                                    </td>
+
                                                 </tr>
                                             <?php endforeach; ?>
+
                                         </tbody>
 
                                     </table>
+
                                 </div>
 
                             </div>
@@ -383,6 +431,38 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const tipo = document.getElementById('filtroTipo');
+        const desde = document.getElementById('filtroFechaDesde');
+        const hasta = document.getElementById('filtroFechaHasta');
+
+        function filtrar() {
+
+            document.querySelectorAll('#kardexBody tr').forEach(row => {
+
+                const rowTipo = row.dataset.tipo;
+                const rowFecha = row.dataset.fecha;
+
+                let visible = true;
+
+                if (tipo.value && rowTipo !== tipo.value) {
+                    visible = false;
+                }
+
+                if (desde.value && rowFecha < desde.value) {
+                    visible = false;
+                }
+
+                if (hasta.value && rowFecha > hasta.value) {
+                    visible = false;
+                }
+
+                row.style.display = visible ? '' : 'none';
+            });
+        }
+
+        [tipo, desde, hasta].forEach(el => {
+            el.addEventListener('change', filtrar);
+        });
 
         document.querySelectorAll('.img-header-producto').forEach(img => {
             img.addEventListener('click', function() {

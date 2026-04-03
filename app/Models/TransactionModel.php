@@ -14,33 +14,30 @@ class TransactionModel extends Model
 
     protected $allowedFields = [
         'account_id',
-        'tracking_id',
         'tipo',
         'monto',
         'origen',
-        'referencia',
+        'origen_id',
     ];
-    public function addEntrada($accountId, $monto, $origen = null, $referencia = null, $trackingId = null)
+    public function addEntrada($accountId, $monto, $origen = null, $origen_id = null)
     {
         return $this->insert([
             'account_id'  => $accountId,
-            'tracking_id' => $trackingId,
             'tipo'        => 'entrada',
             'monto'       => $monto,
             'origen'      => $origen,
-            'referencia'  => $referencia,
+            'origen_id'  => $origen_id,
         ]);
     }
 
-    public function addSalida($accountId, $monto, $origen = null, $referencia = null, $trackingId = null)
+    public function addSalida($accountId, $monto, $origen = null, $origen_id = null)
     {
         return $this->insert([
             'account_id'  => $accountId,
-            'tracking_id' => $trackingId,
             'tipo'        => 'salida',
             'monto'       => $monto,
             'origen'      => $origen,
-            'referencia'  => $referencia,
+            'origen_id'  => $origen_id,
         ]);
     }
 

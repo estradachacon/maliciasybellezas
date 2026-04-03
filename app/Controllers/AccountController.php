@@ -41,11 +41,18 @@ class AccountController extends BaseController
             $builder = $builder->like('name', $alpha, 'after');
         }
 
+        $accounts = $builder->paginate($perPage);
+
+        // 🔥 BALANCE DINÁMICO
+        foreach ($accounts as $acc) {
+            $acc->balance = $this->accountModel->getBalance($acc->id);
+        }
+
         $data = [
             'q' => $q,
             'alpha' => $alpha,
             'perPage' => $perPage,
-            'accounts' => $builder->paginate($perPage),
+            'accounts' => $accounts,
             'pager' => $builder->pager,
         ];
 
@@ -179,8 +186,8 @@ class AccountController extends BaseController
 
         $results = array_map(function ($s) {
             return [
-                'id'   => $s->id,     
-                'text' => $s->name   
+                'id'   => $s->id,
+                'text' => $s->name
             ];
         }, $accounts);
         return $this->response->setJSON($results);
@@ -282,7 +289,7 @@ class AccountController extends BaseController
         }
 
         $request = $this->request;
-        $session = session(); 
+        $session = session();
 
         $origenId = (int) $request->getPost('account_source');
         $destinoId = (int) $request->getPost('account_destination');
@@ -320,7 +327,7 @@ class AccountController extends BaseController
             $transactionModel->insert([
                 'account_id' => $origenId,
                 'tipo'       => 'salida',
-                'monto'      => $monto, 
+                'monto'      => $monto,
                 'origen' => 'Transferencia enviada a cuenta ' . $destinoId . ' (' . $destAccount->name . '): ' . $descripcion,
                 'referencia' => 'Transferencia entre cuentas',
             ]);
@@ -328,7 +335,7 @@ class AccountController extends BaseController
             $transactionModel->insert([
                 'account_id'    => $destinoId,
                 'tipo'       => 'entrada',
-                'monto'      => $monto, 
+                'monto'      => $monto,
                 'origen' => 'Transferencia recibida desde cuenta ' . $origenId . ' (' . $originAccount->name . '): ' . $descripcion,
                 'referencia' => 'Transferencia entre cuentas',
             ]);
@@ -355,7 +362,7 @@ class AccountController extends BaseController
                 'Transferencia exitosa',
                 'Finanzas/Transferencias',
                 $logDetails,
-                $session->get('user_id') 
+                $session->get('user_id')
             );
             return $this->response->setJSON([
                 'status' => 'success',
@@ -379,31 +386,30 @@ class AccountController extends BaseController
         }
     }
     public function listAjax()
-{
-    $accountModel = new AccountModel();
+    {
+        $accountModel = new AccountModel();
 
-    $q = $this->request->getGet('term'); // 🔥 CAMBIA q → term
+        $q = $this->request->getGet('term'); 
 
-    $builder = $accountModel
-        ->select('id, name, balance')
-        ->where('is_active', 1);
+        $builder = $accountModel
+            ->select('id, name')
+            ->where('is_active', 1);
 
-    if (!empty($q)) {
-        $builder->like('name', $q);
+        if (!empty($q)) {
+            $builder->like('name', $q);
+        }
+
+        $data = $builder->findAll();
+
+        $results = [];
+
+        foreach ($data as $row) {
+            $results[] = [
+                'id' => $row->id,
+                'text' => $row->name
+            ];
+        }
+
+        return $this->response->setJSON($results);
     }
-
-    $data = $builder->findAll();
-
-    $results = [];
-
-    foreach ($data as $row) {
-        $results[] = [
-            'id' => $row->id,
-            'text' => $row->name, // 🔥 CLAVE
-            'balance' => $row->balance
-        ];
-    }
-
-    return $this->response->setJSON($results);
-}
 }

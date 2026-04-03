@@ -34,17 +34,6 @@ class CreatePagosCompra extends Migration
                 'constraint' => '10,2',
             ],
 
-            'referencia' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 100,
-                'null'       => true,
-            ],
-
-            'fecha_pago' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-
             'created_at' => [
                 'type' => 'DATETIME',
                 'null' => true,

@@ -186,7 +186,89 @@ foreach ($detalles as $d) {
                     </div>
 
                 </div>
+                <?php if (!empty($pagos)): ?>
 
+                    <div class="mt-4">
+
+                        <button class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            data-toggle="collapse"
+                            data-target="#tablaPagosCompra"
+                            aria-expanded="false"
+                            aria-controls="tablaPagosCompra">
+
+                            <i class="fa fa-money-bill-wave mr-1"></i>
+                            Pagos aplicados
+                            <span class="badge badge-success ml-1">
+                                <?= count($pagos) ?>
+                            </span>
+
+                        </button>
+
+                        <div class="collapse mt-3" id="tablaPagosCompra">
+
+                            <div class="table-responsive">
+
+                                <table class="table table-sm table-bordered table-hover align-middle">
+
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Cuenta</th>
+                                            <th class="text-end">Monto</th>
+                                        </tr>
+                                    </thead>
+
+                                    <?php $totalPagado = 0; ?>
+
+                                    <tbody>
+
+                                        <?php foreach ($pagos as $i => $p):
+                                            $totalPagado += $p->monto;
+                                        ?>
+
+                                            <tr>
+
+                                                <td>
+                                                    <span class="badge badge-secondary">
+                                                        #<?= $i + 1 ?>
+                                                    </span>
+                                                </td>
+
+                                                <td>
+                                                    <?= esc($p->cuenta_nombre ?? 'Cuenta #' . $p->cuenta_id) ?>
+                                                </td>
+
+                                                <td class="text-end">
+                                                    $<?= number_format($p->monto, 2) ?>
+                                                </td>
+
+                                            </tr>
+
+                                        <?php endforeach ?>
+
+                                    </tbody>
+
+                                    <tfoot>
+
+                                        <tr class="table-light">
+                                            <th colspan="2" class="text-end">Total pagado</th>
+                                            <th class="text-end text-success">
+                                                $<?= number_format($totalPagado, 2) ?>
+                                            </th>
+                                        </tr>
+
+                                    </tfoot>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                <?php endif; ?>
             </div>
         </div>
     </div>

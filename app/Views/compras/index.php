@@ -65,6 +65,54 @@
 
                         </div>
                     </div>
+                    
+                    <div class="col-md-2">
+                        <label>Ordenar por</label>
+                        <select id="sort" class="form-control">
+                            <option value="id" selected>ID (Compra)</option>
+                            <option value="created_at">Fecha creación</option>
+                            <option value="fecha_aplicada">Fecha aplicada</option>
+                            <option value="total">Total</option>
+                            <option value="items">Productos</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Creación desde</label>
+                        <input type="date" id="fechaDesde" class="form-control">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Creación hasta</label>
+                        <input type="date" id="fechaHasta" class="form-control">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Aplicada desde</label>
+                        <input type="date" id="aplicadaDesde" class="form-control">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Aplicada hasta</label>
+                        <input type="date" id="aplicadaHasta" class="form-control">
+                    </div>
+
+                    <div class="col-md-1">
+                        <label>Orden</label>
+                        <select id="order" class="form-control">
+                            <option value="DESC">↓</option>
+                            <option value="ASC">↑</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-1">
+                        <label>Mostrar</label>
+                        <select id="perPage" class="form-control">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
 
                 </div>
 
@@ -78,67 +126,85 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const searchInput = document.getElementById('searchInput');
-    const tableContainer = document.getElementById('table-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const tableContainer = document.getElementById('table-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
 
-    const baseUrl = '<?= base_url('compras/searchAjax') ?>';
+        const baseUrl = '<?= base_url('compras/searchAjax') ?>';
 
-    let searchTimeout;
+        let searchTimeout;
 
-    function loadResults(query = '', page = 1) {
+        function loadResults(query = '', page = 1) {
 
-        const url = `${baseUrl}?q=${encodeURIComponent(query)}&page=${page}`;
-
-        loadingSpinner.style.display = 'block';
-
-        fetch(url)
-            .then(res => res.text())
-            .then(html => {
-                tableContainer.innerHTML = html;
-                loadingSpinner.style.display = 'none';
-                updateClearButton(query);
-                rebindEvents();
+            const params = new URLSearchParams({
+                q: query,
+                page: page,
+                fecha_desde: document.getElementById('fechaDesde').value,
+                fecha_hasta: document.getElementById('fechaHasta').value,
+                aplicada_desde: document.getElementById('aplicadaDesde').value,
+                aplicada_hasta: document.getElementById('aplicadaHasta').value,
+                sort: document.getElementById('sort').value,
+                order: document.getElementById('order').value,
+                perPage: document.getElementById('perPage').value
             });
-    }
 
-    // 🔍 búsqueda
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const query = this.value.trim();
+            loadingSpinner.style.display = 'block';
 
-        searchTimeout = setTimeout(() => {
-            loadResults(query);
-        }, 300);
-    });
+            fetch(`${baseUrl}?${params.toString()}`)
+                .then(res => res.text())
+                .then(html => {
+                    tableContainer.innerHTML = html;
+                    loadingSpinner.style.display = 'none';
+                    rebindEvents();
+                });
+        }
 
-    clearSearchBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        loadResults('');
-        updateClearButton('');
-    });
+        // 🔍 búsqueda
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
 
-    function updateClearButton(query) {
-        clearSearchBtn.style.display = query.length > 0 ? 'block' : 'none';
-    }
+            searchTimeout = setTimeout(() => {
+                loadResults(query);
+            }, 300);
+        });
 
-    function rebindEvents() {
-        document.querySelectorAll('#pagination-links a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = new URL(this.href);
-                const page = url.searchParams.get('page');
-                loadResults(searchInput.value.trim(), page);
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            loadResults('');
+            updateClearButton('');
+        });
+
+        function rebindEvents() {
+            document.querySelectorAll('#pagination-links a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = new URL(this.href);
+                    const page = url.searchParams.get('page');
+                    loadResults(searchInput.value.trim(), page);
+                });
+            });
+        }
+
+        function updateClearButton(query) {
+            clearSearchBtn.style.display = query.length > 0 ? 'block' : 'none';
+        }
+
+        // 🔥 filtros (solo una vez)
+        document.querySelectorAll('#fechaDesde, #fechaHasta, #aplicadaDesde, #aplicadaHasta, #sort, #order, #perPage')
+        .forEach(el => {
+            el.addEventListener('change', () => {
+                loadResults(searchInput.value.trim());
             });
         });
-    }
 
-    // init
-    rebindEvents();
+        // init
+        rebindEvents();
+        loadResults();
 
-});
+    });
 </script>
 <?= $this->endSection() ?>
