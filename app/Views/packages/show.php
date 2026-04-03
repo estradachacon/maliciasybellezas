@@ -2,7 +2,7 @@
 <?= $this->section('content') ?>
 <style>
     .info-label {
-        font-size: 12px;
+    font-size: 12px;
         color: #6c757d;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -20,6 +20,20 @@
         font-family: monospace;
     }
 
+    @media (max-width: 768px) {
+        .card-body {
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .card-header {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+    }
+
     .estado-box {
         display: flex;
         align-items: center;
@@ -35,6 +49,13 @@
     .estado-depositado {
         background: #e0f2fe;
         color: #0369a1;
+    }
+
+    .producto-titulo {
+        font-weight: 600;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 6px;
     }
 
     .estado-en_ruta {
@@ -80,6 +101,12 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     }
 
+    @media (max-width: 768px) {
+        .card-section {
+            padding: 12px;
+        }
+    }
+
     .total-box {
         background: #f8f9fa;
         border-radius: 12px;
@@ -91,13 +118,22 @@
         color: #198754;
     }
 </style>
+<?php
+$subtotal = 0;
+$cantidadTotal = 0;
+
+foreach ($detalles as $d) {
+    $subtotal += $d->subtotal;
+    $cantidadTotal += $d->cantidad;
+}
+?>
 <div class="row">
     <div class="col-md-12">
         <div class="card shadow-sm">
 
             <div class="card-header">
 
-                <div class="d-flex justify-content-between flex-wrap">
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
 
                     <!-- IZQUIERDA -->
                     <div>
@@ -112,16 +148,16 @@
                             Registro de envío
                         </small>
                     </div>
-                    <div class="mt-3 mt-md-0 d-flex justify-content-end">
+                    <div class="mt-2 mt-md-0 d-flex flex-wrap justify-content-start justify-content-md-end" style="gap:10px;">
 
-                        <div class="d-flex" style="gap:10px;">
+                        <div class="d-flex flex-wrap w-100 w-md-auto" style="gap:10px;">
                             <!-- BOX ACTUALIZAR -->
                             <?php if (
                                 !empty($tieneAsignacion) &&
                                 $paquete->estado1 !== 'entregado' &&
                                 tienePermiso('actualizar_estado_paquete_en_detalle')
                             ): ?>
-                                <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
+                                <div class="border rounded px-3 py-2 bg-light">
 
                                     <small class="text-muted d-block mb-2">Actualizar estado</small>
 
@@ -143,7 +179,7 @@
                                 </div>
                             <?php endif; ?>
                             <!-- 📦 BOX ESTADOS -->
-                            <div class="border rounded px-3 py-2 bg-light" style="min-width:220px;">
+                            <div class="border rounded px-3 py-2 bg-light">
                                 <?php
                                 function estadoTexto($estado)
                                 {
@@ -175,7 +211,14 @@
                                         </span>
                                     </div>
                                 <?php endif; ?>
+                                <div class="d-flex align-items-center mb-1">
+                                    <small class="text-muted">Vendedor</small>
 
+                                    <span class="badge ml-auto px-2 py-1 text-white"
+                                        style="background: #0dcaf0;">
+                                        <?= esc(estadoTexto($paquete->vendedor_nombre)) ?>
+                                    </span>
+                                </div>
                             </div>
 
                         </div>
@@ -189,7 +232,7 @@
                     <div class="row">
 
                         <!-- 🔵 COLUMNA IZQUIERDA -->
-                        <div class="col-md-8">
+                        <div class="col-12 col-md-12 col-lg-9">
 
                             <!-- CLIENTE -->
                             <div class="card-section mb-3">
@@ -250,6 +293,147 @@
 
                                 </div>
                             </div>
+
+                            <div class="card-section mb-3">
+
+                                <div class="info-label mb-2">Detalle del paquete</div>
+
+                                <!-- 💻 DESKTOP (TABLA) -->
+                                <div class="d-none d-md-block">
+                                    <table class="table table-sm table-borderless">
+                                        <thead style="font-size:12px;">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cant</th>
+                                                <th class="text-end">Precio</th>
+                                                <th class="text-end">Desc</th>
+                                                <th class="text-end">Sub</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($detalles as $i => $d): ?>
+                                         
+                                                <tr>
+                                                    <td><?= $i + 1 ?></td>
+                                                    <td><?= esc($d->producto_nombre) ?></td>
+                                                    <td class="text-center"><?= $d->cantidad ?></td>
+                                                    <td class="text-end">$<?= number_format($d->precio, 2) ?></td>
+                                                    <td class="text-end text-danger">$<?= number_format($d->descuento, 2) ?></td>
+                                                    <td class="text-end fw-bold">$<?= number_format($d->subtotal, 2) ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- 📱 MOBILE (CARDS) -->
+                                <div class="d-block d-md-none">
+
+                                    <?php foreach ($detalles as $i => $d): ?>
+
+                                        <div class="border rounded mb-2 p-2 shadow-sm">
+
+                                            <!-- HEADER -->
+                                            <div class="d-flex justify-content-between">
+
+                                                <span class="badge badge-primary">
+                                                    #<?= $i + 1 ?>
+                                                </span>
+
+                                                <span class="fw-bold text-success">
+                                                    $<?= number_format($d->subtotal, 2) ?>
+                                                </span>
+
+                                            </div>
+
+                                            <!-- NOMBRE -->
+                                            <div class="producto-titulo">
+                                                <?= esc($d->producto_nombre) ?>
+                                            </div>
+
+                                            <!-- DETALLE -->
+                                            <div class="d-flex justify-content-between mt-1 text-center">
+
+                                                <div>
+                                                    <small class="text-muted">Cant</small><br>
+                                                    <?= $d->cantidad ?>
+                                                </div>
+
+                                                <div>
+                                                    <small class="text-muted">Precio</small><br>
+                                                    $<?= number_format($d->precio, 2) ?>
+                                                </div>
+
+                                                <div>
+                                                    <small class="text-muted text-danger">Desc</small><br>
+                                                    $<?= number_format($d->descuento, 2) ?>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    <?php endforeach; ?>
+
+                                </div>
+
+                                <!-- 💰 RESUMEN -->
+                                <?php
+                                $descuentoGlobal = (float)($paquete->descuento_global ?? 0);
+                                $envio = (float)($paquete->envio ?? 0);
+                                $totalReal = (float)($paquete->total_real ?? 0);
+                                $totalRemunerar = (float)($paquete->total ?? 0);
+                                ?>
+
+                                <div class="border-top pt-2 mt-2">
+
+                                    <div class="d-flex justify-content-between">
+                                        <span>Items</span>
+                                        <span><?= $cantidadTotal ?></span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <span>Subtotal</span>
+                                        <span>$<?= number_format($subtotal, 2) ?></span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between text-danger">
+                                        <span>Descuento</span>
+                                        <span>- $<?= number_format($descuentoGlobal, 2) ?></span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <span>Envío</span>
+                                        <span>$<?= number_format($envio, 2) ?></span>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Total real</span>
+                                        <span>$<?= number_format($totalReal, 2) ?></span>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-1">
+
+                                        <span class="fw-bold text-success">Por cobrar</span>
+
+                                        <?php if ($totalRemunerar > 0): ?>
+                                            <span class="fw-bold text-success">
+                                                $<?= number_format($totalRemunerar, 2) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge badge-success">
+                                                ✔ Pagado
+                                            </span>
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
                             <!-- 🧾 LOG DEL PAQUETE -->
                             <?php if (!empty($paquete->packlog)): ?>
                                 <div class="card-section mb-1">
@@ -297,7 +481,7 @@
                         </div>
 
                         <!-- COLUMNA DERECHA (FOTO) -->
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-12 col-lg-3">
                             <div class="p-3 border rounded text-center h-100" style="position: sticky; top:20px; border-radius:12px;">
 
                                 <div class="info-label mb-2">Foto del paquete</div>

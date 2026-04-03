@@ -40,30 +40,54 @@
                     </span>
                 </div>
 
-                <!-- DESTINO -->
-                <div class="mb-1">
-                    <small class="text-muted">Destino:</small>
-                    <span>
-                        <?= esc($p->destino) ?>
-                    </span>
-                </div>
+<?php
+$totalReal = (float)($p->total_real ?? 0);
+$totalRemunerar = (float)($p->total ?? 0);
+?>
 
-                <!-- INFO -->
-                <div class="d-flex justify-content-between mt-1" style="font-size:13px;">
+<div class="row mt-1" style="font-size:13px;">
 
-                    <div class="text-end">
-                        <small class="text-muted">Entrega:</small>
-                        <?= date('d/m/Y', strtotime($p->dia_entrega)) ?>
-                    </div>
+    <!-- 🔹 IZQUIERDA -->
+    <div class="col-6">
 
-                    <div class="text-end">
-                        <small class="text-muted">Total:</small>
-                        <span class="fw-bold text-success">
-                            $<?= number_format($p->total, 2) ?>
-                        </span>
-                    </div>
+        <div>
+            <small class="text-muted">Destino:</small><br>
+            <span><?= esc($p->destino) ?></span>
+        </div>
 
-                </div>
+        <div class="mt-1">
+            <small class="text-muted">Entrega:</small><br>
+            <?= date('d/m/Y', strtotime($p->dia_entrega)) ?>
+        </div>
+
+    </div>
+
+    <!-- 🔹 DERECHA -->
+    <div class="col-6 text-end">
+
+        <div>
+            <small class="text-muted">Total real:</small><br>
+            <span class="fw-bold text-dark">
+                $<?= number_format($totalReal, 2) ?>
+            </span>
+        </div>
+
+        <div class="mt-1">
+            <?php if ($totalRemunerar > 0): ?>
+                <small class="text-muted">Por cobrar Remu:</small><br>
+                <span class="fw-bold text-success">
+                    $<?= number_format($totalRemunerar, 2) ?>
+                </span>
+            <?php else: ?>
+                <span class="badge badge-success">
+                    ✔ Ya pagado
+                </span>
+            <?php endif; ?>
+        </div>
+
+    </div>
+
+</div>
 
             </div>
 

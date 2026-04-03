@@ -5,8 +5,10 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PackageModel;
+use App\Models\PackageDetailModel;
 use App\Models\PackageDepositDetailModel;
 use App\Models\SettledPointModel;
+use App\Models\TransactionModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Endroid\QrCode\Builder\Builder;
@@ -14,6 +16,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+
 
 class PackageController extends BaseController
 {
@@ -65,11 +68,24 @@ class PackageController extends BaseController
         $model = new PackageModel();
         $depositModel = new PackageDepositDetailModel();
 
-        $paquete = $model->find($id);
+        // 🔥 TRAER PAQUETE + NOMBRE DEL VENDEDOR
+        $paquete = $model
+            ->select('paquetes.*, users.user_name as vendedor_nombre')
+            ->join('users', 'users.id = paquetes.vendedor_id', 'left')
+            ->where('paquetes.id', $id)
+            ->first();
 
         if (!$paquete) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Paquete no encontrado");
         }
+
+        $detalleModel = new PackageDetailModel();
+
+        $detalles = $detalleModel
+            ->select('paquete_detalle.*, productos.nombre as producto_nombre')
+            ->join('productos', 'productos.id = paquete_detalle.producto_id', 'left')
+            ->where('paquete_id', $id)
+            ->findAll();
 
         // 🔥 verificar si tiene asignación
         $asignacion = $depositModel
@@ -78,7 +94,8 @@ class PackageController extends BaseController
 
         return view('packages/show', [
             'paquete' => $paquete,
-            'tieneAsignacion' => !empty($asignacion)
+            'tieneAsignacion' => !empty($asignacion),
+            'detalles' => $detalles
         ]);
     }
     public function actualizarEstado()
@@ -234,30 +251,51 @@ class PackageController extends BaseController
     public function guardar()
     {
         try {
+            $db = \Config\Database::connect();
+            $db->transStart();
 
             $model = new PackageModel();
+            $detalleModel = new PackageDetailModel();
+            $branchId = session('branch_id');
+            $userId   = session('id');
+            // 🔥 RECIBIR PAYLOAD
+            $payload = json_decode($this->request->getPost('data'), true);
 
+            if (!$payload) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'msg' => 'Payload vacío o inválido'
+                ]);
+            }
+
+            // CABECERA
             $data = [
-                'cliente_nombre'       => $this->request->getPost('cliente_nombre'),
-                'cliente_telefono'     => $this->request->getPost('cliente_telefono'),
-                'dia_entrega'          => $this->request->getPost('dia_entrega') ?: null,
-                'hora_inicio'          => $this->request->getPost('hora_inicio') ?: null,
-                'hora_fin'             => $this->request->getPost('hora_fin') ?: null,
-                'destino'              => $this->request->getPost('destino'),
-                'encomendista_nombre'  => $this->request->getPost('encomendista_nombre'),
-                'tipo_venta' => $this->request->getPost('tipo_venta') ?? 'detalle',
-                'estado1'    => 'pendiente',
+                'cliente_nombre'      => $payload['cliente']['nombre'],
+                'cliente_telefono'    => $payload['cliente']['telefono'],
+                'dia_entrega'         => $payload['entrega']['fecha'] ?: null,
+                'hora_inicio'         => $payload['entrega']['hora_inicio'] ?: null,
+                'hora_fin'            => $payload['entrega']['hora_fin'] ?: null,
+                'destino'             => $payload['entrega']['destino'],
+                'encomendista_nombre' => (int)$payload['operacion']['encomendista_id'],
+                'tipo_venta'          => $payload['operacion']['tipo_venta'],
+                'estado1'             => 'pendiente',
+
+                // TOTALES
+                'envio'               => $payload['totales']['envio'],
+                'descuento_global'    => $payload['totales']['descuento_global'],
+                'total_real'          => $payload['totales']['total_real'],
+                'total'               => $payload['totales']['total_remunerar'],
+
+                'vendedor_id'         => session('id')
             ];
 
-            $data['total'] = floatval(str_replace(',', '', $this->request->getPost('total') ?? 0));
-
+            // CÓDIGO QR
             do {
-                $codigo = $this->request->getPost('codigoqr');
+                $codigo = $payload['operacion']['codigoqr'];
                 $existe = $model->where('codigoqr', $codigo)->first();
 
                 if (!$existe) break;
 
-                // regenerar si ya existe
                 $codigo = $this->generarCodigoInterno();
             } while (true);
 
@@ -269,7 +307,6 @@ class PackageController extends BaseController
             if ($file && $file->isValid() && !$file->hasMoved()) {
 
                 $nombre = $file->getRandomName();
-
                 $path = ROOTPATH . 'public/upload/paquetes/';
 
                 if (!is_dir($path)) {
@@ -277,11 +314,10 @@ class PackageController extends BaseController
                 }
 
                 $file->move($path, $nombre);
-
                 $data['foto'] = $nombre;
             }
 
-            // INSERT
+            // INSERT PAQUETE
             if (!$model->insert($data)) {
                 return $this->response->setJSON([
                     'status' => 'error',
@@ -289,22 +325,122 @@ class PackageController extends BaseController
                 ]);
             }
 
-            // ID INSERTADO
-            $id = $model->getInsertID();
+            $paqueteId = $model->getInsertID();
 
-            // BITÁCORA 
-            $session = session();
+            // DETALLE
+            foreach ($payload['productos'] as $p) {
 
+                try {
+
+                    $detalleModel->insert([
+                        'paquete_id' => $paqueteId,
+                        'producto_id' => (int)$p['producto_id'],
+                        'cantidad'   => $p['cantidad'],
+                        'precio'     => $p['precio'],
+                        'descuento'  => $p['descuento'],
+                        'subtotal'   => ($p['cantidad'] * $p['precio']) - $p['descuento']
+                    ]);
+
+                    $db->table('inventario_historico')->insert([
+                        'producto_id' => (int)$p['producto_id'],
+                        'branch_id'   => $branchId,
+                        'tipo'        => 'salida',
+                        'cantidad'    => (int)$p['cantidad'],
+                        'origen'      => 'paquete',
+                        'origen_id'   => $paqueteId,
+                        'usuario_id'  => $userId,
+                        'created_at'  => date('Y-m-d H:i:s')
+                    ]);
+                } catch (\Throwable $e) {
+                    throw new \Exception('Error en producto ID ' . $p['producto_id'] . ': ' . $e->getMessage());
+                }
+            }
+
+            $pago = $payload['pago'] ?? null;
+
+            if (!$pago) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'msg' => 'Información de pago requerida'
+                ]);
+            }
+
+            // 🚨 SI ESTÁ PAGADO → CUENTA OBLIGATORIA
+            if ($pago['cancelado'] && empty($pago['cuenta_id'])) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'msg' => 'Debe seleccionar una cuenta para el pago'
+                ]);
+            }
+
+            if ($pago['cancelado'] && !empty($pago['cuenta_id'])) {
+
+                $montoProductos = $payload['totales']['subtotal'] - $payload['totales']['descuento_global'];
+                $montoEnvio = $payload['totales']['envio'];
+                $cuentaId = (int)$pago['cuenta_id'];
+                $transactionModel = new TransactionModel();
+
+                $transactionModel->addEntrada(
+                    $cuentaId,
+                    $montoProductos,
+                    'paquete',
+                    $paqueteId
+                );
+
+                if ($montoEnvio > 0) {
+                    $transactionModel->addEntrada(
+                        $cuentaId,
+                        $montoEnvio,
+                        'envio_paquete',
+                        $paqueteId
+                    );
+                }
+            }
+
+            $totalReal = (float)$data['total_real'];
+            $totalCobrado = (float)$data['total'];
+            $pagado = $payload['pago']['cancelado'] ?? false;
+
+            // TEXTO ESTADO
+            $estadoPago = $pagado ? 'Pagado' : 'Pendiente de cobro de remuneración';
+
+            // ARMAR TEXTO DE TOTALES
+            if ($totalReal != $totalCobrado) {
+                $textoTotales = 'Total real: $' . number_format($totalReal, 2) .
+                    ' | Cobrado: $' . number_format($totalCobrado, 2) .
+                    ' | ' . $estadoPago;
+            } else {
+                $textoTotales = 'Total: $' . number_format($totalCobrado, 2) .
+                    ' | ' . $estadoPago;
+            }
+
+            // BITÁCORA
             registrar_bitacora(
-                'Creación de paquete ID ' . $id,
+                'Creación de paquete ID ' . $paqueteId,
                 'Paquetes',
                 'Cliente: ' . esc($data['cliente_nombre']) .
                     ' | Destino: ' . esc($data['destino']) .
-                    ' | Total: $' . number_format($data['total'], 2),
-                $session->get('id')
+                    ' | ' . $textoTotales,
+                session('id')
             );
 
-            addPackLog($id, 'Paquete creado');
+            addPackLog($paqueteId, 'Paquete creado');
+            if ($db->error()['code'] != 0) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'db_error' => $db->error(),
+                    'last_query' => (string)$db->getLastQuery()
+                ]);
+            }
+            // FINALIZAR
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'msg' => 'Error en transacción'
+                ]);
+            }
 
             return $this->response->setJSON([
                 'status' => 'ok'

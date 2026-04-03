@@ -72,6 +72,24 @@ $logoUrl = setting('logo')
         position: relative;
     }
 
+    #modalImagen .modal-content {
+        border-radius: 12px;
+    }
+
+    #tituloImagen {
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+
+    #modalImagen .modal-header {
+        background: #f8f9fa;
+    }
+
+    #imagenGrande {
+        max-height: 70vh;
+        object-fit: contain;
+    }
+
     /* CONTENEDOR */
     .contenedor {
         display: flex;
@@ -186,8 +204,11 @@ $logoUrl = setting('logo')
     .switch-container {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 10px;
-        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: #f8f9fa;
     }
 
     .estado {
@@ -306,6 +327,95 @@ $logoUrl = setting('logo')
         background-position: right 0.75rem center;
         background-size: 16px;
     }
+
+    #listaProductos .card {
+        border: none;
+        border-left: 4px solid #0d6efd;
+        border-radius: 7px;
+        background: linear-gradient(80deg, #f4ececd5, #f8f9fa);
+        box-shadow: 1 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    #listaProductos .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
+
+    #listaProductos .card-body {
+        padding: 3px 8px;
+        /* 🔥 más compacto */
+    }
+
+    #listaProductos .row {
+        margin-top: 4px !important;
+    }
+
+    #listaProductos small {
+        font-size: 16px;
+    }
+
+    .btn-eliminar {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        font-size: 14px;
+        border-radius: 50%;
+        line-height: 20px;
+    }
+
+    /* ITEM CONTENEDOR */
+    .producto-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* IMAGEN */
+    .producto-img {
+        width: 55px;
+        height: 55px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    /* TEXTO */
+    .producto-nombre {
+        font-weight: 600;
+        color: #000;
+    }
+
+    .producto-precio {
+        color: #666;
+    }
+
+    /* 🔥 CUANDO ESTÁ SELECCIONADO (hover azul de select2) */
+    .select2-results__option--highlighted .producto-nombre,
+    .select2-results__option--highlighted .producto-precio {
+        color: #fff !important;
+    }
+
+    /* opcional: suavizar fondo */
+    .select2-results__option--highlighted {
+        background-color: #0d6efd !important;
+    }
+
+    .img-producto-mini {
+        width: 55px;
+        height: 55px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid #eee;
+        transition: 0.2s;
+    }
+
+    .img-producto-mini:hover {
+        transform: scale(1.05);
+        border-color: #0d6efd;
+    }
 </style>
 
 <div class="row">
@@ -356,23 +466,91 @@ $logoUrl = setting('logo')
                                 <select id="encomendista_id" name="encomendista_id" class="form-control" required></select>
                             </div>
                         </div>
-
                         <div class="col-md-12 mt-3">
-                            <div class="p-3 border rounded-lg bg-light">
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold">Total</label>
-                                        <input type="text" name="total" id="total" class="form-control bg-light fw-bold">
+                            <div class="card shadow-sm border">
+                                <div class="card-header bg-light fw-bold">
+                                    🛒 Productos del paquete
+                                </div>
+
+                                <div class="card-body">
+
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-4">
+                                            <label>Producto</label>
+                                            <select id="producto_id" class="form-control"></select>
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Cantidad</label>
+                                            <input type="number" id="cantidad" class="form-control" min="1" value="1">
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Precio</label>
+                                            <input type="text" id="precio" class="form-control">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label>Descuento en ítem</label>
+                                            <input type="text" id="descuento_item" class="form-control" value="0">
+                                        </div>
+
+                                        <div class="col-md-2 align-items-end">
+                                            <label></label>
+                                            <button type="button" id="btnAgregarProducto" class="btn btn-primary w-100">
+                                                + Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div id="listaProductos" class="mt-2"></div>
+                                    <div class="row mt-3 ml-1 g-2 mt-2">
+                                        <div class="col-md-4">
+                                            <label>Descuento global</label>
+                                            <input type="text" id="descuento_global" class="form-control" value="0">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label>Envío</label>
+                                            <input type="text" id="envio" class="form-control" value="0">
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="row mb-2 mt-2 col-md-12">
+                        <div class="col-md-12 mt-3">
+                            <div class="p-3 border rounded-lg bg-light">
+                                <div class="row g-2">
 
-                            <!-- 🔹 SWITCH CANCELADO -->
+                                    <!-- 💰 TOTAL FINAL -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Total a remunerar</label>
+                                        <input type="text" name="total" id="total"
+                                            class="form-control bg-light fw-bold"
+                                            style="font-size:18px; text-align:right;"
+                                            readonly>
+                                    </div>
+
+                                    <!-- 🧾 TOTAL REAL -->
+                                    <div class="col-md-6" id="contenedorTotalReal" style="display:none;">
+                                        <label class="form-label fw-bold text-muted">Total real</label>
+                                        <input type="text" name="total_real" id="total_real"
+                                            class="form-control bg-white fw-bold text-muted"
+                                            style="font-size:18px; text-align:right;"
+                                            readonly>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2 mt-2">
+
+                            <!-- 🔹 REMUNERAR -->
                             <div class="col-md-6">
-                                <div class="switch-container">
-                                    Remunerar paquete:
+                                <label class="form-label fw-bold">Remunerar paquete</label>
+
+                                <div class="switch-container justify-content-between">
 
                                     <span id="estadoTexto" class="estado activo">Cobrar total</span>
 
@@ -381,14 +559,22 @@ $logoUrl = setting('logo')
                                         <span class="slider"></span>
                                     </label>
 
-                                    <span class="estado cancelado">Paq. Cancelado</span>
+                                    <span class="estado cancelado">Cancelado</span>
+
                                 </div>
                             </div>
 
-                            <!-- 🔹 SWITCH TIPO VENTA -->
-                            <div class="col-md-6">
-                                <div class="switch-container">
-                                    Venta tipo:
+                            <!-- 🔹 CUENTA -->
+                            <div class="col-md-6 mt-2" id="contenedorCuenta" style="display:none;">
+                                <label class="form-label fw-bold">Cuenta destino</label>
+                                <select id="cuenta_id" class="form-control"></select>
+                            </div>
+
+                            <!-- 🔹 TIPO DE VENTA -->
+                            <div class="col-md-6 mt-3">
+                                <label class="form-label fw-bold">Tipo de venta</label>
+
+                                <div class="switch-container justify-content-between">
 
                                     <span id="tipoVentaTexto" class="estado activo">Detalle</span>
 
@@ -398,6 +584,7 @@ $logoUrl = setting('logo')
                                     </label>
 
                                     <span class="estado cancelado">Mayoreo</span>
+
                                 </div>
                             </div>
 
@@ -427,10 +614,10 @@ $logoUrl = setting('logo')
         <div class="card-body">
             <?php $codigoVendedor = session('codigo_vendedor'); ?>
 
-            <!-- 🔙 VOLVER ARRIBA -->
+            <!-- VOLVER ARRIBA -->
             <div class="d-flex justify-content-start mb-2">
                 <button id="btnVolver" class="btn btn-outline-secondary">
-                    ← Volver
+                    Volver
                 </button>
 
                 <small id="hintCamara" class="text-muted d-block text-center mb-2">
@@ -491,13 +678,31 @@ $logoUrl = setting('logo')
 </div>
 <div class="modal fade" id="modalImagen" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content bg-dark text-center">
-            <div class="modal-body p-2">
-                <img id="imagenGrande" class="img-fluid rounded">
+        <div class="modal-content shadow">
+
+            <!-- 🔥 HEADER -->
+            <div class="modal-header">
+
+                <span id="tituloImagen" class="badge badge-primary">
+                    Producto
+                </span>
+
+                <!-- ✅ BOTÓN CORRECTO -->
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+
             </div>
+
+            <!-- 🖼️ IMAGEN -->
+            <div class="modal-body text-center">
+                <img id="imagenGrande" class="img-fluid rounded shadow-sm">
+            </div>
+
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="modalEncomendista" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -522,6 +727,7 @@ $logoUrl = setting('logo')
         let imagenFile = null;
         let stream = null;
         let procesandoImagen = false;
+        let productos = [];
         /* Fin de Variables globales */
 
         $('#btnImprimirFinal').click(function() {
@@ -696,6 +902,26 @@ $logoUrl = setting('logo')
                     text: 'Se activó modo subida de archivo.'
                 });
             }
+        }
+
+        function formatProducto(producto) {
+
+            if (!producto.id) return producto.text;
+
+            let foto = producto.imagen ?
+                `<?= base_url('upload/productos/') ?>/${producto.imagen}` :
+                'https://via.placeholder.com/55';
+
+            return $(`
+                <div class="producto-item">
+                    <img src="${foto}" class="producto-img">
+                    
+                    <div class="producto-info">
+                        <div class="producto-nombre">${producto.text}</div>
+                        <small class="producto-precio">$${producto.precio || '0.00'}</small>
+                    </div>
+                </div>
+            `);
         }
 
         function generarPreview(p) {
@@ -923,11 +1149,11 @@ $logoUrl = setting('logo')
         // =========================
         $('#btnGuardarFinal').click(function() {
             let codigo = $('#codigoqr').val();
-
             if (!codigo) {
                 Swal.fire('Error', 'No se generó el código QR', 'error');
                 return;
             }
+
             // 🔒 evitar múltiples clicks
             if ($(this).data('loading')) return;
 
@@ -940,18 +1166,18 @@ $logoUrl = setting('logo')
             btn.data('loading', true);
             btn.prop('disabled', true);
 
-            let formData = new FormData($('#formPaquete')[0]);
-            // Tipo de venta
-            let tipoVenta = $('#tipo_venta').is(':checked') ? 'mayoreo' : 'detalle';
-            formData.append('tipo_venta', tipoVenta);
+            let payload = construirPayload();
+
+            let formData = new FormData();
+
+            // 🔥 mandar TODO el objeto
+            formData.append('data', JSON.stringify(payload));
 
             if (imagenWebp) {
                 formData.append('foto', imagenWebp);
             } else if (imagenFile) {
                 formData.append('foto', imagenFile);
             }
-
-            formData.append('total', limpiarNumero($('#total').val()));
 
             // 🔥 LOADING
             Swal.fire({
@@ -1017,33 +1243,6 @@ $logoUrl = setting('logo')
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-        }
-
-        $('#precio, #envio').on('blur', function() {
-            if ($('#cancelado').is(':checked')) return;
-
-            let precio = limpiarNumero($('#precio').val());
-            let envio = limpiarNumero($('#envio').val());
-
-            let total = precio + envio;
-
-            $('#total').val(formatearMoneda(total));
-        });
-
-        // TOTAL
-        function calcularTotal() {
-
-            if ($('#cancelado').is(':checked')) {
-                $('#total').val('0.00');
-                return;
-            }
-
-            let precio = limpiarNumero($('#precio').val());
-            let envio = limpiarNumero($('#envio').val());
-
-            let total = precio + envio;
-
-            $('#total').val(formatearMoneda(total));
         }
 
         $('#fileFoto').change(function(e) {
@@ -1118,13 +1317,190 @@ $logoUrl = setting('logo')
             return parseFloat(valor.replace(/,/g, '')) || 0;
         }
 
+        window.eliminarProducto = function(index) {
+            productos.splice(index, 1);
+            renderTabla();
+            calcularTotalProductos();
+        }
+
+        function renderTabla() {
+
+            let html = '';
+
+            productos.forEach((p, i) => {
+
+                let subtotal = (p.cantidad * p.precio) - p.descuento;
+
+                let foto = p.imagen ?
+                    `<?= base_url('upload/productos/') ?>/${p.imagen}` :
+                    'https://via.placeholder.com/60';
+
+                html += `
+        <div class="card mb-2 shadow-sm border-0 position-relative">
+
+            <!-- 🔢 INDEX -->
+            <span class="badge bg-primary text-white position-absolute"
+                style="top:5px; left:5px;">
+                ${i + 1}
+            </span>
+
+            <button type="button"
+                class="btn btn-danger btn-sm btn-eliminar btn-delete"
+                data-index="${i}">
+                ×
+            </button>
+
+            <div class="card-body p-2">
+
+                <div class="d-flex align-items-center gap-2">
+
+                    <!-- 🖼️ IMAGEN -->
+                    <img src="${foto}" 
+                        class="img-producto-mini"
+                        onclick="verImagen('${foto}', ${i + 1}, ${p.cantidad}, ${p.precio})">
+
+                    <!-- 📦 INFO -->
+                    <div class="flex-grow-1">
+
+                        <div class="fw-semibold text-truncate">
+                            ${p.nombre}
+                        </div>
+
+                        <div class="d-flex justify-content-between text-center mt-1">
+
+                            <div>
+                                <small class="text-muted">Cant</small><br>
+                                ${p.cantidad}
+                            </div>
+
+                            <div>
+                                <small class="text-muted">Precio</small><br>
+                                $${formatearMoneda(p.precio)}
+                            </div>
+
+                            <div>
+                                <small class="text-muted">Desc</small><br>
+                                $${formatearMoneda(p.descuento)}
+                            </div>
+
+                            <div>
+                                <small class="text-muted">Sub</small><br>
+                                <strong>$${formatearMoneda(subtotal)}</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+        `;
+            });
+
+            $('#listaProductos').html(html);
+        }
+
+        function construirPayload() {
+
+            let subtotal = productos.reduce((sum, p) => {
+                return sum + ((p.cantidad * p.precio) - p.descuento);
+            }, 0);
+
+            let descuentoGlobal = limpiarNumero($('#descuento_global').val());
+            let envio = limpiarNumero($('#envio').val());
+
+            let totalReal = subtotal - descuentoGlobal + envio;
+            if (totalReal < 0) totalReal = 0;
+
+            let cancelado = $('#cancelado').is(':checked');
+            let totalFinal = cancelado ? 0 : totalReal;
+
+            // 🔥 PRODUCTOS CON SUBTOTAL
+            let productosDetalle = productos.map(p => ({
+                producto_id: p.producto_id,
+                nombre: p.nombre,
+                cantidad: p.cantidad,
+                precio: p.precio,
+                descuento: p.descuento,
+                subtotal: (p.cantidad * p.precio) - p.descuento
+            }));
+
+            return {
+                cliente: {
+                    nombre: $('[name="cliente_nombre"]').val().trim(),
+                    telefono: $('[name="cliente_telefono"]').val().trim()
+                },
+                entrega: {
+                    fecha: $('[name="dia_entrega"]').val(),
+                    hora_inicio: $('[name="hora_inicio"]').val(),
+                    hora_fin: $('[name="hora_fin"]').val(),
+                    destino: $('[name="destino"]').val().trim()
+                },
+                operacion: {
+                    encomendista_id: $('#encomendista_id').val(),
+                    tipo_venta: $('#tipo_venta').is(':checked') ? 'mayoreo' : 'detalle',
+                    codigoqr: $('#codigoqr').val()
+                },
+                productos: productosDetalle,
+                totales: {
+                    subtotal: subtotal,
+                    descuento_global: descuentoGlobal,
+                    envio: envio,
+                    total_real: totalReal,
+                    total_remunerar: totalFinal
+                },
+                pago: {
+                    cancelado: cancelado,
+                    cuenta_id: cancelado ? $('#cuenta_id').val() : null
+                }
+            };
+        }
+        window.verImagen = function(src, index, cantidad, precio) {
+
+            $('#imagenGrande').attr('src', src);
+
+            let texto = `#${index} • ${cantidad} und • $${precio.toFixed(2)}`;
+            $('#tituloImagen').text(texto);
+
+            // ✅ Bootstrap 4
+            $('#modalImagen').modal('show');
+        }
+
+        function calcularTotalProductos() {
+
+            let subtotal = productos.reduce((sum, p) => {
+                return sum + ((p.cantidad * p.precio) - p.descuento);
+            }, 0);
+
+            let descuentoGlobal = limpiarNumero($('#descuento_global').val());
+            let envio = limpiarNumero($('#envio').val());
+
+            let totalReal = subtotal - descuentoGlobal + envio;
+
+            if (totalReal < 0) totalReal = 0;
+
+            let cancelado = $('#cancelado').is(':checked');
+
+            let totalFinal = cancelado ? 0 : totalReal;
+
+            // 💰 lo que se cobra
+            $('#total').val(formatearMoneda(totalFinal));
+
+            // 🧾 lo real (siempre visible)
+            $('#total_real').val(formatearMoneda(totalReal));
+        }
+
         // =========================
         // CANCELADO
         // =========================
         $('#cancelado').change(function() {
 
-            let activo = $('.estado.activo');
-            let cancelado = $('.estado.cancelado');
+            let container = $(this).closest('.switch-container');
+
+            let activo = container.find('.estado.activo');
+            let cancelado = container.find('.estado.cancelado');
 
             if (this.checked) {
 
@@ -1133,25 +1509,64 @@ $logoUrl = setting('logo')
 
                 $('#total').val('0.00');
 
-                // 🔥 bloquear TODO
-                $('#total').prop('disabled', true)
-                    .addClass('bg-light');
+                // ✅ mostrar cuenta
+                $('#contenedorCuenta').slideDown(150);
+
+                // 🔥 mostrar total real
+                $('#contenedorTotalReal').slideDown(150);
+
+                setTimeout(() => {
+                    $('#cuenta_id').select2('open');
+                }, 200);
 
             } else {
 
                 activo.css('opacity', '1');
                 cancelado.css('opacity', '0.3');
 
-                // 🔥 desbloquear
-                $('#total').prop('disabled', false)
-                    .removeClass('bg-light');
+                calcularTotalProductos();
 
-                // 🔥 recalcular solo al volver
-                calcularTotal();
+                // ocultar cuenta
+                $('#contenedorCuenta').slideDown(150);
+
+                $('#cuenta_id').val(null).trigger('change');
+
+                // 🔥 ocultar total real
+                $('#contenedorTotalReal').slideUp(150);
             }
 
         });
+
+        $(document).on('click', '.btn-delete', function () {
+            let index = $(this).data('index');
+            productos.splice(index, 1);
+            renderTabla();
+            calcularTotalProductos();
+        });
+
+        $('#cuenta_id').select2({
+            placeholder: 'Buscar cuenta...',
+            dropdownParent: $('#contenedorCuenta'),
+            width: '100%',
+            ajax: {
+                url: '<?= base_url('accounts-listAjax') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
         $('#encomendista_id').select2({
+            language: 'es',
+            minimumInputLength: 2,
             placeholder: 'Buscar encomendista...',
             width: '100%',
             ajax: {
@@ -1167,10 +1582,10 @@ $logoUrl = setting('logo')
 
                     let results = data;
 
-                    // 🔥 si no hay resultados → opción crear
-                    if (results.length === 0) {
-                        let term = $('.select2-search__field').val();
+                    let term = $('.select2-search__field').val();
 
+                    // 🔥 SOLO SI escribió algo
+                    if (results.length === 0 && term && term.length >= 2) {
                         results.push({
                             id: '__new__',
                             text: `➕ Crear "${term}"`,
@@ -1205,6 +1620,7 @@ $logoUrl = setting('logo')
             $('#nuevoEncomendista').val('');
             $('#modalEncomendista').modal('show');
         });
+
         $('#guardarEncomendista').click(function() {
 
             let nombre = $('#nuevoEncomendista').val().trim();
@@ -1232,23 +1648,148 @@ $logoUrl = setting('logo')
             }, 'json');
 
         });
+
+        $('#producto_id').select2({
+            language: 'es',
+            placeholder: 'Buscar producto...',
+            width: '100%',
+            minimumInputLength: 1,
+
+            templateResult: formatProducto, // 🔥 lista con imagen
+            templateSelection: formatProductoSeleccion, // 🔥 input limpio
+
+            escapeMarkup: function(markup) {
+                return markup;
+            },
+
+            ajax: {
+                url: '<?= base_url('productos/searchAjaxSelect') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
+
+        function formatProductoSeleccion(producto) {
+            if (!producto.id) return producto.text;
+
+            return `<span>${producto.text}</span>`;
+        }
         $('#tipo_venta').change(function() {
 
-            let detalle = $('#tipoVentaTexto');
-            let mayoreo = $(this).closest('.switch-container').find('.estado.cancelado');
+            let container = $(this).closest('.switch-container');
+
+            let activo = container.find('.estado.activo');
+            let cancelado = container.find('.estado.cancelado');
 
             if (this.checked) {
-                // 👉 MAYOREO
-                detalle.css('opacity', '0.3');
-                mayoreo.css('opacity', '1');
+                activo.css('opacity', '0.3');
+                cancelado.css('opacity', '1');
             } else {
-                // 👉 DETALLE
-                detalle.css('opacity', '1');
-                mayoreo.css('opacity', '0.3');
+                activo.css('opacity', '1');
+                cancelado.css('opacity', '0.3');
             }
 
         });
 
+        $('#producto_id').on('select2:select', function(e) {
+            let data = e.params.data;
+
+            $('#precio').val(data.precio || '0.00');
+
+            // 🔥 abrir cantidad directo
+            $('#cantidad').focus();
+        });
+
+        $('#descuento_global, #envio').on('input', function() {
+            calcularTotalProductos();
+        });
+
+        if (this.checked) {
+            $('#total_real').addClass('text-danger');
+        } else {
+            $('#total_real').removeClass('text-danger');
+        }
+
+        $('#cuenta_id').select2({
+            placeholder: 'Buscar cuenta...',
+            width: '100%',
+            ajax: {
+                url: '<?= base_url('accounts-listAjax') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
+
+        $('#btnAgregarProducto').click(function() {
+
+            let productoSelect = $('#producto_id').select2('data')[0];
+            let cantidad = parseFloat($('#cantidad').val());
+            let precio = limpiarNumero($('#precio').val());
+
+            if (!productoSelect) {
+                Swal.fire('Error', 'Seleccione un producto', 'warning');
+                return;
+            }
+
+            if (cantidad <= 0) {
+                Swal.fire('Error', 'Cantidad inválida', 'warning');
+                return;
+            }
+
+            if (precio <= 0) {
+                Swal.fire('Error', 'Precio inválido', 'warning');
+                return;
+            }
+
+            let descuento = limpiarNumero($('#descuento_item').val());
+
+            let producto = {
+                producto_id: productoSelect.id,
+                nombre: productoSelect.text,
+                cantidad: cantidad,
+                precio: precio,
+                descuento: descuento,
+                imagen: productoSelect.imagen || null
+            };
+
+            let existente = productos.find(p => p.producto_id == producto.producto_id);
+
+            if (existente) {
+                existente.cantidad += cantidad;
+                existente.descuento += descuento;
+            } else {
+                productos.push(producto);
+            }
+
+            renderTabla();
+            calcularTotalProductos();
+
+            // limpiar
+            $('#producto_id').val(null).trigger('change');
+            $('#cantidad').val(1);
+            $('#precio').val('');
+            $('#descuento_item').val('0');
+        });
     });
 </script>
 <?= $this->endSection() ?>

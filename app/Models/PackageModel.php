@@ -14,6 +14,7 @@ class PackageModel extends Model
     protected $useTimestamps = true;
 
     protected $allowedFields = [
+        'codigoqr',
         'cliente_nombre',
         'cliente_telefono',
         'dia_entrega',
@@ -22,14 +23,16 @@ class PackageModel extends Model
         'destino',
         'encomendista_nombre',
         'precio',
-        'envio',
         'total',
-        'foto',
+        'packlog',
         'tipo_venta',
         'estado1',
         'estado2',
-        'codigoqr',
-        'packlog'
+        'foto',
+        'envio',
+        'descuento_global',
+        'total_real',
+        'vendedor_id'
     ];
 
     // (Opcional pero recomendado)
@@ -38,17 +41,5 @@ class PackageModel extends Model
     // Formato de fechas
     protected $dateFormat = 'datetime';
 
-    // Validaciones básicas (opcional pero 🔥 recomendado)
-    protected $validationRules = [
-        'cliente_nombre' => 'required|min_length[3]',
-        'precio' => 'permit_empty|decimal',
-        'envio' => 'permit_empty|decimal',
-        'total' => 'permit_empty|decimal'
-    ];
 
-    protected $validationMessages = [
-        'cliente_nombre' => [
-            'required' => 'El nombre del cliente es obligatorio'
-        ]
-    ];
 }
