@@ -423,7 +423,7 @@ $logoUrl = setting('logo')
         <div class="card shadow-sm">
 
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 fw-bold">📦 Nuevo paquete</h5>
+                <h5 class="mb-0 fw-bold">📦 Nuevo envío de Paquete</h5>
             </div>
 
             <div class="card-body">
@@ -904,25 +904,41 @@ $logoUrl = setting('logo')
             }
         }
 
-        function formatProducto(producto) {
+function formatProducto(producto) {
 
-            if (!producto.id) return producto.text;
+    if (!producto.id) return producto.text;
 
-            let foto = producto.imagen ?
-                `<?= base_url('upload/productos/') ?>/${producto.imagen}` :
-                'https://via.placeholder.com/55';
+    let foto = producto.imagen
+        ? `<?= base_url('upload/productos/') ?>/${producto.imagen}`
+        : 'https://via.placeholder.com/55';
 
-            return $(`
-                <div class="producto-item">
-                    <img src="${foto}" class="producto-img">
+    let stock = producto.stock ?? 0;
+
+    return $(`
+        <div class="producto-item">
+            <img src="${foto}" class="producto-img">
+            
+            <div class="producto-info w-100">
+                <div class="producto-nombre">${producto.text}</div>
+
+                <div class="d-flex justify-content-between mt-1">
+                    <small class="producto-precio">$${producto.precio || '0.00'}</small>
                     
-                    <div class="producto-info">
-                        <div class="producto-nombre">${producto.text}</div>
-                        <small class="producto-precio">$${producto.precio || '0.00'}</small>
-                    </div>
+                    <span style="
+                        font-size:16px;
+                        font-weight:bold;
+                        padding:2px 8px;
+                        border-radius:6px;
+                        background:${stock > 0 ? '#e9f7ef' : '#fdecea'};
+                        color:${stock > 0 ? '#198754' : '#dc3545'};
+                    ">
+                        STOCK: ${stock}
+                    </span>
                 </div>
-            `);
-        }
+            </div>
+        </div>
+    `);
+}
 
         function generarPreview(p) {
 
@@ -1336,67 +1352,71 @@ $logoUrl = setting('logo')
                     'https://via.placeholder.com/60';
 
                 html += `
-        <div class="card mb-2 shadow-sm border-0 position-relative">
+                <div class="card mb-2 shadow-sm border-0 position-relative">
 
-            <!-- 🔢 INDEX -->
-            <span class="badge bg-primary text-white position-absolute"
-                style="top:5px; left:5px;">
-                ${i + 1}
-            </span>
+                    <!-- 🔢 INDEX -->
+                    <span class="badge bg-primary text-white position-absolute"
+                        style="top:5px; left:5px;">
+                        ${i + 1}
+                    </span>
 
-            <button type="button"
-                class="btn btn-danger btn-sm btn-eliminar btn-delete"
-                data-index="${i}">
-                ×
-            </button>
+                    <button type="button"
+                        class="btn btn-danger btn-sm btn-eliminar btn-delete"
+                        data-index="${i}">
+                        ×
+                    </button>
 
-            <div class="card-body p-2">
+                    <div class="card-body p-2">
 
-                <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2">
 
-                    <!-- 🖼️ IMAGEN -->
-                    <img src="${foto}" 
-                        class="img-producto-mini"
-                        onclick="verImagen('${foto}', ${i + 1}, ${p.cantidad}, ${p.precio})">
+                            <!-- 🖼️ IMAGEN -->
+                            <img src="${foto}" 
+                                class="img-producto-mini"
+                                onclick="verImagen('${foto}', ${i + 1}, ${p.cantidad}, ${p.precio})">
 
-                    <!-- 📦 INFO -->
-                    <div class="flex-grow-1">
+                            <!-- 📦 INFO -->
+                            <div class="flex-grow-1">
 
-                        <div class="fw-semibold text-truncate">
-                            ${p.nombre}
-                        </div>
+                                <div class="fw-semibold text-truncate">
+                                    ${p.nombre}
+                                </div>
 
-                        <div class="d-flex justify-content-between text-center mt-1">
+                                <div class="d-flex justify-content-between text-center mt-1">
 
-                            <div>
-                                <small class="text-muted">Cant</small><br>
-                                ${p.cantidad}
-                            </div>
+                                    <div>
+                                        <small class="text-muted">Cant</small><br>
+                                        ${p.cantidad}
+                                    </div>
 
-                            <div>
-                                <small class="text-muted">Precio</small><br>
-                                $${formatearMoneda(p.precio)}
-                            </div>
+                                    <div>
+                                        <small class="text-muted">Precio</small><br>
+                                        $${formatearMoneda(p.precio)}
+                                    </div>
 
-                            <div>
-                                <small class="text-muted">Desc</small><br>
-                                $${formatearMoneda(p.descuento)}
-                            </div>
+                                    <div>
+                                        <small class="text-muted">Desc</small><br>
+                                        $${formatearMoneda(p.descuento)}
+                                    </div>
 
-                            <div>
-                                <small class="text-muted">Sub</small><br>
-                                <strong>$${formatearMoneda(subtotal)}</strong>
+                                    <div>
+                                        <small class="text-muted">Sub</small><br>
+                                        <strong>$${formatearMoneda(subtotal)}</strong>
+                                    </div>
+
+                                    <div class="fw-semibold text-truncate">
+                                        ${p.nombre}
+                                        ${p.branch_id ? `<br><small class="text-muted">Sucursal: ${p.branch_id}</small>` : ''}
+                                    </div>
+                                </div>
+
                             </div>
 
                         </div>
 
                     </div>
-
                 </div>
-
-            </div>
-        </div>
-        `;
+                `;
             });
 
             $('#listaProductos').html(html);
@@ -1420,6 +1440,7 @@ $logoUrl = setting('logo')
             // 🔥 PRODUCTOS CON SUBTOTAL
             let productosDetalle = productos.map(p => ({
                 producto_id: p.producto_id,
+                branch_id: p.branch_id, // 🔥 NUEVO
                 nombre: p.nombre,
                 cantidad: p.cantidad,
                 precio: p.precio,
@@ -1537,7 +1558,7 @@ $logoUrl = setting('logo')
 
         });
 
-        $(document).on('click', '.btn-delete', function () {
+        $(document).on('click', '.btn-delete', function() {
             let index = $(this).data('index');
             productos.splice(index, 1);
             renderTabla();
@@ -1663,7 +1684,7 @@ $logoUrl = setting('logo')
             },
 
             ajax: {
-                url: '<?= base_url('productos/searchAjaxSelect') ?>',
+                url: '<?= base_url('productos/searchAjaxSelectStock') ?>',
                 dataType: 'json',
                 delay: 250,
                 data: function(params) {
@@ -1680,9 +1701,29 @@ $logoUrl = setting('logo')
         });
 
         function formatProductoSeleccion(producto) {
+
             if (!producto.id) return producto.text;
 
-            return `<span>${producto.text}</span>`;
+            let stock = producto.stock ?? 0;
+
+            return `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            
+            <span style="font-weight:600; color:#000;">
+                ${producto.text}
+            </span>
+
+            <span style="
+                font-size:14px;
+                font-weight:bold;
+                color:${stock > 0 ? '#198754' : '#dc3545'};
+                margin-left:10px;
+            ">
+                ${stock}
+            </span>
+
+        </div>
+    `;
         }
         $('#tipo_venta').change(function() {
 
@@ -1706,7 +1747,11 @@ $logoUrl = setting('logo')
 
             $('#precio').val(data.precio || '0.00');
 
-            // 🔥 abrir cantidad directo
+            // 🔥 NUEVO
+            $('#producto_id').data('stock', data.stock || 0);
+            $('#producto_id').data('branch_id', data.branch_id || null);
+            $('#producto_id').data('producto_id_real', data.producto_id || data.id);
+
             $('#cantidad').focus();
         });
 
@@ -1746,6 +1791,10 @@ $logoUrl = setting('logo')
             let cantidad = parseFloat($('#cantidad').val());
             let precio = limpiarNumero($('#precio').val());
 
+            let stock = $('#producto_id').data('stock') || 0;
+            let branch_id = $('#producto_id').data('branch_id');
+            let producto_id_real = $('#producto_id').data('producto_id_real');
+
             if (!productoSelect) {
                 Swal.fire('Error', 'Seleccione un producto', 'warning');
                 return;
@@ -1753,6 +1802,15 @@ $logoUrl = setting('logo')
 
             if (cantidad <= 0) {
                 Swal.fire('Error', 'Cantidad inválida', 'warning');
+                return;
+            }
+
+            if (cantidad > stock) {
+                Swal.fire(
+                    'Stock insuficiente',
+                    `Solo hay ${stock} unidades disponibles`,
+                    'warning'
+                );
                 return;
             }
 
@@ -1764,19 +1822,38 @@ $logoUrl = setting('logo')
             let descuento = limpiarNumero($('#descuento_item').val());
 
             let producto = {
-                producto_id: productoSelect.id,
+                producto_id: producto_id_real,
+                branch_id: branch_id,
                 nombre: productoSelect.text,
                 cantidad: cantidad,
                 precio: precio,
                 descuento: descuento,
-                imagen: productoSelect.imagen || null
+                imagen: productoSelect.imagen || null,
+                stock: stock
             };
 
-            let existente = productos.find(p => p.producto_id == producto.producto_id);
+            // 🔥 BUSCAR EXISTENTE (IMPORTANTE: producto + sucursal)
+            let existente = productos.find(p =>
+                p.producto_id == producto.producto_id &&
+                p.branch_id == producto.branch_id
+            );
 
             if (existente) {
-                existente.cantidad += cantidad;
+
+                let nuevaCantidad = existente.cantidad + cantidad;
+
+                if (nuevaCantidad > stock) {
+                    Swal.fire(
+                        'Stock insuficiente',
+                        `Ya tienes ${existente.cantidad} en lista y solo hay ${stock}`,
+                        'warning'
+                    );
+                    return;
+                }
+
+                existente.cantidad = nuevaCantidad;
                 existente.descuento += descuento;
+
             } else {
                 productos.push(producto);
             }

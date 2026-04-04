@@ -32,7 +32,8 @@ class Permisos extends BaseConfig
             'exportar_paquetes_a_excel',
             'ver_asignaciones',
             'depositar_por_codigo',  
-            'actualizar_estado_paquete_en_detalle'          
+            'actualizar_estado_paquete_en_detalle',
+            'descargar_de_todos_los_stock'       
         ],
 
         'Inventario' => [

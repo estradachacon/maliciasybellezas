@@ -591,8 +591,8 @@
                     }
                 });
 
-                // 🚀 REQUEST
-                fetch("<?= base_url('productos/update') ?>", {
+                // REQUEST
+                fetch("<?= base_url('inventario/update') ?>", {
                         method: 'POST',
                         body: formData
                     })
