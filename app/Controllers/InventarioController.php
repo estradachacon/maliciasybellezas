@@ -146,6 +146,74 @@ class InventarioController extends BaseController
             ]);
         }
     }
+
+    public function update()
+    {
+        $id = $this->request->getPost('id');
+
+        if (!$id) {
+            return $this->response->setJSON([
+                'success' => false,
+                'msg' => 'ID no recibido'
+            ]);
+        }
+
+        $productoActual = $this->productoModel->find($id);
+
+        $data = [
+            'nombre'        => $this->request->getPost('nombre'),
+            'marca'         => $this->request->getPost('marca'),
+            'presentacion'  => $this->request->getPost('presentacion'),
+            'precio'        => $this->request->getPost('precio'),
+            'descripcion'   => $this->request->getPost('descripcion'),
+        ];
+
+        $cambios = [];
+
+        foreach ($data as $campo => $nuevoValor) {
+
+            $valorAnterior = $productoActual->$campo ?? null;
+
+            if ($valorAnterior == $nuevoValor) {
+                continue;
+            }
+
+            $cambios[] = ucfirst($campo) . ': "' . $valorAnterior . '" → "' . $nuevoValor . '"';
+        }
+
+        // Imagen
+        $imagen = $this->request->getFile('imagen');
+
+        if ($imagen && $imagen->isValid() && !$imagen->hasMoved()) {
+
+            $nombreImagen = $imagen->getRandomName();
+            $imagen->move('upload/productos', $nombreImagen);
+
+            $data['imagen'] = $nombreImagen;
+
+            $cambios[] = 'Imagen actualizada';
+        }
+
+        $this->productoModel->update($id, $data);
+
+        $detalle = !empty($cambios)
+            ? implode(', ', $cambios)
+            : 'Sin cambios relevantes';
+
+        $session = session();
+
+        registrar_bitacora(
+            'Actualización de producto',
+            'Inventario',
+            'Producto ID ' . $id . ': ' . $detalle,
+            $session->get('user_id')
+        );
+
+        return $this->response->setJSON([
+            'success' => true
+        ]);
+    }
+
     public function searchAjax()
     {
         $db = \Config\Database::connect();

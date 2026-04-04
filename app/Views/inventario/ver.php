@@ -35,6 +35,11 @@
         opacity: 0.7;
     }
 
+    textarea.auto-resize {
+        overflow: hidden;
+        resize: none;
+    }
+
     /* HOVER */
     .nav-tabs .nav-link:hover {
         color: #111;
@@ -99,6 +104,7 @@
 
                                 <div>
                                     <h5 class="mb-0"><?= esc($producto->nombre) ?></h5>
+
                                     <small class="text-muted">Producto #<?= $producto->id ?></small>
                                 </div>
 
@@ -110,7 +116,13 @@
                                         $<?= number_format($producto->precio, 2) ?>
                                     </div>
                                 </div>
-
+                                <?php if (tienePermiso('editar_producto')): ?>
+                                    <button
+                                        class="btn btn-sm btn-primary mt-2 mb-2"
+                                        data-producto='<?= json_encode($producto) ?>'
+                                        onclick="editarProductoDesdeBtn(this)">
+                                        <i class="fa fa-edit"></i> Editar </button>
+                                <?php endif; ?>
                             </div>
 
                             <hr class="my-2">
@@ -428,12 +440,89 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="productoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productoModalTitle">Editar Producto</h5>
+            </div>
+            <form id="productoForm" enctype="multipart/form-data">
+                <input type="hidden" name="id" id="producto_id">
+                <div class="modal-body">
+                    <div class="row"> <!-- Nombre -->
+                        <div class="col-md-6"> <label>Nombre</label> <input type="text" name="nombre" class="form-control" required> </div> <!-- Marca -->
+                        <div class="col-md-6"> <label>Marca</label> <input type="text" name="marca" class="form-control"> </div> <!-- Presentación -->
+                        <div class="col-md-6 mt-2"> <label>Presentación</label> <input type="text" name="presentacion" class="form-control"> </div> <!-- Precio -->
+                        <div class="col-md-6 mt-2"> <label>Precio</label> <input type="number" step="0.01" name="precio" class="form-control" required> </div> <!-- Descripción -->
+                        <div class="col-md-12 mt-2"> <label>Descripción</label>
+                            <textarea name="descripcion" class="form-control auto-resize"></textarea>
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <label>Imagen del producto</label>
+                            <small class="text-muted d-block">Dejar vacío para mantener la actual</small>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <img id="previewImg" style="max-width:200px; margin-top:10px; display:none;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        Guardar cambios
+                    </button>
 
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function editarProducto(producto) {
+
+        document.getElementById('productoModalTitle').innerText = 'Editar Producto';
+
+        document.getElementById('producto_id').value = producto.id;
+        document.querySelector('[name="nombre"]').value = producto.nombre;
+        document.querySelector('[name="marca"]').value = producto.marca ?? '';
+        document.querySelector('[name="presentacion"]').value = producto.presentacion ?? '';
+        document.querySelector('[name="precio"]').value = producto.precio;
+        document.querySelector('[name="descripcion"]').value = producto.descripcion ?? '';
+
+
+        if (producto.imagen) {
+            const img = document.getElementById('previewImg');
+            img.src = "<?= base_url('upload/productos/') ?>/" + producto.imagen;
+            img.style.display = 'block';
+        }
+
+        $('#productoModal').modal('show');
+    }
+
+    function editarProductoDesdeBtn(btn) {
+        const producto = JSON.parse(btn.dataset.producto);
+        editarProducto(producto);
+    }
+
+    function autoResizeTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const tipo = document.getElementById('filtroTipo');
         const desde = document.getElementById('filtroFechaDesde');
         const hasta = document.getElementById('filtroFechaHasta');
+        // Inicializar todos
+        document.querySelectorAll('.auto-resize').forEach(el => {
+            autoResizeTextarea(el);
+
+            el.addEventListener('input', function() {
+                autoResizeTextarea(this);
+            });
+        });
 
         function filtrar() {
 
@@ -471,6 +560,89 @@
             });
         });
 
+        document.getElementById('productoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const formData = new FormData(form);
+
+            // 🔥 CONFIRMACIÓN
+            Swal.fire({
+                title: '¿Guardar cambios?',
+                text: 'Se actualizará la información del producto',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+
+                if (!result.isConfirmed) return;
+
+                // 🔄 LOADING
+                Swal.fire({
+                    title: 'Guardando...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // 🚀 REQUEST
+                fetch("<?= base_url('productos/update') ?>", {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+
+                        if (data.success) {
+
+                            // ✅ ÉXITO
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Actualizado',
+                                text: 'El producto fue actualizado correctamente',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+
+                        } else {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.msg || 'No se pudo guardar'
+                            });
+
+                        }
+
+                    })
+                    .catch(() => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error de conexión'
+                        });
+                    });
+
+            });
+        });
+
+        $('#productoModal').on('shown.bs.modal', function() {
+
+            const textarea = document.querySelector('[name="descripcion"]');
+
+            if (textarea) {
+                autoResizeTextarea(textarea);
+            }
+
+        });
     });
 </script>
 

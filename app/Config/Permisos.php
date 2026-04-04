@@ -38,6 +38,7 @@ class Permisos extends BaseConfig
         'Inventario' => [
             'ver_inventario',
             'crear_producto',
+            'editar_producto',
         ],
 
         'Compras' => [

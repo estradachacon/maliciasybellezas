@@ -216,6 +216,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->get('inventory', 'InventoryController::index');
     $routes->get('inventario', 'InventarioController::index');
     $routes->post('inventario/store', 'InventarioController::store');
+    $routes->post('inventario/update', 'InventarioController::update');
     $routes->get('inventario/searchAjax', 'InventarioController::searchAjax');
     $routes->get('inventario/(:num)', 'InventarioController::ver/$1');
     $routes->get('productos/searchAjaxSelect', 'ProductosController::searchAjaxSelect');
