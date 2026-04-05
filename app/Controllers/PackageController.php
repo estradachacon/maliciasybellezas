@@ -70,8 +70,13 @@ class PackageController extends BaseController
 
         // 🔥 TRAER PAQUETE + NOMBRE DEL VENDEDOR
         $paquete = $model
-            ->select('paquetes.*, users.user_name as vendedor_nombre')
+            ->select('
+                paquetes.*, 
+                users.user_name as vendedor_nombre,
+                e.encomendista_name as encomendista_nombre
+            ')
             ->join('users', 'users.id = paquetes.vendedor_id', 'left')
+            ->join('encomendistas e', 'e.id = paquetes.encomendista_nombre', 'left')
             ->where('paquetes.id', $id)
             ->first();
 
@@ -343,7 +348,7 @@ class PackageController extends BaseController
 
                     $db->table('inventario_historico')->insert([
                         'producto_id' => (int)$p['producto_id'],
-                        'branch_id'   => $branchId,
+                        'branch_id'   => (int)$p['branch_id'],
                         'tipo'        => 'salida',
                         'cantidad'    => (int)$p['cantidad'],
                         'origen'      => 'paquete',

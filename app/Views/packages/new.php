@@ -55,7 +55,35 @@ $logoUrl = setting('logo')
     * {
         box-sizing: border-box;
     }
+.grid-valores {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
 
+.grid-valores .item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.grid-valores .item small {
+    display: block;
+    font-size: 11px;
+    color: #6c757d;
+}
+
+.grid-valores .item span {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.grid-valores .item.total {
+    background: #e9f7ef;
+    border-color: #c3e6cb;
+}
     #previewCard {
         transform: scale(1.5);
     }
@@ -295,6 +323,24 @@ $logoUrl = setting('logo')
             flex-wrap: wrap;
             text-align: center;
         }
+
+        .producto-nombre {
+            white-space: normal;
+            /* permite múltiples líneas */
+            word-break: break-word;
+            /* corta palabras largas */
+            line-height: 1.2;
+            /* más compacto */
+        }
+
+        .producto-info {
+            padding-right: 45px;
+            min-width: 0; /* 🔥 ESTA ES LA MAGIA */
+            /* espacio para botón */
+        }
+        #listaProductos .producto-nombre {
+            text-indent: 25px;
+        }
     }
 
     #miniPreview {
@@ -345,7 +391,10 @@ $logoUrl = setting('logo')
         padding: 3px 8px;
         /* 🔥 más compacto */
     }
-
+    #listaProductos .card {
+        position: relative;
+        overflow: visible; /* 🔥 importante para que la imagen se salga */
+    }
     #listaProductos .row {
         margin-top: 4px !important;
     }
@@ -402,15 +451,20 @@ $logoUrl = setting('logo')
         background-color: #0d6efd !important;
     }
 
-    .img-producto-mini {
-        width: 55px;
-        height: 55px;
-        object-fit: cover;
-        border-radius: 8px;
-        cursor: pointer;
-        border: 2px solid #eee;
-        transition: 0.2s;
-    }
+.img-producto-mini {
+    position: absolute;
+    left: -50px; /* 🔥 se sale hacia la izquierda */
+    top: 50%;
+    transform: translateY(-50%);
+    
+    width: 55px;
+    height: 55px;
+    
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
 
     .img-producto-mini:hover {
         transform: scale(1.05);
@@ -904,17 +958,17 @@ $logoUrl = setting('logo')
             }
         }
 
-function formatProducto(producto) {
+        function formatProducto(producto) {
 
-    if (!producto.id) return producto.text;
+            if (!producto.id) return producto.text;
 
-    let foto = producto.imagen
-        ? `<?= base_url('upload/productos/') ?>/${producto.imagen}`
-        : 'https://via.placeholder.com/55';
+            let foto = producto.imagen ?
+                `<?= base_url('upload/productos/') ?>/${producto.imagen}` :
+                'https://via.placeholder.com/55';
 
-    let stock = producto.stock ?? 0;
+            let stock = producto.stock ?? 0;
 
-    return $(`
+            return $(`
         <div class="producto-item">
             <img src="${foto}" class="producto-img">
             
@@ -938,7 +992,7 @@ function formatProducto(producto) {
             </div>
         </div>
     `);
-}
+        }
 
         function generarPreview(p) {
 
@@ -1368,7 +1422,7 @@ function formatProducto(producto) {
 
                     <div class="card-body p-2">
 
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex gap-2">
 
                             <!-- 🖼️ IMAGEN -->
                             <img src="${foto}" 
@@ -1376,38 +1430,34 @@ function formatProducto(producto) {
                                 onclick="verImagen('${foto}', ${i + 1}, ${p.cantidad}, ${p.precio})">
 
                             <!-- 📦 INFO -->
-                            <div class="flex-grow-1">
+                            <div class="flex-grow-1 producto-info">
 
-                                <div class="fw-semibold text-truncate">
+                                <div class="fw-semibold producto-nombre">
                                     ${p.nombre}
                                 </div>
 
-                                <div class="d-flex justify-content-between text-center mt-1">
-
-                                    <div>
-                                        <small class="text-muted">Cant</small><br>
-                                        ${p.cantidad}
+                                <div class="grid-valores mt-2">
+                                    
+                                    <div class="item">
+                                        <small>Cant</small>
+                                        <span>${p.cantidad}</span>
                                     </div>
 
-                                    <div>
-                                        <small class="text-muted">Precio</small><br>
-                                        $${formatearMoneda(p.precio)}
+                                    <div class="item">
+                                        <small>Precio</small>
+                                        <span>$${formatearMoneda(p.precio)}</span>
                                     </div>
 
-                                    <div>
-                                        <small class="text-muted">Desc</small><br>
-                                        $${formatearMoneda(p.descuento)}
+                                    <div class="item">
+                                        <small>Desc</small>
+                                        <span>$${formatearMoneda(p.descuento)}</span>
                                     </div>
 
-                                    <div>
-                                        <small class="text-muted">Sub</small><br>
-                                        <strong>$${formatearMoneda(subtotal)}</strong>
+                                    <div class="item total">
+                                        <small>Sub</small>
+                                        <span>$${formatearMoneda(subtotal)}</span>
                                     </div>
 
-                                    <div class="fw-semibold text-truncate">
-                                        ${p.nombre}
-                                        ${p.branch_id ? `<br><small class="text-muted">Sucursal: ${p.branch_id}</small>` : ''}
-                                    </div>
                                 </div>
 
                             </div>
@@ -1820,6 +1870,11 @@ function formatProducto(producto) {
             }
 
             let descuento = limpiarNumero($('#descuento_item').val());
+
+            if (!branch_id) {
+                Swal.fire('Error', 'El producto no tiene sucursal asignada', 'error');
+                return;
+            }
 
             let producto = {
                 producto_id: producto_id_real,
