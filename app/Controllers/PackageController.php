@@ -68,7 +68,6 @@ class PackageController extends BaseController
         $model = new PackageModel();
         $depositModel = new PackageDepositDetailModel();
 
-        // 🔥 TRAER PAQUETE + NOMBRE DEL VENDEDOR
         $paquete = $model
             ->select('
                 paquetes.*, 
@@ -92,7 +91,6 @@ class PackageController extends BaseController
             ->where('paquete_id', $id)
             ->findAll();
 
-        // 🔥 verificar si tiene asignación
         $asignacion = $depositModel
             ->where('package_id', $id)
             ->first();

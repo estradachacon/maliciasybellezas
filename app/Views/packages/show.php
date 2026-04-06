@@ -2,7 +2,7 @@
 <?= $this->section('content') ?>
 <style>
     .info-label {
-    font-size: 12px;
+        font-size: 12px;
         color: #6c757d;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -249,6 +249,7 @@ foreach ($detalles as $d) {
                                         <div class="info-sub">
                                             <?= esc($paquete->cliente_telefono) ?>
                                         </div>
+
                                     </div>
 
                                     <!-- DERECHA -->
@@ -257,6 +258,27 @@ foreach ($detalles as $d) {
                                         <div class="info-sub">
                                             <?= ucfirst($paquete->tipo_venta ?? 'detalle') ?>
                                         </div>
+                                        <?php
+                                        $query = http_build_query([
+                                            'codigoqr' => $paquete->codigoqr,
+                                            'cliente_nombre' => $paquete->cliente_nombre,
+                                            'cliente_telefono' => $paquete->cliente_telefono,
+                                            'dia_entrega' => $paquete->dia_entrega,
+                                            'hora_inicio' => $paquete->hora_inicio,
+                                            'hora_fin' => $paquete->hora_fin,
+                                            'destino' => $paquete->destino,
+                                            'encomendista_id' => $paquete->encomendista_nombre,
+                                            'total' => $paquete->total,
+                                            'total_real' => $paquete->total_real,
+                                            'encomendista_nombre' => $paquete->encomendista_nombre,
+                                        ]);
+                                        ?>
+
+                                        <a href="<?= base_url('paquetes/etiqueta?' . $query) ?>"
+                                            target="_blank"
+                                            class="btn btn-dark btn-sm">
+                                            🏷️ Viñeta
+                                        </a>
                                     </div>
 
                                 </div>
@@ -313,7 +335,7 @@ foreach ($detalles as $d) {
                                         </thead>
                                         <tbody>
                                             <?php foreach ($detalles as $i => $d): ?>
-                                         
+
                                                 <tr>
                                                     <td><?= $i + 1 ?></td>
                                                     <td><?= esc($d->producto_nombre) ?></td>
