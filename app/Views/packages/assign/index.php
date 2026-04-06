@@ -271,6 +271,7 @@
     let paquetes = [];
     let html5QrCode;
     let scanning = false;
+    window.encomendistas = <?= json_encode($encomendistas ?? []) ?>;
 
     document.getElementById('btnCamara').addEventListener('click', async () => {
 
@@ -356,7 +357,13 @@
                             cliente: p.cliente_nombre,
                             destino: p.destino,
                             valor: parseFloat(p.total || 0),
-                            estado: 'ruta'
+                            estado: 'ruta',
+
+                            encomendista_id: p.encomendista_nombre,
+                            encomendista_nombre: p.encomendista_nombre_texto || '—',
+
+                            encomendista_id_original: p.encomendista_nombre, // 👈 CLAVE
+                            reasignado: false
                         });
 
                         render();
@@ -384,6 +391,16 @@
             }
         );
     });
+
+    function cambiarEncomendista(index, encomendista_id) {
+
+        let enc = window.encomendistas.find(e => e.id == encomendista_id);
+
+        paquetes[index].encomendista_id = encomendista_id;
+        paquetes[index].encomendista_nombre = enc ? enc.nombre : '—';
+
+    }
+
     const emptyState = document.getElementById('emptyState');
     const lista = document.getElementById('listaPaquetes');
 
@@ -457,11 +474,34 @@
         <div class="item-paquete">
             
             <div class="item-left">
+
                 <div class="item-cliente">${p.cliente}</div>
+
                 <div class="item-destino">${p.destino}</div>
+
+                <select class="form-control form-control-sm mt-1"
+                    onchange="cambiarEncomendista(${i}, this.value)">
+
+                    <option value="">Seleccionar</option>
+
+                    ${window.encomendistas.map(e => `
+                        <option value="${e.id}" ${e.id == p.encomendista_id ? 'selected' : ''}>
+                            ${e.nombre}
+                        </option>
+                    `).join('')}
+
+                    ${p.reasignado ? `
+                        <small style="color:#f59e0b; font-weight:600;">
+                            ⚠ Reasignado
+                        </small>
+                    ` : ''}
+                
+                </select>
+
                 <small class="estado ${p.estado}">
                     ${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}
                 </small>
+
             </div>
 
             <div class="item-right">
@@ -488,21 +528,89 @@
 
     function configurar(index) {
 
-        Swal.fire({
-            title: 'Estado del paquete',
-            showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonText: 'En ruta',
-            denyButtonText: 'En casillero',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
+        let p = paquetes[index];
 
-            if (result.isConfirmed) {
-                paquetes[index].estado = 'ruta';
-            } else if (result.isDenied) {
-                paquetes[index].estado = 'casillero';
-            } else {
-                return;
+        Swal.fire({
+            title: 'Configurar paquete',
+
+            html: `
+            <div style="text-align:left">
+
+                <label>Estado</label>
+                <select id="estadoSelect" class="form-control mb-2">
+                    <option value="ruta" ${p.estado === 'ruta' ? 'selected' : ''}>En ruta</option>
+                    <option value="casillero" ${p.estado === 'casillero' ? 'selected' : ''}>En casillero</option>
+                </select>
+
+                <label>Encomendista</label>
+                <select id="encomendistaSelect" style="width:100%"></select>
+
+            </div>
+        `,
+
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+
+            didOpen: () => {
+
+                // 🔥 activar select2 AJAX
+                $('#encomendistaSelect').select2({
+                    dropdownParent: $('.swal2-popup'),
+                    placeholder: 'Buscar encomendista...',
+                    width: '100%',
+                    ajax: {
+                        url: "<?= base_url('encomendistas/searchAjaxSelect') ?>",
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({
+                            term: params.term
+                        }),
+                        processResults: data => ({
+                            results: data
+                        })
+                    }
+                });
+
+                // 🔥 setear valor actual
+                if (p.encomendista_id) {
+
+                    let option = new Option(
+                        p.encomendista_nombre || 'Actual',
+                        p.encomendista_id,
+                        true,
+                        true
+                    );
+
+                    $('#encomendistaSelect')
+                        .append(option)
+                        .trigger('change');
+                }
+            }
+
+        }).then(result => {
+
+            if (!result.isConfirmed) return;
+
+            // 🔥 estado
+            let nuevoEstado = document.getElementById('estadoSelect').value;
+
+            // 🔥 encomendista
+            let encId = $('#encomendistaSelect').val();
+            let encText = $('#encomendistaSelect option:selected').text();
+
+            paquetes[index].estado = nuevoEstado;
+
+            if (encId) {
+                paquetes[index].encomendista_id = encId;
+                paquetes[index].encomendista_nombre = encText;
+
+                // 🔥 detectar cambio
+                if (encId != paquetes[index].encomendista_id_original) {
+                    paquetes[index].reasignado = true;
+                } else {
+                    paquetes[index].reasignado = false;
+                }
             }
 
             render();

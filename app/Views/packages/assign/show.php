@@ -164,7 +164,13 @@ $totalCobrar = $totalDepositado;
                                                 <td><?= $i + 1 ?></td>
 
                                                 <td>
-                                                    <span class="badge bg-dark text-white">#<?= $p->id ?></span>
+                                                    <a href="<?= base_url('packages/show/' . $p->id) ?>"
+                                                        class="badge badge-lg bg-dark text-white text-decoration-none d-inline-flex align-items-center gap-1"
+                                                        title="Ver paquete">
+
+                                                        Ver: #<?= $p->id ?>
+
+                                                    </a>
                                                 </td>
 
                                                 <td><?= esc($p->cliente_nombre) ?></td>
