@@ -39,10 +39,15 @@ class PackagesAssign extends Controller
             ]);
         }
 
-        $paquete = $this->packageModel
-            ->where('codigoqr', $qr)
-            ->first();
-
+        $paquete = $this->db->table('paquetes p')
+            ->select('
+            p.*,
+            e.encomendista_name AS encomendista_nombre_texto
+        ')
+            ->join('encomendistas e', 'e.id = p.encomendista_nombre', 'left')
+            ->where('p.codigoqr', $qr)
+            ->get()
+            ->getRow();
         if (!$paquete) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -104,6 +109,13 @@ class PackagesAssign extends Controller
             'usuario_id' => session('id')
         ]);
 
+        registrarSalida(
+            1,
+            $fleteTotal,
+            'deposito_paquetes',
+            $depositId
+        );
+
         // 🔥 SEPARAR
         $paquetesConValor = [];
         $paquetesSinValor = [];
@@ -131,26 +143,41 @@ class PackagesAssign extends Controller
 
                 $tipo = $p['estado'] === 'casillero' ? 'en_casillero' : 'en_ruta';
 
+                $valor = 0;
+                $porcentaje = 0;
+                $fleteAsignado = $fleteUnitario;
+
                 $detalles[] = [
                     'deposit_id' => $depositId,
-                    'package_id' => $p['id'],
-                    'codigo_qr' => $p['codigoqr'],
-                    'valor_paquete' => 0,
-                    'porcentaje' => 0,
-                    'flete_asignado' => round($fleteUnitario, 2),
+                    'package_id' => $p['package_id'],
+                    'valor_paquete' => $valor,
+                    'porcentaje' => $porcentaje,
+                    'flete_asignado' => round($fleteAsignado, 2),
                     'nuevo_estado' => $tipo,
-                    'foto' => $p['foto'] ?? null
+                    'created_at' => date('Y-m-d H:i:s')
                 ];
 
-                $this->packageModel->update($p['id'], [
+                $this->packageModel->update($p['package_id'], [
                     'estado1' => 'depositado',
-                    'estado2' => $tipo
+                    'estado2' => $tipo,
+                    'encomendista_nombre' => $p['encomendista_id'] ?? null
                 ]);
 
-                addPackLog(
-                    $p['id'],
-                    'Asignado (' . $tipo . ') - Flete: $' . number_format($fleteUnitario, 2)
-                );
+                // 🔥 LOG UNIFICADO
+                $nombreNuevo = $p['encomendista_nombre'] ?? 'Sin asignar';
+                $nombreOriginal = $p['encomendista_nombre_original'] ?? 'Sin asignar';
+
+                $mensaje = 'Asignado (' . $tipo . ') - Flete: $' .
+                    number_format($fleteAsignado, 2);
+
+                if (!empty($p['reasignado']) && $nombreNuevo !== $nombreOriginal) {
+                    $mensaje .= ' - Encomendista reasignado: ' .
+                        $nombreOriginal . ' → ' . $nombreNuevo;
+                } else {
+                    $mensaje .= ' - Encomendista: ' . $nombreNuevo;
+                }
+
+                addPackLog($p['package_id'], $mensaje);
             }
         } else {
 
@@ -180,24 +207,34 @@ class PackagesAssign extends Controller
 
                 $detalles[] = [
                     'deposit_id' => $depositId,
-                    'package_id' => $p['id'],
-                    'codigo_qr' => $p['codigoqr'],
+                    'package_id' => $p['package_id'],
                     'valor_paquete' => $valor,
                     'porcentaje' => $porcentaje * 100,
                     'flete_asignado' => round($fleteAsignado, 2),
                     'nuevo_estado' => $tipo,
-                    'foto' => $p['foto'] ?? null
+                    'created_at' => date('Y-m-d H:i:s')
                 ];
 
-                $this->packageModel->update($p['id'], [
+                $this->packageModel->update($p['package_id'], [
                     'estado1' => 'depositado',
-                    'estado2' => $tipo
+                    'estado2' => $tipo,
+                    'encomendista_nombre' => $p['encomendista_id'] ?? null
                 ]);
 
-                addPackLog(
-                    $p['id'],
-                    'Asignado (' . $tipo . ') - Flete: $' . number_format($fleteAsignado, 2)
-                );
+                $nombreNuevo = $p['encomendista_nombre'] ?? 'Sin asignar';
+                $nombreOriginal = $p['encomendista_nombre_original'] ?? 'Sin asignar';
+
+                $mensaje = 'Asignado (' . $tipo . ') - Flete: $' .
+                    number_format($fleteAsignado, 2);
+
+                if (!empty($p['reasignado']) && $nombreNuevo !== $nombreOriginal) {
+                    $mensaje .= ' - Encomendista reasignado: ' .
+                        $nombreOriginal . ' → ' . $nombreNuevo;
+                } else {
+                    $mensaje .= ' - Encomendista: ' . $nombreNuevo;
+                }
+
+                addPackLog($p['package_id'], $mensaje);
             }
         }
 
@@ -218,6 +255,7 @@ class PackagesAssign extends Controller
             'deposit_id' => $depositId
         ]);
     }
+
     public function show($id)
     {
         $db = \Config\Database::connect();
@@ -329,5 +367,4 @@ class PackagesAssign extends Controller
             'pager'    => $pager
         ]);
     }
-    
 }

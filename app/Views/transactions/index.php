@@ -55,12 +55,27 @@
 
                                     <div class="mt-2 pt-2 border-top">
                                         <div class="small text-secondary">
-                                            <strong>Concepto:</strong> <?= esc($t->origen ?? 'Sin descripción') ?>
+                                            <?php
+                                            $origenBonito = match ($t->origen) {
+                                                'deposito_paquetes' => 'Depósito de paquetes',
+                                                'manual' => 'Gasto manual',
+                                                default => ucfirst(str_replace('_', ' ', $t->origen))
+                                            };
+                                            ?>
+
+                                            <div class="small text-secondary">
+                                                <strong><?= esc($origenBonito) ?></strong>
+                                            </div>
                                         </div>
-                                        <?php if (!empty($t->referencia) || !empty($t->tracking_id)): ?>
-                                            <div class="d-flex justify-content-between mt-1" style="font-size: 0.7rem;">
-                                                <span class="text-muted">Ref: <?= esc($t->referencia ?: '—') ?></span>
-                                                <span class="text-muted">Track: <?= esc($t->tracking_id ?: '—') ?></span>
+                                        <?php if (!empty($t->origen_id)): ?>
+                                            <div class="mt-1" style="font-size: 0.75rem;">
+                                                <?php if ($t->origen === 'deposito_paquetes'): ?>
+                                                    <a href="<?= base_url('packages-assign/show/' . $t->origen_id) ?>" class="text-decoration-none">
+                                                        Ver depósito #<?= esc($t->origen_id) ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Ref: #<?= esc($t->origen_id) ?></span>
+                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -68,7 +83,7 @@
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-                    
+
                     <!-- PAGINACIÓN -->
                     <div class="mt-3">
                         <?= $pager->links('default', 'bitacora_pagination') ?>
@@ -84,36 +99,58 @@
                                 <th>Cuenta</th>
                                 <th>Tipo</th>
                                 <th>Monto</th>
-                                <th>Descripción</th>
+                                <th>Origen</th>
                                 <th>Referencia</th>
-                                <th>Tracking</th>
                                 <th>Fecha</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($transactions as $t): ?>
-                                <tr>
-                                    <td><?= esc($t->id) ?></td>
-                                    <td><?= esc($t->account_name) ?></td>
-                                    <td>
-                                        <?php if ($t->tipo == 'entrada'): ?>
-                                            <span class="badge bg-success">
-                                                <i class="fa-solid fa-arrow-down"></i> Entrada
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger">
-                                                <i class="fa-solid fa-arrow-up"></i> Salida
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><strong>$<?= number_format($t->monto, 2) ?></strong></td>
-                                    <td><?= esc($t->origen ?? '—') ?></td>
-                                    <td><?= esc($t->referencia ?? '—') ?></td>
-                                    <td><?= esc($t->tracking_id ?? '—') ?></td>
-                                    <td><?= date('d/m/Y H:i', strtotime($t->created_at)) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
+                        <?php foreach ($transactions as $t): ?>
+                            <?php
+                            $origenBonito = match ($t->origen) {
+                                'deposito_paquetes' => 'Depósito',
+                                'manual' => 'Manual',
+                                default => ucfirst(str_replace('_', ' ', $t->origen))
+                            };
+                            ?>
+                            <tr>
+                                <td><?= esc($t->id) ?></td>
+                                <td><?= esc($t->account_name) ?></td>
+
+                                <td>
+                                    <?php if ($t->tipo == 'entrada'): ?>
+                                        <span class="badge bg-success">
+                                            <i class="fa-solid fa-arrow-down"></i> Entrada
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">
+                                            <i class="fa-solid fa-arrow-up"></i> Salida
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td><strong>$<?= number_format($t->monto, 2) ?></strong></td>
+
+                                <!-- ORIGEN -->
+                                <td>
+                                    <span class="badge bg-info text-white">
+                                        <?= esc($origenBonito) ?>
+                                    </span>
+                                </td>
+
+                                <!-- REFERENCIA (ID CLICKABLE 🔥) -->
+                                <td>
+                                    <?php if ($t->origen === 'deposito_paquetes'): ?>
+                                        <a href="<?= base_url('packages-assign/show/' . $t->origen_id) ?>">
+                                            #<?= esc($t->origen_id) ?>
+                                        </a>
+                                    <?php else: ?>
+                                        #<?= esc($t->origen_id ?? '—') ?>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td><?= date('d/m/Y H:i', strtotime($t->created_at)) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     </table>
                 </div>
             </div>
@@ -286,7 +323,7 @@
         }
     }
 
-    $(document).ready(function () {
+    $(document).ready(function() {
         toggleTransactionsView();
         $(window).on('resize', toggleTransactionsView);
     });

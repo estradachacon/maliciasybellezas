@@ -180,12 +180,14 @@ $totalCobrar = $totalDepositado;
                                                 <td><?= esc($p->encomendista_name ?? '—') ?></td>
 
                                                 <td>
-                                                    <?php
-                                                    function estadoBonito($estado)
-                                                    {
-                                                        return ucfirst(str_replace('_', ' ', $estado));
-                                                    }
-                                                    ?>
+                                                  <?php if (!function_exists('estadoBonito')): ?>
+                                                        <?php
+                                                        function estadoBonito($estado)
+                                                        {
+                                                            return ucfirst(str_replace('_', ' ', $estado));
+                                                        }
+                                                        ?>
+                                                    <?php endif; ?>
 
                                                     <span class="estado-badge estado-<?= $p->nuevo_estado ?>">
                                                         <?= esc(estadoBonito($p->nuevo_estado)) ?>
@@ -263,7 +265,7 @@ $totalCobrar = $totalDepositado;
                                 </div>
 
                                 <div class="d-flex justify-content-between fw-bold">
-                                    <span class="text-success">Total depositado</span>
+                                    <span class="text-success">Total a remunerar</span>
                                     <span class="text-success">
                                         $<?= number_format($totalDepositado, 2) ?>
                                     </span>
@@ -286,7 +288,7 @@ $totalCobrar = $totalDepositado;
                                 <div class="info-value"><?= count($detalles) ?></div>
                             </div>
 
-                            <div class="info-sub">Total depositado</div>
+                            <div class="info-sub">Total a remunerar</div>
                             <div class="info-value text-success">
                                 $<?= number_format($totalDepositado, 2) ?>
                             </div>

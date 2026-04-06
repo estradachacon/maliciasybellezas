@@ -189,7 +189,17 @@
             </div>
 
             <div class="card-body">
+                <?php if (ENVIRONMENT !== 'production'): ?>
+                    <!-- 🔧 DEV INPUT -->
+                    <div class="mb-2">
+                        <input type="text" id="qrManual" class="form-control"
+                            placeholder="🔧 Modo dev: ingresar código QR manual">
 
+                        <button id="btnAgregarManual" class="btn btn-primary w-100 mt-1">
+                            Agregar manual
+                        </button>
+                    </div>
+                <?php endif; ?>
                 <!-- QR INPUT -->
 
                 <button id="btnCamara" class="btn btn-dark mb-2 w-100">
@@ -291,114 +301,131 @@
                 }
             },
             (decodedText) => {
-
                 if (!scanning) return;
-
                 scanning = false;
 
-                fetch("<?= base_url('packages-assign/buscar') ?>", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: 'codigoqr=' + encodeURIComponent(decodedText)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
+                procesarQR(decodedText);
 
-                        if (res.status === 'empty') {
-                            return; // silencioso o pequeño aviso
-                        }
-
-                        if (res.status === 'not_found') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'QR inválido',
-                                text: res.msg,
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-                            return;
-                        }
-
-                        if (res.status === 'used') {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Ya asignado',
-                                html: `
-                Este paquete ya está en la asignación:<br>
-                <b>#${res.deposit_id}</b>
-            `
-                            });
-                            return;
-                        }
-
-                        if (res.status !== 'ok') return;
-
-                        let p = res.data;
-
-                        if (paquetes.some(x => x.id == p.id)) {
-
-                            Swal.fire({
-                                toast: true,
-                                position: 'top',
-                                icon: 'warning',
-                                title: 'Ya agregado',
-                                showConfirmButton: false,
-                                timer: 1000
-                            });
-
-                            return;
-                        }
-
-                        paquetes.push({
-                            id: p.id,
-                            codigoqr: p.codigoqr,
-                            cliente: p.cliente_nombre,
-                            destino: p.destino,
-                            valor: parseFloat(p.total || 0),
-                            estado: 'ruta',
-
-                            encomendista_id: p.encomendista_nombre,
-                            encomendista_nombre: p.encomendista_nombre_texto || '—',
-
-                            encomendista_id_original: p.encomendista_nombre, // 👈 CLAVE
-                            reasignado: false
-                        });
-
-                        render();
-
-                        // ALERTA DE ÉXITO
-                        Swal.fire({
-                            toast: true,
-                            position: 'top',
-                            icon: 'success',
-                            title: 'Agregado',
-                            showConfirmButton: false,
-                            timer: 500,
-                            timerProgressBar: false
-                        });
-
-                        // animación visual
-                        animacionCheck();
-
-                    })
-                    .finally(() => {
-                        setTimeout(() => {
-                            scanning = true;
-                        }, 650);
-                    });
+                setTimeout(() => scanning = true, 650);
             }
         );
     });
 
+    function procesarQR(decodedText) {
+
+        fetch("<?= base_url('packages-assign/buscar') ?>", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'codigoqr=' + encodeURIComponent(decodedText)
+            })
+            .then(res => res.json())
+            .then(res => {
+
+                if (res.status === 'empty') return;
+
+                if (res.status === 'error') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.msg || 'Error desconocido'
+                    });
+                    return;
+                }
+
+                if (res.status === 'not_found') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'QR inválido',
+                        text: res.msg,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+
+                if (res.status === 'used') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Ya asignado',
+                        html: `Este paquete ya está en la asignación:<br><b>#${res.deposit_id}</b>`
+                    });
+                    return;
+                }
+
+                if (res.status !== 'ok') return;
+
+                let p = res.data;
+
+                if (paquetes.some(x => x.codigoqr == decodedText)) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top',
+                        icon: 'warning',
+                        title: 'QR ya escaneado',
+                        timer: 1000,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+
+                if (paquetes.some(x => x.id == p.id)) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top',
+                        icon: 'warning',
+                        title: 'Ya agregado',
+                        showConfirmButton: false,
+                        timer: 1000
+                    });
+                    return;
+                }
+
+                paquetes.push({
+                    id: p.id,
+                    codigoqr: p.codigoqr,
+                    cliente: p.cliente_nombre,
+                    destino: p.destino,
+                    valor: parseFloat(p.total || 0),
+                    estado: 'ruta',
+
+                    encomendista_id: p.encomendista_nombre,
+                    encomendista_nombre: p.encomendista_nombre_texto || '—',
+
+                    // 🔥 NUEVOS
+                    encomendista_nombre_original: p.encomendista_nombre_texto || '—',
+                    encomendista_id_original: p.encomendista_nombre,
+
+                    reasignado: false
+                });
+
+                render();
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top',
+                    icon: 'success',
+                    title: 'Agregado',
+                    showConfirmButton: false,
+                    timer: 500
+                });
+
+                animacionCheck();
+            });
+    }
+
     function cambiarEncomendista(index, encomendista_id) {
 
-        let enc = window.encomendistas.find(e => e.id == encomendista_id);
+        let enc = window.encomendistas.find(e => String(e.id) === String(encomendista_id));
 
         paquetes[index].encomendista_id = encomendista_id;
         paquetes[index].encomendista_nombre = enc ? enc.nombre : '—';
 
+        paquetes[index].reasignado =
+            String(encomendista_id) !== String(paquetes[index].encomendista_id_original);
+
+        render();
     }
 
     const emptyState = document.getElementById('emptyState');
@@ -471,54 +498,41 @@
             total += p.valor;
 
             lista.innerHTML += `
-        <div class="item-paquete">
-            
-            <div class="item-left">
+            <div class="item-paquete ${p.reasignado ? 'border border-warning' : ''}">
+                
+                <div class="item-left">
 
-                <div class="item-cliente">${p.cliente}</div>
+                    <div class="item-cliente">${p.cliente}</div>
 
-                <div class="item-destino">${p.destino}</div>
-
-                <select class="form-control form-control-sm mt-1"
-                    onchange="cambiarEncomendista(${i}, this.value)">
-
-                    <option value="">Seleccionar</option>
-
-                    ${window.encomendistas.map(e => `
-                        <option value="${e.id}" ${e.id == p.encomendista_id ? 'selected' : ''}>
-                            ${e.nombre}
-                        </option>
-                    `).join('')}
+                    <div class="item-destino">${p.destino}</div>
 
                     ${p.reasignado ? `
                         <small style="color:#f59e0b; font-weight:600;">
                             ⚠ Reasignado
                         </small>
                     ` : ''}
-                
-                </select>
 
-                <small class="estado ${p.estado}">
-                    ${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}
-                </small>
+                    <small class="estado ${p.estado}">
+                        ${p.estado === 'ruta' ? 'En ruta' : 'En casillero'}
+                    </small>
 
-            </div>
-
-            <div class="item-right">
-                <div class="item-valor">$${p.valor.toFixed(2)}</div>
-
-                <div class="d-flex gap-2 mt-1">
-                    <button class="btn btn-sm btn-light"
-                        onclick="configurar(${i})">
-                        ⚙
-                    </button>
-
-                    <span class="remove-btn" onclick="eliminar(${i})">×</span>
                 </div>
-            </div>
 
-        </div>
-        `;
+                <div class="item-right">
+                    <div class="item-valor">Remunerar: $${p.valor.toFixed(2)}</div>
+
+                    <div class="d-flex gap-2 mt-1">
+                        <button class="btn btn-sm btn-light"
+                            onclick="configurar(${i})">
+                            Configurar ⚙
+                        </button>
+
+                        <span class="remove-btn" onclick="eliminar(${i})">×</span>
+                    </div>
+                </div>
+
+            </div>
+            `;
         });
 
         // 🔥 actualizar resumen
@@ -534,19 +548,19 @@
             title: 'Configurar paquete',
 
             html: `
-            <div style="text-align:left">
+                <div style="text-align:left">
 
-                <label>Estado</label>
-                <select id="estadoSelect" class="form-control mb-2">
-                    <option value="ruta" ${p.estado === 'ruta' ? 'selected' : ''}>En ruta</option>
-                    <option value="casillero" ${p.estado === 'casillero' ? 'selected' : ''}>En casillero</option>
-                </select>
+                    <label>Estado</label>
+                    <select id="estadoSelect" class="form-control mb-2">
+                        <option value="ruta" ${p.estado === 'ruta' ? 'selected' : ''}>En ruta</option>
+                        <option value="casillero" ${p.estado === 'casillero' ? 'selected' : ''}>En casillero</option>
+                    </select>
 
-                <label>Encomendista</label>
-                <select id="encomendistaSelect" style="width:100%"></select>
+                    <label>Encomendista</label>
+                    <select id="encomendistaSelect" style="width:100%"></select>
 
-            </div>
-        `,
+                </div>
+            `,
 
             showCancelButton: true,
             confirmButtonText: 'Guardar',
@@ -554,20 +568,26 @@
 
             didOpen: () => {
 
-                // 🔥 activar select2 AJAX
+                // Activar select2 AJAX
                 $('#encomendistaSelect').select2({
+                    language: 'es',
+                    minimumInputLength: 1,
                     dropdownParent: $('.swal2-popup'),
                     placeholder: 'Buscar encomendista...',
                     width: '100%',
                     ajax: {
-                        url: "<?= base_url('encomendistas/searchAjaxSelect') ?>",
+                        url: "<?= base_url('encomendistas/searchAjaxAssign') ?>",
+                        type: 'POST',
                         dataType: 'json',
                         delay: 250,
                         data: params => ({
                             term: params.term
                         }),
                         processResults: data => ({
-                            results: data
+                            results: data.map(e => ({
+                                id: e.id,
+                                text: e.text
+                            }))
                         })
                     }
                 });
@@ -617,6 +637,48 @@
         });
     }
 
+    function enviarDatos() {
+
+        let data = {
+            flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
+            paquetes: paquetes.map(p => ({
+                package_id: p.id,
+                encomendista_id: p.encomendista_id,
+                encomendista_nombre: p.encomendista_nombre,
+
+                encomendista_nombre_original: p.encomendista_nombre_original,
+
+                estado: p.estado,
+                valor: p.valor,
+                reasignado: p.reasignado
+            }))
+        };
+
+        fetch("<?= base_url('packages-assign/guardar') ?>", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'ok') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Guardado',
+                        text: 'Paquetes procesados'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.msg
+                    });
+                }
+            });
+    }
+
     function eliminar(i) {
         paquetes.splice(i, 1);
         render();
@@ -635,6 +697,33 @@
 
         document.getElementById('scannerContainer').style.display = 'none';
     }
+
+    let btnManual = document.getElementById('btnAgregarManual');
+
+    if (btnManual) {
+        btnManual.addEventListener('click', () => {
+
+            let codigo = document.getElementById('qrManual').value.trim();
+
+            if (!codigo) return;
+
+            procesarQR(codigo);
+
+            document.getElementById('qrManual').value = '';
+        });
+    }
+
+    let inputManual = document.getElementById('qrManual');
+
+    if (inputManual) {
+        inputManual.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (btnManual) btnManual.click();
+                if (inputManual) inputManual.focus();
+            }
+        });
+    }
     // GUARDAR
     document.getElementById('btnProcesar').addEventListener('click', function() {
 
@@ -646,37 +735,32 @@
             });
             return;
         }
+        let sinEncomendista = paquetes.some(p => !p.encomendista_id);
 
-        let data = {
-            flete_total: parseFloat(document.getElementById('fleteTotal').value || 0),
-            paquetes: paquetes
-        };
-
-        fetch("<?= base_url('packages-assign/guardar') ?>", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'ok') {
-                    Swal.close();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Guardado',
-                        text: 'Paquetes procesados'
-                    }).then(() => location.reload());
-                    location.reload();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: res.msg
-                    });
-                }
+        if (sinEncomendista) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Falta encomendista',
+                text: 'Todos los paquetes deben tener encomendista'
             });
+            return;
+        }
+
+        if (paquetes.some(p => p.reasignado)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Hay paquetes reasignados',
+                text: 'Se detectaron cambios de encomendista',
+                showCancelButton: true,
+                confirmButtonText: 'Continuar',
+                cancelButtonText: 'Cancelar'
+            }).then(r => {
+                if (r.isConfirmed) enviarDatos();
+            });
+            return;
+        }
+
+        enviarDatos();
 
     });
 

@@ -250,7 +250,6 @@ class EncomendistasController extends BaseController
                 ->groupEnd();
         }
 
-        // 🔽 ORDEN
         $builder = $builder->orderBy('id', 'DESC');
 
         $data = [
@@ -260,5 +259,32 @@ class EncomendistasController extends BaseController
         ];
 
         return view('encomendistas/_table', $data);
+    }
+    public function searchAjaxAssign()
+    {
+        $q = trim($this->request->getPost('term') ?? '');
+
+        $model = new EncomendistasModel();
+
+        if ($q !== '') {
+            $model = $model
+                ->groupStart()
+                ->like('encomendista_name', $q)
+                ->orLike('id', $q)
+                ->groupEnd();
+        }
+
+        $encomendistas = $model
+            ->orderBy('id', 'DESC')
+            ->findAll(10);
+
+        $result = array_map(function ($e) {
+            return [
+                'id' => $e->id,
+                'text' => $e->encomendista_name
+            ];
+        }, $encomendistas);
+
+        return $this->response->setJSON($result);
     }
 }

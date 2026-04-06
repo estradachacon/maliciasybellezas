@@ -14,17 +14,43 @@ class TransactionsController extends BaseController
         $chk = requerirPermiso('ver_transacciones');
         if ($chk !== true) return $chk;
 
+        $perPage = 10;
+
         $model = new TransactionModel();
-        $data = [
-            'transactions' => $model->getTransactionsWithAccountName(),
-            'transactions2' => $model->getTransactionsWithAccountNamePaginated(10),
-            'pager'        => $model->pager
-        ];
-        return view('transactions/index', $data);
+
+        $origen     = $this->request->getGet('origen');
+        $tipo       = $this->request->getGet('tipo');
+        $origen_id  = $this->request->getGet('origen_id');
+
+        $model
+            ->select('transactions.*, accounts.name as account_name')
+            ->join('accounts', 'accounts.id = transactions.account_id', 'left')
+            ->orderBy('transactions.created_at', 'DESC');
+
+        if ($origen) {
+            $model->where('transactions.origen', $origen);
+        }
+
+        if ($tipo) {
+            $model->where('transactions.tipo', $tipo);
+        }
+
+        if ($origen_id) {
+            $model->where('transactions.origen_id', $origen_id);
+        }
+
+        $transactions = $model->paginate($perPage);
+        $pager = $model->pager;
+
+        return view('transactions/index', [
+            'transactions' => $transactions,
+            'transactions2' => $transactions,
+            'pager' => $pager
+        ]);
     }
 
     public function addSalida()
-    {        
+    {
         helper(['form', 'bitacora', 'account']);
         $session = session();
         $request = service('request');

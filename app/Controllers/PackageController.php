@@ -498,13 +498,29 @@ class PackageController extends BaseController
         $model = new PackageModel();
 
         $cliente = $this->request->getGet('cliente');
-        $estado = $this->request->getGet('estado');
         $fecha_inicio = $this->request->getGet('fecha_inicio');
         $fecha_fin    = $this->request->getGet('fecha_fin');
 
-        $builder = $model;
+        $builder = $model
+            ->select('
+            paquetes.*,
+            e.encomendista_name,
+            pdd.flete_asignado,
+            pd.fecha AS fecha_deposito
+        ')
+            ->join('(
+            SELECT p1.*
+            FROM package_deposit_details p1
+            INNER JOIN (
+                SELECT package_id, MAX(id) as max_id
+                FROM package_deposit_details
+                GROUP BY package_id
+            ) p2 ON p1.id = p2.max_id
+        ) pdd', 'pdd.package_id = paquetes.id', 'left', false)
 
-        // filtros
+            ->join('package_deposits pd', 'pd.id = pdd.deposit_id', 'left')
+            ->join('encomendistas e', 'e.id = paquetes.encomendista_nombre', 'left');
+
         if (!empty($cliente)) {
             $builder->like('cliente_nombre', $cliente);
         }
@@ -514,8 +530,7 @@ class PackageController extends BaseController
                 ->where('dia_entrega <=', $fecha_fin);
         }
 
-        // 🔥 traer TODO (sin paginar)
-        $data = $builder->orderBy('id', 'DESC')->findAll();
+        $data = $builder->orderBy('paquetes.id', 'DESC')->findAll();
 
         // =========================
         // EXCEL
@@ -523,51 +538,147 @@ class PackageController extends BaseController
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Resumen');
 
-        // encabezados
-        $sheet->setCellValue('A1', '#');
-        $sheet->setCellValue('B1', 'Cliente');
-        $sheet->setCellValue('C1', 'Destino');
-        $sheet->setCellValue('D1', 'Entrega');
-        $sheet->setCellValue('E1', 'Total');
-        $sheet->setCellValue('F1', 'Estado');
+        // HEADERS
+        $headers = [
+            'A1' => '#',
+            'B1' => 'Cliente',
+            'C1' => 'Destino',
+            'D1' => 'ID Encomendista',
+            'E1' => 'Encomendista',
+            'F1' => 'Fecha depósito',
+            'G1' => 'Entrega',
+            'H1' => 'Total venta',
+            'I1' => 'Flete',
+            'J1' => 'Descuento',
+            'K1' => 'Total real',
+            'L1' => 'Total remunerar',
+            'M1' => 'Cancelado',
+            'N1' => 'Estado 1',
+            'O1' => 'Estado 2',
+        ];
 
-        // data
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
         $row = 2;
 
         foreach ($data as $p) {
 
-            $estadoTexto = trim(($p->estado1 ?? '') . ' ' . ($p->estado2 ?? ''));
+            $total = floatval($p->total ?? 0);
+            $totalVenta = floatval($p->total_real ?? 0);
+            $flete = floatval($p->flete_asignado ?? 0);
+            $descuento = floatval($p->descuento_global ?? 0);
+
+            $pagado = $total <= 0 ? 'SI' : 'NO';
+
+            $fechaDeposito = !empty($p->fecha_deposito)
+                ? date('d/m/Y H:i', strtotime($p->fecha_deposito))
+                : '—';
 
             $sheet->setCellValue('A' . $row, $p->id);
             $sheet->setCellValue('B' . $row, $p->cliente_nombre);
             $sheet->setCellValue('C' . $row, $p->destino);
-            $sheet->setCellValue('D' . $row, $p->dia_entrega);
-            $sheet->setCellValue('E' . $row, $p->total);
-            $sheet->setCellValue('F' . $row, $estadoTexto);
-            $sheet->setCellValue('E' . $row, $p->total);
+            $sheet->setCellValue('D' . $row, $p->encomendista_nombre);
+            $sheet->setCellValue('E' . $row, $p->encomendista_name);
+            $sheet->setCellValue('F' . $row, $fechaDeposito);
+            $sheet->setCellValue('G' . $row, $p->dia_entrega);
+            $sheet->setCellValue('H' . $row, $totalVenta);
+            $sheet->setCellValue('I' . $row, $flete);
+            $sheet->setCellValue('J' . $row, $descuento);
+            $sheet->setCellValue('K' . $row, $totalVenta - $flete);
+            $sheet->setCellValue('L' . $row, $total);
+            $sheet->setCellValue('M' . $row, $pagado);
+            $sheet->setCellValue('N' . $row, $p->estado1);
+            $sheet->setCellValue('O' . $row, $p->estado2);
 
-            // formato moneda
-            $sheet->getStyle('E' . $row)
-                ->getNumberFormat()
-                ->setFormatCode('"$"#,##0.00');
+            foreach (['H', 'I', 'J', 'K', 'L'] as $col) {
+                $sheet->getStyle($col . $row)
+                    ->getNumberFormat()
+                    ->setFormatCode('"$"#,##0.00');
+            }
 
             $row++;
         }
 
-        // auto size
-        foreach (range('A', 'F') as $col) {
-            $sheet->getColumnDimension('A')->setWidth(8);   // #
-            $sheet->getColumnDimension('B')->setWidth(30);  // Cliente
-            $sheet->getColumnDimension('C')->setWidth(35);  // Destino
-            $sheet->getColumnDimension('D')->setWidth(15);  // Fecha
-            $sheet->getColumnDimension('E')->setWidth(15);  // Total
-            $sheet->getColumnDimension('F')->setWidth(25);  // Estado
+        // =========================
+        // HOJA 2 DETALLE
+        // =========================
+
+        $detalleSheet = $spreadsheet->createSheet();
+        $detalleSheet->setTitle('Detalle');
+
+        $detalleSheet->setCellValue('A1', 'Paquete');
+        $detalleSheet->setCellValue('B1', 'Cliente');
+        $detalleSheet->setCellValue('C1', 'Producto ID');
+        $detalleSheet->setCellValue('D1', 'Cantidad');
+        $detalleSheet->setCellValue('E1', 'Precio');
+        $detalleSheet->setCellValue('F1', 'Descuento');
+        $detalleSheet->setCellValue('G1', 'Subtotal');
+
+        // 🔥 SOLO paquetes exportados
+        $packageIds = array_map(fn($p) => $p->id, $data);
+
+        if (!empty($packageIds)) {
+
+            $db = \Config\Database::connect();
+
+            $detalles = $db->table('paquete_detalle pd')
+                ->select('
+                        pd.*,
+                        p.cliente_nombre,
+                        pr.nombre AS producto_nombre
+                    ')
+                ->join('paquetes p', 'p.id = pd.paquete_id', 'left')
+                ->join('productos pr', 'pr.id = pd.producto_id', 'left') // 👈 ESTA LÍNEA
+                ->whereIn('pd.paquete_id', $packageIds)
+                ->orderBy('pd.paquete_id', 'ASC')
+                ->get()
+                ->getResult();
+
+            $rowDetalle = 2;
+            $last = null;
+
+            foreach ($detalles as $d) {
+
+                // separador visual
+                if ($last !== $d->paquete_id) {
+                    $detalleSheet->setCellValue('A' . $rowDetalle, '---');
+                    $rowDetalle++;
+                    $last = $d->paquete_id;
+                }
+
+                $detalleSheet->setCellValue('A' . $rowDetalle, $d->paquete_id);
+                $detalleSheet->setCellValue('B' . $rowDetalle, $d->cliente_nombre);
+                $detalleSheet->setCellValue('C' . $rowDetalle, $d->producto_nombre ?? $d->producto_id);
+                $detalleSheet->setCellValue('D' . $rowDetalle, $d->cantidad);
+                $detalleSheet->setCellValue('E' . $rowDetalle, $d->precio);
+                $detalleSheet->setCellValue('F' . $rowDetalle, $d->descuento ?? 0);
+                $detalleSheet->setCellValue('G' . $rowDetalle, $d->subtotal);
+
+                foreach (['E', 'F', 'G'] as $col) {
+                    $detalleSheet->getStyle($col . $rowDetalle)
+                        ->getNumberFormat()
+                        ->setFormatCode('"$"#,##0.00');
+                }
+
+                $rowDetalle++;
+            }
+        }
+
+        // autosize todo
+        foreach (range('A', 'O') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        foreach (range('A', 'G') as $col) {
+            $detalleSheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         // descargar
         $writer = new Xlsx($spreadsheet);
-
         $filename = 'paquetes_' . date('Ymd_His') . '.xlsx';
 
         if (ob_get_length()) ob_end_clean();

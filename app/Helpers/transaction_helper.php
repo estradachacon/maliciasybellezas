@@ -58,7 +58,7 @@ function registrarEntrada($accountId, $monto, $origen = null, $referencia = null
     ]);
 }
 
-function registrarSalida($accountId, $monto, $origen = null, $referencia = null, $trackingId = null)
+function registrarSalida($accountId, $monto, $origen = null, $origen_id = null)
 {
     $model = new TransactionModel();
 
@@ -71,10 +71,9 @@ function registrarSalida($accountId, $monto, $origen = null, $referencia = null,
     
     $model->insert([
         'account_id' => $accountId,
-        'tracking_id' => $trackingId,
         'tipo' => 'salida',
         'monto' => $monto,
         'origen' => $origen,
-        'referencia' => $referencia,
+        'origen_id' => $origen_id,
     ]);
 }

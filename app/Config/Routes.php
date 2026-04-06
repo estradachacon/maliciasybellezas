@@ -111,6 +111,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('encomendistas/delete', 'EncomendistasController::delete');
     $routes->post('encomendistas-create-ajax', 'EncomendistasController::createAjax');
     $routes->get('encomendistas/searchAjax', 'EncomendistasController::searchAjax');
+    $routes->post('encomendistas/searchAjaxAssign', 'EncomendistasController::searchAjaxAssign');
     $routes->get('encomendistas/filter-for-packages', 'EncomendistasController::filterForPackages');
 
     // Módulo de mantenimiento de puntos fijos
