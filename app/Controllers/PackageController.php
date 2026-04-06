@@ -696,7 +696,41 @@ class PackageController extends BaseController
             ->setBody($excelOutput);
     }
 
-    public function edit($id) {}
+    public function simuladorLiquidacion()
+    {
+        $db = \Config\Database::connect();
+
+        $builder = $db->table('paquetes p');
+        $builder->select('
+            p.id,
+            p.codigo,
+            p.monto_cobro,
+            p.estado,
+            p.fecha_entrega,
+            c.nombre as cliente,
+            e.id as encomendista_id,
+            e.nombre as encomendista
+        ');
+        $builder->join('clientes c', 'c.id = p.cliente_id');
+        $builder->join('encomendistas e', 'e.id = p.encomendista_id');
+
+        $builder->where('p.estado', 'ENTREGADO');
+        $builder->where('p.remunerado', 0);
+
+        $paquetes = $builder->get()->getResult();
+
+        // Agrupar por encomendista
+        $agrupado = [];
+
+        foreach ($paquetes as $p) {
+            $agrupado[$p->encomendista_id]['nombre'] = $p->encomendista;
+            $agrupado[$p->encomendista_id]['paquetes'][] = $p;
+        }
+
+        return view('liquidaciones/simulador', [
+            'data' => $agrupado
+        ]);
+    }
 
     public function update($id) {}
 

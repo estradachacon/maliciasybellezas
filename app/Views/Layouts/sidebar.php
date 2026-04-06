@@ -115,7 +115,8 @@
                 <?php if (
                     tienePermiso('crear_paquetes') ||
                     tienePermiso('ver_paquetes') ||
-                    tienePermiso('ver_tracking')
+                    tienePermiso('ver_asignaciones') ||
+                    tienePermiso('ver_remuneraciones')
                 ): ?>
 
                     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#sales" aria-expanded="false"
@@ -135,8 +136,13 @@
                             <?php if (tienePermiso('ver_paquetes')): ?>
                                 <a class="nav-link" href="/packages">Lista de paquetes</a>
                             <?php endif; ?>
+
                             <?php if (tienePermiso('ver_asignaciones')): ?>
                                 <a class="nav-link" href="/packages-assignation">Asignación de paquetes</a>
+                            <?php endif; ?>
+
+                            <?php if (tienePermiso('ver_remuneraciones')): ?>
+                                <a class="nav-link" href="/packages-remunerations">Remuneraciones</a>
                             <?php endif; ?>
                         </nav>
                     </div>
