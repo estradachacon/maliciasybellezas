@@ -1,55 +1,82 @@
 <?= $this->extend('Layouts/mainbody') ?>
 <?= $this->section('content') ?>
 
+<style>
+    .remu-card {
+        transition: all 0.2s ease;
+        border-radius: 10px;
+    }
+
+    .remu-card:hover {
+        transform: scale(1.01);
+    }
+
+    .remu-card .card-body {
+        padding: 10px 15px;
+    }
+
+    .remu-card {
+        margin-bottom: 8px;
+    }
+
+    small.text-muted {
+        font-size: 13px;
+        line-height: 1;
+        margin-right: 8px;
+    }
+</style>
+
 <div class="row">
     <div class="col-md-12">
-        <div class="card shadow-sm">
-            
-        <div class="card-header d-flex justify-content-between">
-            <h4 class="header-title mb-0">
-                <i class="fa-solid fa-hand-holding-dollar"></i>
-                Remuneración de Paquetes
-            </h4>
-            <a href="<?= base_url('packages-remunerations/create') ?>" class="btn btn-sm btn-primary">
-                <i class="fa-solid fa-plus"></i> Nuevo
-            </a>
-        </div>
+        <div class="card">
+
+            <!-- HEADER -->
+            <div class="card-header d-flex">
+                <h4 class="header-title">Remuneraciones</h4>
+
+                <a href="<?= base_url('packages-remunerations/create') ?>" 
+                   class="btn btn-primary btn-sm ml-auto">
+                    <i class="fa-solid fa-plus"></i> Nueva
+                </a>
+            </div>
 
             <div class="card-body">
 
-                <!-- Aquí puedes meter filtros después -->
+                <!-- 🔍 BUSCADOR -->
                 <div class="mb-3">
-                    <input type="text" class="form-control" placeholder="Buscar paquete...">
+                    <input type="text" id="searchInput" class="form-control"
+                        placeholder="Buscar por observaciones o ID...">
                 </div>
 
-                <!-- Tabla -->
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Tracking</th>
-                                <th>Cliente</th>
-                                <th>Estado</th>
-                                <th>Estado 2</th>
-                                <th>Monto</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-paquetes">
-                            <tr>
-                                <td colspan="7" class="text-center text-muted">
-                                    No hay datos aún
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- 📋 LISTADO -->
+                <div id="table-container">
+                    <?= $this->include('packages_remunerations/_list') ?>
                 </div>
 
             </div>
-
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const searchInput = document.getElementById('searchInput');
+    const tableContainer = document.getElementById('table-container');
+
+    let timeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+            fetch(`<?= base_url('packages-remunerations/searchAjax') ?>?q=${this.value}`)
+                .then(res => res.text())
+                .then(html => tableContainer.innerHTML = html);
+        }, 300);
+    });
+
+});
+</script>
 
 <?= $this->endSection() ?>

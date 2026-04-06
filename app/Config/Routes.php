@@ -246,4 +246,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->get('packages-remunerations', 'PackagesRemunerations::index');
     $routes->get('packages-remunerations/create', 'PackagesRemunerations::create');
     $routes->post('packages-remunerations/store', 'PackagesRemunerations::store');
+    $routes->get('packages-remunerations/searchAjax', 'PackagesRemunerations::searchAjax');
+    $routes->get('packages-remunerations/(:num)', 'PackagesRemunerations::show/$1');
 });

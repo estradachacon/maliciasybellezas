@@ -15,7 +15,36 @@ class PackagesRemunerations extends BaseController
 {
     public function index()
     {
-        return view('packages_remunerations/index');
+        $model = new RemuneracionesModel();
+        $detalleModel = new RemuneracionesDetalleModel();
+
+        $remuneraciones = $model
+            ->select('
+            remuneraciones.*,
+            accounts.name as cuenta_nombre,
+            users.user_name as usuario_nombre
+        ')
+            ->join('accounts', 'accounts.id = remuneraciones.cuenta', 'left')
+            ->join('users', 'users.id = remuneraciones.usuario_id', 'left')
+            ->orderBy('remuneraciones.id', 'DESC')
+            ->findAll();
+
+        // 🔥 agregar encomendistas por cada remuneración
+        foreach ($remuneraciones as $r) {
+
+            $encomendistas = $detalleModel
+                ->select('encomendistas.encomendista_name as nombre')
+                ->join('encomendistas', 'encomendistas.id = remuneraciones_detalle.encomendista_id', 'left')
+                ->where('remuneraciones_detalle.remuneracion_id', $r->id)
+                ->groupBy('encomendistas.id')
+                ->findAll();
+
+            $r->encomendistas = array_map(fn($e) => $e->nombre ?? '—', $encomendistas);
+        }
+
+        $data['remuneraciones'] = $remuneraciones;
+
+        return view('packages_remunerations/index', $data);
     }
 
     public function create()
@@ -88,6 +117,27 @@ class PackagesRemunerations extends BaseController
             'agrupados' => $agrupados
         ]);
     }
+
+    public function searchAjax()
+    {
+        $model = new RemuneracionesModel();
+
+        $q = $this->request->getGet('q');
+
+        $builder = $model;
+
+        if ($q) {
+            $builder = $builder
+                ->groupStart()
+                ->like('id', $q)
+                ->orLike('observaciones', $q)
+                ->groupEnd();
+        }
+
+        $data['remuneraciones'] = $builder->orderBy('id', 'DESC')->findAll();
+
+        return view('packages_remunerations/_list', $data);
+    }
     public function store()
     {
         try {
@@ -128,7 +178,10 @@ class PackagesRemunerations extends BaseController
 
             // 🔥 traer paquetes reales
             $paquetes = $packageModel
-                ->select('paquetes.*, encomendistas.encomendista_name as encomendista_nombre')
+                ->select('paquetes.*, 
+                        encomendistas.id as encomendista_id,
+                        encomendistas.encomendista_name as encomendista_nombre
+                    ')
                 ->join('encomendistas', 'encomendistas.id = paquetes.encomendista_nombre', 'left')
                 ->whereIn('paquetes.id', $paquetesIds)
                 ->where('estado1', 'entregado')
@@ -223,7 +276,7 @@ class PackagesRemunerations extends BaseController
                 $detModel->insert([
                     'remuneracion_id' => $remId,
                     'paquete_id' => $p->id,
-                    'encomendista_id' => $p->encomendista_nombre,
+                    'encomendista_id' => $p->encomendista_id,
                     'monto' => $p->total
                 ]);
 
@@ -267,5 +320,35 @@ class PackagesRemunerations extends BaseController
                 'msg' => $e->getMessage()
             ]);
         }
+    }
+    public function show($id)
+    {
+        $remModel = new RemuneracionesModel();
+        $detModel = new RemuneracionesDetalleModel();
+
+        $remuneracion = $remModel
+            ->select('
+            remuneraciones.*,
+            accounts.name as cuenta_nombre,
+            users.user_name as usuario_nombre
+        ')
+            ->join('accounts', 'accounts.id = remuneraciones.cuenta', 'left')
+            ->join('users', 'users.id = remuneraciones.usuario_id', 'left')
+            ->where('remuneraciones.id', $id)
+            ->first();
+
+        $detalles = $detModel
+            ->select('
+            remuneraciones_detalle.*,
+            encomendistas.encomendista_name
+        ')
+            ->join('encomendistas', 'encomendistas.id = remuneraciones_detalle.encomendista_id', 'left')
+            ->where('remuneracion_id', $id)
+            ->findAll();
+
+        return view('packages_remunerations/show', [
+            'remuneracion' => $remuneracion,
+            'detalles' => $detalles
+        ]);
     }
 }
