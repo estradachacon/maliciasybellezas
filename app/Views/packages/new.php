@@ -1637,7 +1637,7 @@ $logoUrl = setting('logo')
         });
         $('#encomendista_id').select2({
             language: 'es',
-            minimumInputLength: 2,
+            minimumInputLength: 1,
             placeholder: 'Buscar encomendista...',
             width: '100%',
             ajax: {

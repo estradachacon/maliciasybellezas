@@ -33,7 +33,8 @@ class Permisos extends BaseConfig
             'ver_asignaciones',
             'depositar_por_codigo',  
             'actualizar_estado_paquete_en_detalle',
-            'descargar_de_todos_los_stock'       
+            'descargar_de_todos_los_stock',
+            'ver_remuneraciones'       
         ],
 
         'Inventario' => [

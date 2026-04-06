@@ -59,6 +59,7 @@
                                             $origenBonito = match ($t->origen) {
                                                 'deposito_paquetes' => 'Depósito de paquetes',
                                                 'manual' => 'Gasto manual',
+                                                'compra' => 'Compra',
                                                 default => ucfirst(str_replace('_', ' ', $t->origen))
                                             };
                                             ?>
@@ -73,6 +74,12 @@
                                                     <a href="<?= base_url('packages-assign/show/' . $t->origen_id) ?>" class="text-decoration-none">
                                                         Ver depósito #<?= esc($t->origen_id) ?>
                                                     </a>
+
+                                                <?php elseif ($t->origen === 'compra'): ?>
+                                                    <a href="<?= base_url('compras/' . $t->origen_id) ?>" class="text-decoration-none">
+                                                        Ver compra #<?= esc($t->origen_id) ?>
+                                                    </a>
+
                                                 <?php else: ?>
                                                     <span class="text-muted">Ref: #<?= esc($t->origen_id) ?></span>
                                                 <?php endif; ?>
@@ -106,11 +113,12 @@
                         </thead>
                         <?php foreach ($transactions as $t): ?>
                             <?php
-                            $origenBonito = match ($t->origen) {
-                                'deposito_paquetes' => 'Depósito',
-                                'manual' => 'Manual',
-                                default => ucfirst(str_replace('_', ' ', $t->origen))
-                            };
+                                $origenBonito = match ($t->origen) {
+                                    'deposito_paquetes' => 'Depósito',
+                                    'manual' => 'Manual',
+                                    'compra' => 'Compra',
+                                    default => ucfirst(str_replace('_', ' ', $t->origen))
+                                };
                             ?>
                             <tr>
                                 <td><?= esc($t->id) ?></td>
@@ -143,6 +151,12 @@
                                         <a href="<?= base_url('packages-assign/show/' . $t->origen_id) ?>">
                                             #<?= esc($t->origen_id) ?>
                                         </a>
+
+                                    <?php elseif ($t->origen === 'compra'): ?>
+                                        <a href="<?= base_url('compras/' . $t->origen_id) ?>">
+                                            #<?= esc($t->origen_id) ?>
+                                        </a>
+
                                     <?php else: ?>
                                         #<?= esc($t->origen_id ?? '—') ?>
                                     <?php endif; ?>

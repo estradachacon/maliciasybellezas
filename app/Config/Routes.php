@@ -241,4 +241,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->get('(:num)', 'CompraController::show/$1');
         $routes->get('searchAjax', 'CompraController::searchAjax');
     });
+
+    // Modulo de remuneraciones por encomendistas
+    $routes->get('packages-remunerations', 'PackagesRemunerations::index');
+    $routes->get('packages-remunerations/create', 'PackagesRemunerations::create');
+    $routes->post('packages-remunerations/store', 'PackagesRemunerations::store');
 });

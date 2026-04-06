@@ -173,9 +173,9 @@ foreach ($detalles as $d) {
 
                                         <select name="nuevo_estado" class="form-control form-control-sm mb-2" required>
                                             <option value="">Seleccionar</option>
-                                            <?php if ($paquete->estado2 !== 'en_casillero'): ?>
-                                                <option value="reenvio">Reenvio</option>
-                                            <?php endif; ?>
+                                                <?php if ($paquete->estado2 === 'no_retirado'): ?>
+                                                    <option value="reenvio">Reenvio</option>
+                                                <?php endif; ?>
                                             <option value="entregado">Entregado</option>
                                             <option value="no_retirado">No retirado</option>
                                             <?php if ($paquete->estado2 === 'no_retirado'): ?>
