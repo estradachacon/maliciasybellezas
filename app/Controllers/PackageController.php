@@ -113,6 +113,7 @@ class PackageController extends BaseController
             'reenvio'      => 'Cliente solicitó reenvío',
             'entregado'    => 'Entregado',
             'no_retirado'  => 'No retirado',
+            'devuelto'     => 'Paquete devuelto',
         ];
 
         if (!isset($map[$estado])) {
@@ -126,10 +127,35 @@ class PackageController extends BaseController
             return redirect()->back()->with('error', 'Paquete no encontrado');
         }
 
-        // ✅ actualizar estado
-        $model->update($paqueteId, [
+        $dataUpdate = [
             'estado1' => $estado
-        ]);
+        ];
+
+        switch ($estado) {
+
+            case 'entregado':
+                $dataUpdate['estado2'] = 'pendiente_remu';
+                break;
+
+            case 'reenvio':
+                $model->set('reenvios', 'reenvios + 1', false);
+                $dataUpdate['estado1'] = 'en_encomendista';
+                $dataUpdate['estado2'] = 'reenvio';
+                break;
+
+            case 'no_retirado':
+                $dataUpdate['estado1'] = 'en_encomendista';
+                $dataUpdate['estado2'] = 'no_retirado';
+                break;
+
+            case 'devuelto':
+                $dataUpdate['estado1'] = 'finalizado';
+                $dataUpdate['estado2'] = 'no_retirado_y_devuelto';
+                break;
+        }
+
+        // actualizar
+        $model->update($paqueteId, $dataUpdate);
 
         // 🧾 log bonito
         $mensaje = "Estado actualizado a: " . $map[$estado];

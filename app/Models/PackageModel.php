@@ -32,7 +32,8 @@ class PackageModel extends Model
         'envio',
         'descuento_global',
         'total_real',
-        'vendedor_id'
+        'vendedor_id',
+        'reenvios'
     ];
 
     // (Opcional pero recomendado)

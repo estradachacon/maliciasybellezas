@@ -25,6 +25,10 @@
             padding-left: 0px !important;
             padding-right: 0px !important;
         }
+
+        .card-header .d-flex>div {
+            margin-bottom: 8px;
+        }
     }
 
     @media (max-width: 768px) {
@@ -133,13 +137,13 @@ foreach ($detalles as $d) {
 
             <div class="card-header">
 
-                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
+                <div class="d-flex flex-column flex-md-row align-items-start justify-content-md-between">
 
                     <!-- IZQUIERDA -->
-                    <div>
+                    <div class="d-flex flex-column">
                         <h4 class="mb-0">
                             Paquete
-                            <span class="badge bg-primary ms-2 text-white">
+                            <span class="badge bg-primary text-white">
                                 #<?= $paquete->id ?>
                             </span>
                         </h4>
@@ -150,14 +154,17 @@ foreach ($detalles as $d) {
                     </div>
                     <div class="mt-2 mt-md-0 d-flex flex-wrap justify-content-start justify-content-md-end" style="gap:10px;">
 
-                        <div class="d-flex flex-wrap w-100 w-md-auto" style="gap:10px;">
+                        <div class="d-flex flex-wrap w-100" style="gap:10px;">
                             <!-- BOX ACTUALIZAR -->
-                            <?php if (
-                                !empty($tieneAsignacion) &&
-                                $paquete->estado1 !== 'entregado' &&
-                                tienePermiso('actualizar_estado_paquete_en_detalle')
-                            ): ?>
-                                <div class="border rounded px-3 py-2 bg-light">
+                                <?php
+                                $estado1 = trim(strtolower($paquete->estado1 ?? ''));
+                                ?>
+
+                                <?php if (
+                                    !in_array($estado1, ['finalizado', 'pendiente']) &&
+                                    tienePermiso('actualizar_estado_paquete_en_detalle')
+                                ): ?>
+                                <div class="border rounded px-3 py-2 bg-light flex-grow-1" style="min-width:250px;">
 
                                     <small class="text-muted d-block mb-2">Actualizar estado</small>
 
@@ -166,9 +173,14 @@ foreach ($detalles as $d) {
 
                                         <select name="nuevo_estado" class="form-control form-control-sm mb-2" required>
                                             <option value="">Seleccionar</option>
-                                            <option value="reenvio">Reenvío</option>
+                                            <?php if ($paquete->estado2 !== 'en_casillero'): ?>
+                                                <option value="reenvio">Reenvio</option>
+                                            <?php endif; ?>
                                             <option value="entregado">Entregado</option>
                                             <option value="no_retirado">No retirado</option>
+                                            <?php if ($paquete->estado2 === 'no_retirado'): ?>
+                                                <option value="devuelto">Devuelto</option>
+                                            <?php endif; ?>
                                         </select>
 
                                         <button type="submit" class="btn btn-primary btn-sm w-100">
@@ -179,7 +191,7 @@ foreach ($detalles as $d) {
                                 </div>
                             <?php endif; ?>
                             <!-- 📦 BOX ESTADOS -->
-                            <div class="border rounded px-3 py-2 bg-light">
+                            <div class="border rounded px-3 py-2 bg-light flex-grow-1" style="min-width: 300px;">
                                 <?php
                                 function estadoTexto($estado)
                                 {
@@ -191,7 +203,7 @@ foreach ($detalles as $d) {
                                 }
                                 ?>
                                 <?php if (!empty($paquete->estado1)): ?>
-                                    <div class="d-flex align-items-center mb-1">
+                                    <div class="d-flex align-items-center mb-1 mt-1">
                                         <small class="text-muted">Estado</small>
 
                                         <span class="badge ml-auto px-2 py-1 text-white"
@@ -202,11 +214,15 @@ foreach ($detalles as $d) {
                                 <?php endif; ?>
 
                                 <?php if (!empty($paquete->estado2)): ?>
-                                    <div class="d-flex align-items-center">
-                                        <small class="text-muted">Ubicación</small>
+                                    <?php
+                                    $bgColor = ($paquete->estado2 === 'no_retirado') ? '#dc3545' : '#198754';
+                                    ?>
+
+                                    <div class="d-flex align-items-center mb-1">
+                                        <small class="text-muted mt-1">Ubicación</small>
 
                                         <span class="badge ml-auto px-2 py-1 text-white"
-                                            style="background: #198754;">
+                                            style="background: <?= $bgColor ?>;">
                                             <?= esc(estadoTexto($paquete->estado2)) ?>
                                         </span>
                                     </div>
@@ -219,6 +235,16 @@ foreach ($detalles as $d) {
                                         <?= esc(estadoTexto($paquete->vendedor_nombre)) ?>
                                     </span>
                                 </div>
+                                <?php if ($paquete->reenvios > 0): ?>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <small class="text-muted">Reenvíos</small>
+
+                                        <span class="badge ml-auto px-2 py-1 text-white"
+                                            style="background: #0dcaf0;">
+                                            <?= esc($paquete->reenvios) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
 
                         </div>
@@ -426,7 +452,7 @@ foreach ($detalles as $d) {
                                     </div>
 
                                     <div class="d-flex justify-content-between">
-                                        <span>Envío</span>
+                                        <span>Envío cobrado</span>
                                         <span>$<?= number_format($envio, 2) ?></span>
                                     </div>
 
