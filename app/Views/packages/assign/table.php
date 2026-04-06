@@ -51,8 +51,10 @@
                             <th>Encomendista</th>
                             <th>Cantidad</th>
                             <th>Total Flete</th>
+                            <th>Por cobrar</th>
                             <th>Fecha</th>
                             <th>Registro</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
 
@@ -84,6 +86,12 @@
                                         $ <?= number_format($d->flete_total, 2) ?>
                                     </td>
 
+                                    <td class="text-end">
+                                        <span class="fw-bold text-success">
+                                            $ <?= number_format($d->total_cobrar ?? 0, 2) ?>
+                                        </span>
+                                    </td>
+
                                     <td class="text-center">
                                         <?= date('d/m/Y', strtotime($d->fecha)) ?>
                                     </td>
@@ -92,6 +100,12 @@
                                         <small class="text-muted">
                                             <?= date('d/m/Y H:i', strtotime($d->created_at)) ?>
                                         </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="<?= base_url('packages-assign/show/' . $d->id) ?>"
+                                            class="btn btn-sm btn-light">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

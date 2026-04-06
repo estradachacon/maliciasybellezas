@@ -220,32 +220,48 @@ class PackagesAssign extends Controller
     }
     public function show($id)
     {
-        // Obtener cabecera del depósito
-        $deposit = $this->depositModel->find($id);
+        $db = \Config\Database::connect();
 
-        if (!$deposit) {
-            return redirect()->to(base_url('packages-assign'))
-                ->with('error', 'Seguimiento no encontrado');
+        // 🔥 CABECERA
+        $deposito = $db->table('package_deposits pd')
+            ->select("
+                pd.*,
+                GROUP_CONCAT(DISTINCT e.encomendista_name SEPARATOR ', ') as encomendistas
+            ")
+            ->join('package_deposit_details pdd', 'pdd.deposit_id = pd.id', 'left')
+            ->join('paquetes p', 'p.id = pdd.package_id', 'left')
+            ->join('encomendistas e', 'e.id = p.encomendista_nombre', 'left')
+            ->where('pd.id', $id)
+            ->groupBy('pd.id')
+            ->get()
+            ->getRow();
+
+        if (!$deposito) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("No encontrado");
         }
 
-        // Obtener detalle con info del paquete (join)
-        $detalles = $this->detailModel->obtenerConPaquete($id);
+        $detalles = $db->table('package_deposit_details pdd')
+            ->select("
+                p.id,
+                p.cliente_nombre,
+                p.destino,
+                p.total_real,
 
-        // (Opcional) recalcular totales por seguridad
-        $totalValor = 0;
-        $totalFlete = 0;
+                pdd.valor_paquete,
+                pdd.nuevo_estado,
+                pdd.porcentaje,
 
-        foreach ($detalles as $d) {
-            $totalValor += $d->valor_paquete;
-            $totalFlete += $d->flete_asignado;
-        }
+                e.encomendista_name
+            ")
+            ->join('paquetes p', 'p.id = pdd.package_id')
+            ->join('encomendistas e', 'e.id = p.encomendista_nombre', 'left')
+            ->where('pdd.deposit_id', $id)
+            ->get()
+            ->getResult();
 
-        // Enviar a la vista
         return view('packages/assign/show', [
-            'deposit'      => $deposit,
-            'detalles'     => $detalles,
-            'totalValor'   => $totalValor,
-            'totalFlete'   => $totalFlete
+            'deposito' => $deposito,
+            'detalles' => $detalles
         ]);
     }
     public function table()
@@ -261,7 +277,14 @@ class PackagesAssign extends Controller
 
                 COUNT(DISTINCT pdd.id) as cantidad_paquetes,
 
-                GROUP_CONCAT(DISTINCT e.encomendista_name ORDER BY e.encomendista_name SEPARATOR ', ') as encomendistas
+                GROUP_CONCAT(DISTINCT e.encomendista_name ORDER BY e.encomendista_name SEPARATOR ', ') as encomendistas,
+
+                SUM(
+                    CASE 
+                        WHEN p.estado1 != 'cancelado' AND p.total IS NOT NULL THEN p.total
+                        ELSE 0
+                    END
+                ) as total_cobrar
             ")
             ->join('package_deposit_details pdd', 'pdd.deposit_id = package_deposits.id', 'left')
             ->join('paquetes p', 'p.id = pdd.package_id', 'left')
@@ -306,4 +329,5 @@ class PackagesAssign extends Controller
             'pager'    => $pager
         ]);
     }
+    
 }
