@@ -510,10 +510,10 @@
                     return;
                 }
 
-                // 🎯 RESALTAR FILA
                 row.style.backgroundColor = '#eef6ff';
+                row.dataset.stock = data.stock || 0;
+                row.dataset.imagen = data.imagen || '';
 
-                // 🎯 BOTÓN VER IMAGEN
                 const btnImg = row.querySelector('.ver-img-btn');
 
                 if (data.imagen) {
@@ -530,17 +530,113 @@
                     btnImg.classList.add('d-none');
                 }
 
-                // 🎯 PRECIO (como lo dejaste)
                 let sugerido = data.precio || 0;
                 precio.value = '';
                 cantidad.focus();
             });
+
+            function formatProducto(producto) {
+
+                // 🔥 CASO CREAR PRODUCTO
+                if (producto.id === '__new__') {
+                    return $(`
+                        <div style="
+                            padding:8px;
+                            font-weight:600;
+                            color:#0d6efd;
+                        ">
+                            ${producto.text}
+                        </div>
+                    `);
+                }
+
+                if (!producto.id) return producto.text;
+
+                let foto = producto.imagen ?
+                    "<?= base_url('upload/productos/') ?>/" + producto.imagen :
+                    'https://via.placeholder.com/55';
+
+                let stock = producto.stock ?? 0;
+
+                return $(`
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        
+                        <img src="${foto}" style="
+                            width:50px;
+                            height:50px;
+                            object-fit:cover;
+                            border-radius:8px;
+                        ">
+
+                        <div style="flex:1;">
+                            <div style="font-weight:600;">
+                                ${producto.text}
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:3px;">
+                                
+                                <span style="color:#666;">
+                                    $${producto.precio || '0.00'}
+                                </span>
+
+                                <span style="
+                                    font-weight:bold;
+                                    padding:2px 6px;
+                                    border-radius:6px;
+                                    background:${stock > 0 ? '#e9f7ef' : '#fdecea'};
+                                    color:${stock > 0 ? '#198754' : '#dc3545'};
+                                ">
+                                    STOCK: ${stock}
+                                </span>
+
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            function formatProductoSeleccion(producto) {
+
+                // 🔥 IMPORTANTE
+                if (producto.id === '__new__') {
+                    return $(`
+                        <div style="
+                            padding:10px;
+                            background:#eef6ff;
+                            border-radius:6px;
+                            text-align:center;
+                            font-weight:bold;
+                            color:#0d6efd;
+                        ">
+                            ${producto.text}
+                        </div>
+                    `);
+                }
+
+                if (!producto.id) return producto.text;
+
+                // 🔥 FORZAR TEXTO LIMPIO
+                let nombre = producto.text || '';
+
+                return `
+                    <span style="font-weight:600;">
+                        ${nombre}
+                    </span>
+                `;
+            }
 
             $(select).select2({
                 language: 'es',
                 minimumInputLength: 1,
                 placeholder: 'Buscar producto...',
                 width: '100%',
+
+                templateResult: formatProducto,
+                templateSelection: formatProductoSeleccion,
+                escapeMarkup: function(markup) {
+                    return markup;
+                },
+
                 ajax: {
                     url: '<?= base_url('productos/searchAjaxSelect') ?>',
                     dataType: 'json',
@@ -554,9 +650,13 @@
 
                         let results = data;
 
-                        if (results.length === 0) {
-                            let term = $(select).data('select2').dropdown.$search.val();
+                        let term = $(select).data('select2').dropdown.$search.val();
 
+                        if (!results || results.length === 0) {
+                            results = [];
+                        }
+
+                        if (term && term.length >= 1) {
                             results.push({
                                 id: '__new__',
                                 text: `➕ Crear "${term}"`,

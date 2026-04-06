@@ -11,22 +11,37 @@ class ProductosController extends BaseController
 {
     public function searchAjaxSelect()
     {
-        $model = new ProductoModel();
+        $term = $this->request->getGet('term');
 
-        $q = $this->request->getGet('term');
+        $db = \Config\Database::connect();
 
-        $productos = $model
-            ->like('nombre', $q)
-            ->findAll(10);
+        $builder = $db->table('productos p');
 
-        return $this->response->setJSON(array_map(function ($p) {
-            return [
-                'id' => $p->id,
-                'text' => $p->nombre,
-                'precio' => $p->precio,
-                'imagen' => $p->imagen
-            ];
-        }, $productos));
+        $builder->select("
+            p.id,
+            p.nombre as text,
+            p.precio,
+            p.imagen,
+            COALESCE(SUM(
+                CASE 
+                    WHEN ih.tipo = 'entrada' THEN ih.cantidad
+                    WHEN ih.tipo = 'salida' THEN -ih.cantidad
+                END
+            ), 0) as stock
+        ");
+
+        $builder->join('inventario_historico ih', 'ih.producto_id = p.id', 'left');
+
+        if ($term) {
+            $builder->like('p.nombre', $term);
+        }
+
+        $builder->groupBy('p.id');
+        $builder->limit(20);
+
+        $productos = $builder->get()->getResult();
+
+        return $this->response->setJSON($productos);
     }
 
     public function searchAjaxSelectStock()
