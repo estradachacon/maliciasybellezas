@@ -38,27 +38,29 @@
     }
 
     .paquete-card {
-    position: relative;
-    overflow: hidden;
-}
+        position: relative;
+        overflow: hidden;
+    }
 
-.watermark-check {
-    position: absolute;
-    bottom: -10px;
-    right: -10px;
-    font-size: 120px;
-    opacity: 0.08;
-    pointer-events: none;
-    z-index: 0;
-}
+    .watermark-check {
+        position: absolute;
+        bottom: -10px;
+        right: -10px;
+        font-size: 120px;
+        opacity: 0.08;
+        pointer-events: none;
+        z-index: 0;
+    }
 
-.watermark-entregado {
-    color: #0dcaf0; /* celeste */
-}
+    .watermark-entregado {
+        color: #0dcaf0;
+        /* celeste */
+    }
 
-.watermark-remunerado {
-    color: #198754; /* verde */
-}
+    .watermark-remunerado {
+        color: #198754;
+        /* verde */
+    }
 </style>
 
 <div class="row">
@@ -194,6 +196,11 @@
     });
 </script>
 <script>
+    setInterval(() => {
+        location.reload();
+    }, 15000);
+</script>
+<script>
     function verImagen(src) {
         document.getElementById('imagenGrande').src = src;
         $('#modalImagen').modal('show'); // Bootstrap 4
@@ -276,6 +283,7 @@
                 $('#contenedorPaquetes').html(data.html);
                 $('#pagerContainer').html(data.pager);
             });
+
     });
 </script>
 

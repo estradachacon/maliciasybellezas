@@ -62,7 +62,17 @@
                                 <tr>
                                     <td class="text-center"><?= $d->id ?></td>
 
-                                    <td><?= esc($d->encomendista_nombre) ?></td>
+                                    <td>
+                                        <?php if (!empty($d->encomendistas)): ?>
+                                            <?php foreach (explode(',', $d->encomendistas) as $e): ?>
+                                                <span class="badge bg-primary text-white mr-1 mb-1">
+                                                    <?= esc(trim($e)) ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            —
+                                        <?php endif; ?>
+                                    </td>
 
                                     <td class="text-center">
                                         <span class="badge badge-estado bg-info text-white">

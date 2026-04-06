@@ -252,14 +252,28 @@ class PackagesAssign extends Controller
     {
         $model = new PackageDepositModel();
 
-        $builder = $model;
+        $builder = $model
+            ->select("
+                package_deposits.id,
+                package_deposits.fecha,
+                package_deposits.flete_total,
+                package_deposits.created_at,
+
+                COUNT(DISTINCT pdd.id) as cantidad_paquetes,
+
+                GROUP_CONCAT(DISTINCT e.encomendista_name ORDER BY e.encomendista_name SEPARATOR ', ') as encomendistas
+            ")
+            ->join('package_deposit_details pdd', 'pdd.deposit_id = package_deposits.id', 'left')
+            ->join('paquetes p', 'p.id = pdd.package_id', 'left')
+            ->join('encomendistas e', 'e.id = p.encomendista_nombre', 'left')
+            ->groupBy('package_deposits.id');
 
         // FILTROS
         $nombre = $this->request->getGet('nombre');
         $fecha  = $this->request->getGet('fecha');
 
         if ($nombre) {
-            $builder = $builder->like('encomendista_nombre', $nombre);
+            $builder->like('e.encomendista_name', $nombre);
         }
 
         if ($fecha) {
