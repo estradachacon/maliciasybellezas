@@ -177,7 +177,9 @@ foreach ($detalles as $d) {
                                                     <option value="reenvio">Reenvio</option>
                                                 <?php endif; ?>
                                             <option value="entregado">Entregado</option>
-                                            <option value="no_retirado">No retirado</option>
+                                            <?php if ($paquete->estado2 != 'no_retirado'): ?>
+                                                <option value="no_retirado">No retirado</option>
+                                            <?php endif; ?>
                                             <?php if ($paquete->estado2 === 'no_retirado'): ?>
                                                 <option value="devuelto">Devuelto</option>
                                             <?php endif; ?>

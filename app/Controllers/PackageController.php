@@ -7,6 +7,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PackageModel;
 use App\Models\PackageDetailModel;
 use App\Models\PackageDepositDetailModel;
+use App\Models\EncomendistasModel;
 use App\Models\SettledPointModel;
 use App\Models\TransactionModel;
 use Dompdf\Dompdf;
@@ -33,33 +34,48 @@ class PackageController extends BaseController
     public function index()
     {
         $model = new PackageModel();
+        $encomendistasModel = new EncomendistasModel();
+        $encomendistas = $encomendistasModel->findAll();
 
         $cliente = $this->request->getGet('cliente');
         $fecha_inicio = $this->request->getGet('fecha_inicio');
         $fecha_fin    = $this->request->getGet('fecha_fin');
-        $builder = $model;
+        $encomendista = $this->request->getGet('encomendista');
+
+        $builder = $model
+            ->select('paquetes.*, encomendistas.encomendista_name as encomendista_nombre')
+            ->join('encomendistas', 'encomendistas.id = paquetes.encomendista_nombre', 'left');
+
         if (!empty($cliente)) {
-            $builder = $builder->like('cliente_nombre', $cliente);
+            $builder->like('cliente_nombre', $cliente);
         }
 
         if ($fecha_inicio && $fecha_fin) {
             $builder->where('DATE(dia_entrega) >=', $fecha_inicio)
                 ->where('DATE(dia_entrega) <=', $fecha_fin);
         }
-        $builder = $builder->orderBy('id', 'DESC');
+
+        if (!empty($encomendista)) {
+            $builder->where('paquetes.encomendista_nombre', $encomendista);
+        }
+
+        $builder = $builder->orderBy('paquetes.id', 'DESC');
+
         $paquetes = $builder->paginate(12);
         $pager = $builder->pager;
-        if ($this->request->isAJAX()) {
-            $html = view('packages/_cards', ['paquetes' => $paquetes]);
 
+        if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'html' => view('packages/_cards', ['paquetes' => $paquetes]),
-                'pager' => $pager->links('default', 'bitacora_pagination')
+                'pager' => $pager->links('default', 'bitacora_pagination'),
+                'encomendistas' => $encomendistas
             ]);
         }
+
         return view('packages/index', [
             'paquetes' => $paquetes,
-            'pager' => $pager
+            'pager' => $pager,
+            'encomendistas' => $encomendistas
         ]);
     }
 

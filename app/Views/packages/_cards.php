@@ -39,55 +39,62 @@
                         <?= esc($p->cliente_nombre) ?>
                     </span>
                 </div>
+                <!-- ENCOMENDISTA -->
+                <div class="mb-1">
+                    <small class="text-muted">Encomendista:</small>
+                    <span class="fw-bold text-info">
+                        <?= esc($p->encomendista_nombre ?? 'Sin asignar') ?>
+                    </span>
+                </div>
 
-<?php
-$totalReal = (float)($p->total_real ?? 0);
-$totalRemunerar = (float)($p->total ?? 0);
-?>
+                <?php
+                $totalReal = (float)($p->total_real ?? 0);
+                $totalRemunerar = (float)($p->total ?? 0);
+                ?>
 
-<div class="row mt-1" style="font-size:13px;">
+                <div class="row mt-1" style="font-size:13px;">
 
-    <!-- 🔹 IZQUIERDA -->
-    <div class="col-6">
+                    <!-- 🔹 IZQUIERDA -->
+                    <div class="col-6">
 
-        <div>
-            <small class="text-muted">Destino:</small><br>
-            <span><?= esc($p->destino) ?></span>
-        </div>
+                        <div>
+                            <small class="text-muted">Destino:</small><br>
+                            <span><?= esc($p->destino) ?></span>
+                        </div>
 
-        <div class="mt-1">
-            <small class="text-muted">Entrega:</small><br>
-            <?= date('d/m/Y', strtotime($p->dia_entrega)) ?>
-        </div>
+                        <div class="mt-1">
+                            <small class="text-muted">Entrega:</small><br>
+                            <?= date('d/m/Y', strtotime($p->dia_entrega)) ?>
+                        </div>
 
-    </div>
+                    </div>
 
-    <!-- 🔹 DERECHA -->
-    <div class="col-6 text-end">
+                    <!-- 🔹 DERECHA -->
+                    <div class="col-6 text-end">
 
-        <div>
-            <small class="text-muted">Total real:</small><br>
-            <span class="fw-bold text-dark">
-                $<?= number_format($totalReal, 2) ?>
-            </span>
-        </div>
+                        <div>
+                            <small class="text-muted">Total real:</small><br>
+                            <span class="fw-bold text-dark">
+                                $<?= number_format($totalReal, 2) ?>
+                            </span>
+                        </div>
 
-        <div class="mt-1">
-            <?php if ($totalRemunerar > 0): ?>
-                <small class="text-muted">Por cobrar Remu:</small><br>
-                <span class="fw-bold text-success">
-                    $<?= number_format($totalRemunerar, 2) ?>
-                </span>
-            <?php else: ?>
-                <span class="badge badge-success">
-                    ✔ Ya pagado
-                </span>
-            <?php endif; ?>
-        </div>
+                        <div class="mt-1">
+                            <?php if ($totalRemunerar > 0): ?>
+                                <small class="text-muted">Por cobrar Remu:</small><br>
+                                <span class="fw-bold text-success">
+                                    $<?= number_format($totalRemunerar, 2) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="badge badge-success">
+                                    ✔ Ya pagado
+                                </span>
+                            <?php endif; ?>
+                        </div>
 
-    </div>
+                    </div>
 
-</div>
+                </div>
 
             </div>
 

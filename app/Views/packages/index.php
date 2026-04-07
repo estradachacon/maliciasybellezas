@@ -61,6 +61,19 @@
         color: #198754;
         /* verde */
     }
+
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        /* altura estándar Bootstrap */
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        /* centra texto */
+        padding-left: .75rem;
+    }
 </style>
 
 <div class="row">
@@ -101,6 +114,11 @@
                     <div class="col-md-3">
                         <small>Rango de fechas</small>
                         <input type="text" id="fechaRango" class="form-control" placeholder="Selecciona rango">
+                    </div>
+
+                    <div class="col-md-3">
+                        <small>Encomendista</small>
+                        <select id="encomendistaFiltro" class="form-control"></select>
                     </div>
 
                     <div class="col-md-3">
@@ -177,11 +195,35 @@
             window.open("<?= base_url('packages-exportar') ?>?" + params.toString(), '_blank');
         });
 
+        $('#encomendistaFiltro').select2({
+            language: 'es',
+            minimumInputLength: 1,
+            placeholder: 'Buscar encomendista...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '<?= base_url('encomendistas-buscar') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
+
         // FILTRAR
         $('#btnLimpiar').on('click', function() {
 
             $('#clienteFiltro').val('');
             $('#estadoFiltro').val('');
+            $('#encomendistaFiltro').val(null).trigger('change');
 
             if (fp) fp.clear();
 
@@ -210,6 +252,7 @@
 
         let cliente = $('#clienteFiltro').val();
         let fechaRango = $('#fechaRango').val();
+        let encomendista = $('#encomendistaFiltro').val();
 
         let fecha_inicio = '';
         let fecha_fin = '';
@@ -219,6 +262,7 @@
             fecha_inicio = partes[0];
             fecha_fin = partes[1];
         }
+
         if (fp && fp.selectedDates.length === 2) {
             fecha_inicio = fp.formatDate(fp.selectedDates[0], "Y-m-d");
             fecha_fin = fp.formatDate(fp.selectedDates[1], "Y-m-d");
@@ -230,7 +274,8 @@
             cliente,
             estado,
             fecha_inicio,
-            fecha_fin
+            fecha_fin,
+            encomendista
         });
 
         let endpoint = url || "<?= base_url('packages') ?>";
@@ -250,6 +295,9 @@
     $('#clienteFiltro').on('keyup', cargarPaquetes);
     $('#fechaRango, #estadoFiltro').on('change', cargarPaquetes);
     $('#btnFiltrar').on('click', function() {
+        cargarPaquetes();
+    });
+    $('#encomendistaFiltro').on('change', function() {
         cargarPaquetes();
     });
 
