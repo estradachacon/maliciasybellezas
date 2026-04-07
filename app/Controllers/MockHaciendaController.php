@@ -79,7 +79,6 @@ class MockHaciendaController extends ResourceController
 
     public function auth()
     {
-        dd('ENTRO A AUTH');
         try {
             // 🔥 CORRECTO: leer form-urlencoded
             $request = $this->request->getPost();
