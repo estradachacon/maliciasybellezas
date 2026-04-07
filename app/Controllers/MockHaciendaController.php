@@ -79,38 +79,7 @@ class MockHaciendaController extends ResourceController
 
     public function auth()
     {
-        dd('ENTRO A AUTH');
-        try {
-            // 🔥 CORRECTO: leer form-urlencoded
-            $request = $this->request->getPost();
-
-            // 🔍 Debug temporal (opcional)
-            // dd($request);
-
-            if (empty($request['user']) || empty($request['pwd'])) {
-                return $this->response->setJSON([
-                    "status" => "ERROR",
-                    "message" => "Credenciales inválidas"
-                ])->setStatusCode(401);
-            }
-
-            return $this->response->setJSON([
-                "status" => "OK",
-                "body" => [
-                    "user" => $request['user'],
-                    "token" => "Bearer MOCK_TOKEN_123456",
-                    "rol" => [
-                        "nombre" => "Usuario"
-                    ],
-                    "roles" => ["ROLE_USER"],
-                    "tokenType" => "Bearer"
-                ]
-            ]);
-        } catch (\Throwable $e) {
-
-            return $this->response->setJSON([
-                "error" => $e->getMessage()
-            ])->setStatusCode(500);
-        }
+        echo "OK AUTH";
+        exit;
     }
 }

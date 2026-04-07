@@ -16,8 +16,8 @@ $routes->get('api/backup/estrada', 'Api\BackupController::index');
 
 //rutas para pruebas de simulacion hacienda
 $routes->post('mock/hacienda/recepciondte', 'MockHaciendaController::recepcionDTE');
-$routes->post('mock/hacienda/seguridad/auth', 'MockHaciendaController::auth');
-$routes->get('test-auth', 'MockHaciendaController::auth');
+$routes->post('mock/hacienda/seguridad/auth', '\App\Controllers\MockHaciendaController::auth');
+
 
 // 🔐 Recuperación de contraseña (SIN AUTH)
 $routes->group('auth', function ($routes) {
