@@ -7,6 +7,13 @@ use CodeIgniter\Config\BaseConfig;
 class Permisos extends BaseConfig
 {
     public array $modulos = [
+        'Ventas locales' => [
+            'ver_ventas',
+            'crear_venta',
+            'ver_clientes',
+            'venta_credito'
+        ],
+
         'Ajustes del sistema' => [
             'ver_configuracion',
             'ver_sucursales',

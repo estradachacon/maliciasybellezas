@@ -51,6 +51,39 @@
                 </a>
 
                 <?php if (
+                    tienePermiso('ver_ventas') ||
+                    tienePermiso('crear_venta') ||
+                    tienePermiso('ver_clientes')
+                ): ?>
+
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#ventas"
+                        aria-expanded="false" aria-controls="ventas">
+                        <div class="sb-nav-link-icon"><i class="fa-solid fa-cash-register"></i></div>
+                        Ventas
+                        <div class="sb-sidenav-collapse-arrow"><i class="fa-solid fa-angle-down"></i></div>
+                    </a>
+
+                    <div class="collapse" id="ventas" aria-labelledby="headingVentas" data-parent="#sidenavAccordion">
+                        <nav class="sb-sidenav-menu-nested nav">
+
+                            <?php if (tienePermiso('ver_ventas')): ?>
+                                <a class="nav-link" href="/ventas">Listado de ventas</a>
+                            <?php endif; ?>
+
+                            <?php if (tienePermiso('crear_venta')): ?>
+                                <a class="nav-link" href="/ventas/nueva">Nueva venta</a>
+                            <?php endif; ?>
+
+                            <?php if (tienePermiso('ver_clientes')): ?>
+                                <a class="nav-link" href="/clientes">Clientes</a>
+                            <?php endif; ?>
+
+                        </nav>
+                    </div>
+
+                <?php endif; ?>
+
+                <?php if (
                     tienePermiso('ver_transacciones') ||
                     tienePermiso('ver_cajas') ||
                     tienePermiso('crear_caja') ||
@@ -174,7 +207,7 @@
                         Proveedores
                     </a>
                 <?php endif; ?>
-                
+
                 <?php if (
                     tienePermiso('ver_encomendistas')
                 ): ?>

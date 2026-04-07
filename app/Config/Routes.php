@@ -210,7 +210,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->post('buscar', 'PackagesAssign::buscarPorQR');
         $routes->post('guardar', 'PackagesAssign::guardar');
         $routes->get('show/(:num)', 'PackagesAssign::show/$1');
-        });
+    });
     $routes->get('packages-assignation/', 'PackagesAssign::table');
     $routes->get('packages-assignation/(:num)', 'PackagesAssign::show/$1');
 
@@ -248,4 +248,19 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->post('packages-remunerations/store', 'PackagesRemunerations::store');
     $routes->get('packages-remunerations/searchAjax', 'PackagesRemunerations::searchAjax');
     $routes->get('packages-remunerations/(:num)', 'PackagesRemunerations::show/$1');
+
+    $routes->group('clientes', function ($routes) {
+        $routes->get('/', 'ClientesController::index');
+        $routes->get('new', 'ClientesController::new');
+        $routes->post('create', 'ClientesController::create');
+        $routes->get('edit/(:num)', 'ClientesController::edit/$1');
+        $routes->post('update/(:num)', 'ClientesController::update/$1');
+        $routes->get('delete/(:num)', 'ClientesController::delete/$1');
+        $routes->get('buscar', 'ClientesController::buscar');
+    });
+
+    $routes->group('ventas', function ($routes) {
+        $routes->get('/', 'VentasController::index');
+        $routes->get('nueva', 'VentasController::nueva');
+    });
 });
