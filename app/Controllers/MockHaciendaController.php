@@ -3,9 +3,14 @@
 namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
+use CodeIgniter\HTTP\IncomingRequest;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class MockHaciendaController extends ResourceController
 {
+    protected IncomingRequest $request;
+    protected ResponseInterface $response;
+
     public function recepcionDTE()
     {
         $request = service('request')->getJSON(true);
@@ -74,19 +79,38 @@ class MockHaciendaController extends ResourceController
 
     public function auth()
     {
-        $request = service('request')->getJSON(true);
+        dd('ENTRO A AUTH');
+        try {
+            // 🔥 CORRECTO: leer form-urlencoded
+            $request = $this->request->getPost();
 
-        return $this->response->setJSON([
-            "status" => "OK",
-            "body" => [
-                "user" => $request['user'] ?? 'test',
-                "token" => "Bearer MOCK_TOKEN_123456",
-                "rol" => [
-                    "nombre" => "Usuario"
-                ],
-                "roles" => ["ROLE_USER"],
-                "tokenType" => "Bearer"
-            ]
-        ]);
+            // 🔍 Debug temporal (opcional)
+            // dd($request);
+
+            if (empty($request['user']) || empty($request['pwd'])) {
+                return $this->response->setJSON([
+                    "status" => "ERROR",
+                    "message" => "Credenciales inválidas"
+                ])->setStatusCode(401);
+            }
+
+            return $this->response->setJSON([
+                "status" => "OK",
+                "body" => [
+                    "user" => $request['user'],
+                    "token" => "Bearer MOCK_TOKEN_123456",
+                    "rol" => [
+                        "nombre" => "Usuario"
+                    ],
+                    "roles" => ["ROLE_USER"],
+                    "tokenType" => "Bearer"
+                ]
+            ]);
+        } catch (\Throwable $e) {
+
+            return $this->response->setJSON([
+                "error" => $e->getMessage()
+            ])->setStatusCode(500);
+        }
     }
 }
