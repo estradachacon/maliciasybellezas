@@ -261,6 +261,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
 
     $routes->group('ventas', function ($routes) {
         $routes->get('/', 'VentasController::index');
+        $routes->get('(:num)', 'VentasController::show/$1');
         $routes->get('nueva', 'VentasController::nueva');
+        $routes->post('store', 'VentasController::store');
     });
 });

@@ -317,6 +317,7 @@
 
                 row.dataset.precioSugerido = data.precio || 0;
                 row.dataset.stock = data.stock || 0;
+                row.dataset.branch = data.branch_id || null;
 
                 aplicarColorPrecio(row);
             });
@@ -539,34 +540,19 @@
 
             let errores = [];
 
+            let tipoVenta = document.getElementById('tipoVenta').value;
+            let total = parseFloat(totalVenta.innerText) || 0;
+            let pagado = parseFloat(totalPagado.innerText) || 0;
+
+            // =========================
+            // 🔥 VALIDAR PRODUCTOS
+            // =========================
             document.querySelectorAll('#productosTable tbody tr').forEach((row, i) => {
 
                 let producto = $(row).find('.producto').val();
                 let cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
                 let precio = parseFloat(row.querySelector('.precio').value) || 0;
                 let stock = parseFloat(row.dataset.stock) || 0;
-                let tipoVenta = document.getElementById('tipoVenta').value;
-                let total = parseFloat(totalVenta.innerText) || 0;
-                let pagado = parseFloat(totalPagado.innerText) || 0;
-
-                let saldoPendiente = total - pagado;
-
-                if (tipoVenta === 'contado') {
-
-                    if (pagado <= 0) {
-                        errores.push('Debe registrar un pago para ventas de contado');
-                    }
-
-                    // 🔥 CLAVE: bloquear si no está completo
-                    if (pagado < total) {
-                        errores.push(`Venta de contado incompleta. Faltan $${(total - pagado).toFixed(2)}`);
-                    }
-
-                    // opcional (seguridad)
-                    if (pagado < 0) {
-                        errores.push('Monto pagado inválido');
-                    }
-                }
 
                 if (!producto) errores.push(`Fila ${i+1}: seleccione producto`);
                 if (cantidad <= 0) errores.push(`Fila ${i+1}: cantidad inválida`);
@@ -575,8 +561,21 @@
                 if (cantidad > stock) {
                     errores.push(`Fila ${i+1}: supera stock (${stock})`);
                 }
-
             });
+
+            // =========================
+            // 💰 VALIDAR PAGOS
+            // =========================
+            if (tipoVenta === 'contado') {
+
+                if (pagado <= 0) {
+                    errores.push('Debe registrar un pago para ventas de contado');
+                }
+
+                if (pagado < total) {
+                    errores.push(`Venta de contado incompleta. Faltan $${(total - pagado).toFixed(2)}`);
+                }
+            }
 
             if (errores.length > 0) {
                 Swal.fire({
@@ -587,13 +586,69 @@
                 return;
             }
 
-            let total = parseFloat(totalVenta.innerText) || 0;
-            let pagado = parseFloat(totalPagado.innerText) || 0;
-            let saldo = total - pagado;
+            // =========================
+            // 🧾 ARMAR OBJETO
+            // =========================
 
+            let venta = {
+                fecha: document.querySelector('[name="fecha"]').value,
+                cliente_id: $('#cliente_id').val(),
+                tipo_venta: tipoVenta,
+                total: total,
+                total_pagado: pagado
+            };
+
+            let detalle = [];
+            let detalleHtml = '';
+
+            document.querySelectorAll('#productosTable tbody tr').forEach(row => {
+
+                let producto_id = $(row).find('.producto').val();
+                let nombre = $(row).find('.producto').select2('data')[0]?.text || 'Producto';
+                let cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
+                let precio = parseFloat(row.querySelector('.precio').value) || 0;
+                let totalLinea = parseFloat(row.querySelector('.total').value) || 0;
+
+                if (producto_id) {
+                    detalle.push({
+                        producto_id: producto_id,
+                        cantidad: cantidad,
+                        precio_unitario: precio,
+                        total: totalLinea,
+                        branch_id: row.dataset.branch
+                    });
+
+                    detalleHtml += `• ${nombre} x${cantidad} = $${totalLinea.toFixed(2)}<br>`;
+                }
+            });
+
+            let pagos = [];
+
+            document.querySelectorAll('#pagosTable tbody tr').forEach(row => {
+
+                let cuenta = $(row).find('.cuenta').val();
+                let monto = parseFloat(row.querySelector('.monto').value) || 0;
+
+                if (cuenta && monto > 0) {
+                    pagos.push({
+                        account_id: cuenta,
+                        monto: monto
+                    });
+                }
+            });
+
+            let data = {
+                venta: venta,
+                detalle: detalle,
+                pagos: pagos
+            };
+
+            // =========================
+            // 🎨 ESTADO VISUAL
+            // =========================
+            let saldo = total - pagado;
             let estadoPago = '';
 
-            // 🎨 lógica visual
             if (saldo > 0) {
                 estadoPago = `<span style="color:#dc3545;">Pendiente: $${saldo.toFixed(2)}</span>`;
             } else if (saldo < 0) {
@@ -602,73 +657,81 @@
                 estadoPago = `<span style="color:#198754;">Pagado completo</span>`;
             }
 
-            // 🧾 resumen productos
-            let detalle = '';
-            document.querySelectorAll('#productosTable tbody tr').forEach(row => {
-
-                let nombre = $(row).find('.producto').select2('data')[0]?.text || 'Producto';
-                let cantidad = row.querySelector('.cantidad').value;
-                let totalLinea = row.querySelector('.total').value;
-
-                detalle += `• ${nombre} x${cantidad} = $${totalLinea}<br>`;
-            });
-            if (tipoVenta === 'contado') {
-
-                if (pagado <= 0) {
-                    errores.push('Debe registrar un pago para ventas de contado');
-                }
-
-                // 🔥 CLAVE: bloquear si no está completo
-                if (pagado < total) {
-                    errores.push(`Venta de contado incompleta. Faltan $${(total - pagado).toFixed(2)}`);
-                }
-
-                // opcional (seguridad)
-                if (pagado < 0) {
-                    errores.push('Monto pagado inválido');
-                }
-            }
-            // 🚀 SWEET ALERT PRO
+            // =========================
+            // 🔥 CONFIRMACIÓN
+            // =========================
             Swal.fire({
                 icon: 'info',
                 title: 'Resumen de venta',
                 width: 600,
                 html: `
-                    <div style="text-align:left; font-size:14px">
+            <div style="text-align:left; font-size:14px">
 
-                        <b>Detalle:</b><br>
-                        ${detalle || 'Sin productos'} 
+                <b>Detalle:</b><br>
+                ${detalleHtml || 'Sin productos'} 
 
-                        <hr>
+                <hr>
 
-                        <div style="display:flex; justify-content:space-between;">
-                            <span>Total:</span>
-                            <b>$${total.toFixed(2)}</b>
-                        </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Total:</span>
+                    <b>$${total.toFixed(2)}</b>
+                </div>
 
-                        <div style="display:flex; justify-content:space-between;">  
-                            <span>Pagado:</span>
-                            <b>$${pagado.toFixed(2)}</b>
-                        </div>
+                <div style="display:flex; justify-content:space-between;">  
+                    <span>Pagado:</span>
+                    <b>$${pagado.toFixed(2)}</b>
+                </div>
 
-                        <div style="display:flex; justify-content:space-between;">
-                            <span>Estado:</span>
-                            <b>${estadoPago}</b>
-                        </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Estado:</span>
+                    <b>${estadoPago}</b>
+                </div>
 
-                    </div>
-                `,
+            </div>
+        `,
                 showCancelButton: true,
                 confirmButtonText: 'Guardar venta',
                 cancelButtonText: 'Revisar'
             }).then(result => {
 
-                if (result.isConfirmed) {
-                    // 🔥 aquí haces el submit real (ajax o normal)
-                    Swal.fire('Guardado', 'Venta registrada correctamente', 'success');
-                }
+                if (!result.isConfirmed) return;
+
+                // =========================
+                // 🚀 ENVÍO REAL
+                // =========================
+                fetch("<?= base_url('ventas/store') ?>", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(res => res.json())
+                    .then(resp => {
+
+                        if (resp.success) {
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Venta guardada',
+                                text: 'Se registró correctamente',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.href = "<?= base_url('ventas') ?>";
+                            });
+
+                        } else {
+                            Swal.fire('Error', resp.message || 'No se pudo guardar', 'error');
+                        }
+
+                    })
+                    .catch(() => {
+                        Swal.fire('Error', 'Error de conexión', 'error');
+                    });
 
             });
+
         });
         document.getElementById('addPagoBtn').onclick = e => {
             e.preventDefault();

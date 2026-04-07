@@ -281,7 +281,7 @@ class PackagesRemunerations extends BaseController
                 ]);
 
                 // 🔥 LOG DEL PAQUETE
-                $mensaje = '💰 Remunerado - ID #' . $remId .
+                $mensaje = 'Remunerado - ID #' . $remId .
                     ' - Cuenta: ' . $cuentaTexto .
                     ' - $' . number_format($p->total, 2);
 

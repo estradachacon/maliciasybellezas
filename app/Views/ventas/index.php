@@ -12,7 +12,8 @@
     }
 
     .venta-card .card-body {
-        padding: 8px 12px; /* 🔥 más compacto */
+        padding: 8px 12px;
+        /* 🔥 más compacto */
     }
 
     .venta-card {
@@ -53,24 +54,60 @@
 
             <div class="card-body">
 
-                <!-- 🔍 BUSCADOR -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label>Buscar venta</label>
-                        <input type="text" id="searchInput" class="form-control"
-                               placeholder="Cliente o número de venta">
+                <form method="GET">
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="q" class="form-control"
+                                placeholder="Cliente o # venta"
+                                value="<?= esc($_GET['q'] ?? '') ?>">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Desde</label>
+                            <input type="date" name="desde" class="form-control"
+                                value="<?= esc($_GET['desde'] ?? '') ?>">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Hasta</label>
+                            <input type="date" name="hasta" class="form-control"
+                                value="<?= esc($_GET['hasta'] ?? '') ?>">
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="pagado" <?= (@$_GET['estado'] == 'pagado') ? 'selected' : '' ?>>Pagado</option>
+                                <option value="parcial" <?= (@$_GET['estado'] == 'parcial') ? 'selected' : '' ?>>Parcial</option>
+                                <option value="pendiente" <?= (@$_GET['estado'] == 'pendiente') ? 'selected' : '' ?>>Pendiente</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100">
+                                <i class="fa fa-search"></i> Filtrar
+                            </button>
+                        </div>
+
                     </div>
-                </div>
+
+                </form>
 
                 <!-- 📋 LISTADO -->
                 <div id="ventas-container">
 
-                    <!-- 🔥 VACÍO (por ahora) -->
-                    <div class="text-center text-muted py-4">
-                        <i class="fa-solid fa-receipt fa-2x mb-2"></i>
-                        <div>No hay ventas registradas</div>
-                    </div>
+                    <div id="ventas-container">
 
+                        <?= view('ventas/_ventas_list', ['ventas' => $ventas]) ?>
+
+                    </div>
+                    <div class="mt-3">
+                        <?= $pager->links('default', 'bitacora_pagination') ?>
+                    </div>
                 </div>
 
             </div>

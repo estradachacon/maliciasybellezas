@@ -345,6 +345,15 @@
                                     <div class="col-md-3">
                                         <input type="date" id="filtroFechaHasta" class="form-control form-control-sm">
                                     </div>
+                                    <div class="col-md-3">
+                                        <select id="filtroLimite" class="form-control form-control-sm">
+                                            <option value="10">Mostrar 10</option>
+                                            <option value="20">Mostrar 20</option>
+                                            <option value="50">Mostrar 50</option>
+                                            <option value="100">Mostrar 100</option>
+                                            <option value="todos">Todos</option>
+                                        </select>
+                                    </div>
 
                                 </div>
 
@@ -388,7 +397,18 @@
                                                                 <i class="fa fa-eye"></i>
                                                             </a>
                                                         <?php endif; ?>
-
+                                                        <?php if ($m->origen == 'paquete'): ?>
+                                                            <a href="<?= base_url('packages/' . $m->origen_id) ?>"
+                                                                class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                        <?php endif; ?>
+                                                        <?php if ($m->origen == 'venta'): ?>
+                                                            <a href="<?= base_url('ventas/' . $m->origen_id) ?>"
+                                                                class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i>
+                                                            </a>
+                                                        <?php endif; ?>
                                                         <!-- puedes agregar más tipos aquí -->
                                                     </td>
 
@@ -526,6 +546,9 @@
 
         function filtrar() {
 
+            const limite = document.getElementById('filtroLimite').value;
+            let contador = 0;
+
             document.querySelectorAll('#kardexBody tr').forEach(row => {
 
                 const rowTipo = row.dataset.tipo;
@@ -543,6 +566,15 @@
 
                 if (hasta.value && rowFecha > hasta.value) {
                     visible = false;
+                }
+
+                // 👇 aplicar límite
+                if (visible) {
+                    contador++;
+
+                    if (limite !== 'todos' && contador > parseInt(limite)) {
+                        visible = false;
+                    }
                 }
 
                 row.style.display = visible ? '' : 'none';
@@ -632,6 +664,11 @@
                     });
 
             });
+        });
+
+        const limite = document.getElementById('filtroLimite');
+        [tipo, desde, hasta, limite].forEach(el => {
+            el.addEventListener('change', filtrar);
         });
 
         $('#productoModal').on('shown.bs.modal', function() {
