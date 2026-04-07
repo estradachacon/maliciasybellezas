@@ -553,12 +553,16 @@
 
                 if (tipoVenta === 'contado') {
 
-                    if (pagado === 0) {
-                        errores.push('La venta no tiene ningún pago registrado');
+                    if (pagado <= 0) {
+                        errores.push('Debe registrar un pago para ventas de contado');
                     }
 
-                    // 🔥 NO bloquea parcial
-                    // solo evita valores negativos raros
+                    // 🔥 CLAVE: bloquear si no está completo
+                    if (pagado < total) {
+                        errores.push(`Venta de contado incompleta. Faltan $${(total - pagado).toFixed(2)}`);
+                    }
+
+                    // opcional (seguridad)
                     if (pagado < 0) {
                         errores.push('Monto pagado inválido');
                     }
@@ -608,7 +612,22 @@
 
                 detalle += `• ${nombre} x${cantidad} = $${totalLinea}<br>`;
             });
+            if (tipoVenta === 'contado') {
 
+                if (pagado <= 0) {
+                    errores.push('Debe registrar un pago para ventas de contado');
+                }
+
+                // 🔥 CLAVE: bloquear si no está completo
+                if (pagado < total) {
+                    errores.push(`Venta de contado incompleta. Faltan $${(total - pagado).toFixed(2)}`);
+                }
+
+                // opcional (seguridad)
+                if (pagado < 0) {
+                    errores.push('Monto pagado inválido');
+                }
+            }
             // 🚀 SWEET ALERT PRO
             Swal.fire({
                 icon: 'info',
@@ -627,7 +646,7 @@
                             <b>$${total.toFixed(2)}</b>
                         </div>
 
-                        <div style="display:flex; justify-content:space-between;">
+                        <div style="display:flex; justify-content:space-between;">  
                             <span>Pagado:</span>
                             <b>$${pagado.toFixed(2)}</b>
                         </div>
