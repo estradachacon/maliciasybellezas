@@ -5,6 +5,9 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
+$routes->get('ping', function () {
+    return 'pong';
+});
 $routes->get('/', 'Home::index');
 $routes->get('/rutas', 'Home::rutas');
 $routes->get('/sucursales', 'Home::sucursales');
@@ -16,7 +19,7 @@ $routes->get('api/backup/estrada', 'Api\BackupController::index');
 
 //rutas para pruebas de simulacion hacienda
 $routes->post('mock/hacienda/recepciondte', 'MockHaciendaController::recepcionDTE');
-$routes->post('mock/hacienda/seguridad/auth', '\App\Controllers\MockHaciendaController::auth');
+$routes->post('mock/hacienda/seguridad/auth', 'MockHaciendaController::auth');
 
 
 // 🔐 Recuperación de contraseña (SIN AUTH)
