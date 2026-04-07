@@ -13,7 +13,10 @@ $routes->get('/quienes-somos', 'Home::quienes_somos');
 $routes->post('/login', 'AuthController::login');
 $routes->get('/logout', 'AuthController::logout');
 $routes->get('api/backup/estrada', 'Api\BackupController::index');
+
+//rutas para pruebas de simulacion hacienda
 $routes->post('mock/hacienda/recepciondte', 'MockHaciendaController::recepcionDTE');
+$routes->post('mock/hacienda/seguridad/auth', 'MockHaciendaController::auth');
 
 // 🔐 Recuperación de contraseña (SIN AUTH)
 $routes->group('auth', function ($routes) {

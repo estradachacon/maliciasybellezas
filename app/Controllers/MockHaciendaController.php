@@ -71,4 +71,22 @@ class MockHaciendaController extends ResourceController
 
         return empty($errores) ? true : $errores;
     }
+
+    public function auth()
+    {
+        $request = service('request')->getJSON(true);
+
+        return $this->response->setJSON([
+            "status" => "OK",
+            "body" => [
+                "user" => $request['user'] ?? 'test',
+                "token" => "Bearer MOCK_TOKEN_123456",
+                "rol" => [
+                    "nombre" => "Usuario"
+                ],
+                "roles" => ["ROLE_USER"],
+                "tokenType" => "Bearer"
+            ]
+        ]);
+    }
 }
