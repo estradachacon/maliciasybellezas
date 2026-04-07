@@ -137,7 +137,7 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Cuenta</th>
+                                        <th style="width:65%">Cuenta</th>
                                         <th>Monto</th>
                                         <th></th>
                                     </tr>
