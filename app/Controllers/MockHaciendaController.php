@@ -3,13 +3,9 @@
 namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
-use CodeIgniter\HTTP\IncomingRequest;
-use CodeIgniter\HTTP\ResponseInterface;
 
 class MockHaciendaController extends ResourceController
 {
-    protected IncomingRequest $request;
-    protected ResponseInterface $response;
 
     public function recepcionDTE()
     {
@@ -79,7 +75,51 @@ class MockHaciendaController extends ResourceController
 
     public function auth()
     {
-        echo "OK AUTH";
-        exit;
+        try {
+            // 🔥 Obtener raw input
+            $raw = $this->request->getBody();
+
+            // fallback si viene vacío
+            if (empty($raw)) {
+                $raw = file_get_contents("php://input");
+            }
+
+            // convertir form-urlencoded a array
+            parse_str($raw, $request);
+
+            // fallback final
+            if (empty($request)) {
+                $request = $_POST;
+            }
+
+            // 🔍 Validación básica
+            if (empty($request['user']) || empty($request['pwd'])) {
+                return $this->response->setJSON([
+                    "status" => "ERROR",
+                    "message" => "Credenciales inválidas"
+                ])->setStatusCode(401);
+            }
+
+            // ✅ Respuesta tipo Hacienda
+            return $this->response->setJSON([
+                "status" => "OK",
+                "body" => [
+                    "user" => $request['user'],
+                    "token" => "Bearer MOCK_TOKEN_123456",
+                    "rol" => [
+                        "nombre" => "Usuario"
+                    ],
+                    "roles" => ["ROLE_USER"],
+                    "tokenType" => "Bearer"
+                ]
+            ]);
+        } catch (\Throwable $e) {
+
+            return $this->response->setJSON([
+                "status" => "ERROR",
+                "message" => $e->getMessage(),
+                "trace" => $e->getTraceAsString()
+            ])->setStatusCode(500);
+        }
     }
 }
