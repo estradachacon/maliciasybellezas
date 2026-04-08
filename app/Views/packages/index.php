@@ -238,11 +238,6 @@
     });
 </script>
 <script>
-    setInterval(() => {
-        location.reload();
-    }, 15000);
-</script>
-<script>
     function verImagen(src) {
         document.getElementById('imagenGrande').src = src;
         $('#modalImagen').modal('show'); // Bootstrap 4
