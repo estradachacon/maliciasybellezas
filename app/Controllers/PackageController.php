@@ -10,6 +10,7 @@ use App\Models\PackageDepositDetailModel;
 use App\Models\EncomendistasModel;
 use App\Models\SettledPointModel;
 use App\Models\TransactionModel;
+use App\Models\UserModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Endroid\QrCode\Builder\Builder;
@@ -34,48 +35,100 @@ class PackageController extends BaseController
     public function index()
     {
         $model = new PackageModel();
-        $encomendistasModel = new EncomendistasModel();
+        $encomendistasModel     = new EncomendistasModel();
+        $usersModel             = new UserModel(); // o como se llame
         $encomendistas = $encomendistasModel->findAll();
+        $vendedores = $usersModel->findAll();
 
         $cliente = $this->request->getGet('cliente');
         $fecha_inicio = $this->request->getGet('fecha_inicio');
         $fecha_fin    = $this->request->getGet('fecha_fin');
         $encomendista = $this->request->getGet('encomendista');
+        $vendedor     = $this->request->getGet('vendedor');
 
-        $builder = $model
-            ->select('paquetes.*, encomendistas.encomendista_name as encomendista_nombre')
-            ->join('encomendistas', 'encomendistas.id = paquetes.encomendista_nombre', 'left');
+        // 🔥 limpiar strings "null"
+        if ($encomendista === 'null' || $encomendista === '') {
+            $encomendista = null;
+        }
+
+        if ($vendedor === 'null' || $vendedor === '') {
+            $vendedor = null;
+        }
+
+        $model = $model->select('paquetes.*');
+
+        // 🔥 join encomendista SOLO si se usa o siempre si lo ocupás en vista
+        $model->join('encomendistas', 'encomendistas.id = paquetes.encomendista_nombre', 'left');
+        $model->select('encomendistas.encomendista_name as encomendista_nombre');
+
+        $model->join('users', 'users.id = paquetes.vendedor_id', 'left');
+        $model->select('users.user_name as vendedor_nombre');
 
         if (!empty($cliente)) {
-            $builder->like('cliente_nombre', $cliente);
+            $model->like('paquetes.cliente_nombre', $cliente);
         }
 
         if ($fecha_inicio && $fecha_fin) {
-            $builder->where('DATE(dia_entrega) >=', $fecha_inicio)
-                ->where('DATE(dia_entrega) <=', $fecha_fin);
+            $model->where('DATE(paquetes.dia_entrega) >=', $fecha_inicio)
+                ->where('DATE(paquetes.dia_entrega) <=', $fecha_fin);
         }
 
-        if (!empty($encomendista)) {
-            $builder->where('paquetes.encomendista_nombre', $encomendista);
+        if ($encomendista !== null && is_numeric($encomendista) && (int)$encomendista > 0) {
+            $model->where('paquetes.encomendista_nombre', (int)$encomendista);
         }
 
-        $builder = $builder->orderBy('paquetes.id', 'DESC');
+        if ($vendedor !== null && is_numeric($vendedor) && (int)$vendedor > 0) {
+            $model->where('paquetes.vendedor_id', (int)$vendedor);
+        }
 
-        $paquetes = $builder->paginate(12);
-        $pager = $builder->pager;
+        $model = $model->orderBy('paquetes.id', 'DESC');
+log_message('error', '========== DEBUG PACKAGE FILTER ==========');
+
+// 🔹 parámetros crudos
+log_message('error', 'GET RAW: ' . json_encode($_GET));
+
+// 🔹 valores ya procesados
+log_message('error', 'Cliente: ' . json_encode($cliente));
+log_message('error', 'Encomendista: ' . json_encode($encomendista));
+log_message('error', 'Vendedor: ' . json_encode($vendedor));
+
+// 🔹 tipos (IMPORTANTE 🔥)
+log_message('error', 'Tipo vendedor: ' . gettype($vendedor));
+
+// 🔹 validaciones
+log_message('error', 'is_numeric(vendedor): ' . (is_numeric($vendedor) ? 'YES' : 'NO'));
+log_message('error', '(int)vendedor: ' . (int)$vendedor);
+
+// 🔹 query final
+log_message('error', 'SQL: ' . $model->builder()->getCompiledSelect());
+
+// 🔹 ejecutar consulta sin paginate para ver resultados reales
+$tmp = $model->builder()->get()->getResult();
+
+log_message('error', 'TOTAL REAL DB: ' . count($tmp));
+
+// 🔹 IDs encontrados
+$ids = array_map(fn($p) => $p->id ?? null, $tmp);
+log_message('error', 'IDS: ' . json_encode($ids));
+
+log_message('error', '========== END DEBUG ==========');
+        $paquetes = $model->orderBy('paquetes.id', 'DESC')->paginate(12);
+        $pager = $model->pager;
 
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'html' => view('packages/_cards', ['paquetes' => $paquetes]),
                 'pager' => $pager->links('default', 'bitacora_pagination'),
-                'encomendistas' => $encomendistas
+                'encomendistas' => $encomendistas,
+                'vendedores' => $vendedores
             ]);
         }
 
         return view('packages/index', [
             'paquetes' => $paquetes,
             'pager' => $pager,
-            'encomendistas' => $encomendistas
+            'encomendistas' => $encomendistas,
+            'vendedores' => $vendedores
         ]);
     }
 
@@ -547,6 +600,7 @@ class PackageController extends BaseController
             ->select('
             paquetes.*,
             e.encomendista_name,
+            paquetes.cliente_telefono AS encomendista_telefono,
             pdd.flete_asignado,
             pd.fecha AS fecha_deposito
         ')
@@ -586,19 +640,20 @@ class PackageController extends BaseController
         $headers = [
             'A1' => '#',
             'B1' => 'Cliente',
-            'C1' => 'Destino',
-            'D1' => 'ID Encomendista',
+            'C1' => 'Teléfono',
+            'D1' => 'Destino',
             'E1' => 'Encomendista',
-            'F1' => 'Fecha depósito',
-            'G1' => 'Entrega',
-            'H1' => 'Total venta',
-            'I1' => 'Flete',
-            'J1' => 'Descuento',
-            'K1' => 'Total real',
-            'L1' => 'Total remunerar',
+            'F1' => 'Envío (Pagado a Encom)',
+            'G1' => 'Fecha depósito',
+            'H1' => 'Entrega',
+            'I1' => 'Total real (venta sin envío)',
+            'J1' => 'Envío (cliente)',
+            'K1' => 'Descuento',
+            'L1' => 'Total venta (ya con envío)',
             'M1' => 'Cancelado',
-            'N1' => 'Estado 1',
-            'O1' => 'Estado 2',
+            'N1' => 'Total remunerar',
+            'O1' => 'Estado 1',
+            'P1' => 'Estado 2',
         ];
 
         foreach ($headers as $cell => $text) {
@@ -609,9 +664,9 @@ class PackageController extends BaseController
 
         foreach ($data as $p) {
 
-            $total = floatval($p->total ?? 0);
+            $total = floatval($p->total_real ?? 0);
             $totalVenta = floatval($p->total_real ?? 0);
-            $flete = floatval($p->flete_asignado ?? 0);
+            $flete = floatval($p->envio ?? 0);
             $descuento = floatval($p->descuento_global ?? 0);
 
             $pagado = $total <= 0 ? 'SI' : 'NO';
@@ -622,21 +677,22 @@ class PackageController extends BaseController
 
             $sheet->setCellValue('A' . $row, $p->id);
             $sheet->setCellValue('B' . $row, $p->cliente_nombre);
-            $sheet->setCellValue('C' . $row, $p->destino);
-            $sheet->setCellValue('D' . $row, $p->encomendista_nombre);
+            $sheet->setCellValue('C' . $row, $p->encomendista_telefono);
+            $sheet->setCellValue('D' . $row, $p->destino);
             $sheet->setCellValue('E' . $row, $p->encomendista_name);
-            $sheet->setCellValue('F' . $row, $fechaDeposito);
-            $sheet->setCellValue('G' . $row, $p->dia_entrega);
-            $sheet->setCellValue('H' . $row, $totalVenta);
-            $sheet->setCellValue('I' . $row, $flete);
-            $sheet->setCellValue('J' . $row, $descuento);
-            $sheet->setCellValue('K' . $row, $totalVenta - $flete);
-            $sheet->setCellValue('L' . $row, $total);
+            $sheet->setCellValue('F' . $row, $p->flete_asignado);
+            $sheet->setCellValue('G' . $row, $fechaDeposito);
+            $sheet->setCellValue('H' . $row, $p->dia_entrega);
+            $sheet->setCellValue('I' . $row, $totalVenta - $flete);
+            $sheet->setCellValue('J' . $row, $flete);
+            $sheet->setCellValue('K' . $row, $descuento);
+            $sheet->setCellValue('L' . $row, $totalVenta);
             $sheet->setCellValue('M' . $row, $pagado);
-            $sheet->setCellValue('N' . $row, $p->estado1);
-            $sheet->setCellValue('O' . $row, $p->estado2);
+            $sheet->setCellValue('N' . $row, $total);
+            $sheet->setCellValue('O' . $row, $p->estado1);
+            $sheet->setCellValue('P' . $row, $p->estado2);
 
-            foreach (['H', 'I', 'J', 'K', 'L'] as $col) {
+            foreach (['F', 'I', 'J', 'K', 'L', 'N'] as $col) {
                 $sheet->getStyle($col . $row)
                     ->getNumberFormat()
                     ->setFormatCode('"$"#,##0.00');
@@ -713,9 +769,6 @@ class PackageController extends BaseController
         // autosize todo
         foreach (range('A', 'O') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        foreach (range('A', 'G') as $col) {
             $detalleSheet->getColumnDimension($col)->setAutoSize(true);
         }
 

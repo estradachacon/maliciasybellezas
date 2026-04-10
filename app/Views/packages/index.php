@@ -122,6 +122,11 @@
                     </div>
 
                     <div class="col-md-3">
+                        <small>Vendedor</small>
+                        <select id="vendedor_id" class="form-control"></select>
+                    </div>
+
+                    <div class="col-md-3">
                         <small>&nbsp;</small>
                         <div class="d-grid gap-2">
                             <button id="btnFiltrar" class="btn btn-primary">
@@ -175,7 +180,6 @@
             e.preventDefault();
 
             let cliente = $('#clienteFiltro').val();
-            let estado = $('#estadoFiltro').val();
 
             let fecha_inicio = '';
             let fecha_fin = '';
@@ -187,12 +191,51 @@
 
             const params = new URLSearchParams({
                 cliente,
-                estado,
                 fecha_inicio,
-                fecha_fin
+                fecha_fin,
+                encomendista: $('#encomendistaFiltro').val(),
+                vendedor: $('#vendedor_id').val()
             });
 
             window.open("<?= base_url('packages-exportar') ?>?" + params.toString(), '_blank');
+        });
+
+        // listeners
+        $('#clienteFiltro').on('keyup', cargarPaquetes);
+        $('#fechaRango').on('change', function() {
+            cargarPaquetes();
+        });
+        $('#btnFiltrar').on('click', function() {
+            cargarPaquetes();
+        });
+        $('#encomendistaFiltro').on('select2:select select2:clear', function() {
+            cargarPaquetes();
+        });
+        $('#vendedor_id').on('select2:select select2:clear', function() {
+            cargarPaquetes();
+        });
+
+        $('#vendedor_id').select2({
+            language: 'es',
+            minimumInputLength: 1,
+            placeholder: 'Buscar vendedor...',
+            width: '100%',
+            allowClear: true,
+            ajax: {
+                url: '<?= base_url('users/searchAjaxSelect') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
         });
 
         $('#encomendistaFiltro').select2({
@@ -222,8 +265,9 @@
         $('#btnLimpiar').on('click', function() {
 
             $('#clienteFiltro').val('');
-            $('#estadoFiltro').val('');
+
             $('#encomendistaFiltro').val(null).trigger('change');
+            $('#vendedor_id').val(null).trigger('change');
 
             if (fp) fp.clear();
 
@@ -247,7 +291,8 @@
 
         let cliente = $('#clienteFiltro').val();
         let fechaRango = $('#fechaRango').val();
-        let encomendista = $('#encomendistaFiltro').val();
+        let encomendista = $('#encomendistaFiltro').val() || '';
+        let vendedor = $('#vendedor_id').val() || '';
 
         let fecha_inicio = '';
         let fecha_fin = '';
@@ -263,14 +308,12 @@
             fecha_fin = fp.formatDate(fp.selectedDates[1], "Y-m-d");
         }
 
-        let estado = $('#estadoFiltro').val();
-
         const params = new URLSearchParams({
             cliente,
-            estado,
             fecha_inicio,
             fecha_fin,
-            encomendista
+            encomendista: $('#encomendistaFiltro').val() || '',
+            vendedor: $('#vendedor_id').val() || ''
         });
 
         let endpoint = url || "<?= base_url('packages') ?>";
@@ -286,15 +329,6 @@
                 $('#pagerContainer').html(data.pager);
             });
     }
-    // listeners
-    $('#clienteFiltro').on('keyup', cargarPaquetes);
-    $('#fechaRango, #estadoFiltro').on('change', cargarPaquetes);
-    $('#btnFiltrar').on('click', function() {
-        cargarPaquetes();
-    });
-    $('#encomendistaFiltro').on('change', function() {
-        cargarPaquetes();
-    });
 
     // paginación AJAX
     $(document).on('click', '#pagerContainer a', function(e) {
@@ -303,7 +337,6 @@
         let url = new URL($(this).attr('href'));
 
         let cliente = $('#clienteFiltro').val();
-        let estado = $('#estadoFiltro').val();
         let fecha_inicio = '';
         let fecha_fin = '';
 
@@ -314,7 +347,8 @@
         url.searchParams.set('cliente', cliente || '');
         url.searchParams.set('fecha_inicio', fecha_inicio || '');
         url.searchParams.set('fecha_fin', fecha_fin || '');
-        url.searchParams.set('estado', estado || '');
+        url.searchParams.set('encomendista', $('#encomendistaFiltro').val() || '');
+        url.searchParams.set('vendedor', $('#vendedor_id').val() || '');
 
         fetch(url.toString(), {
                 headers: {

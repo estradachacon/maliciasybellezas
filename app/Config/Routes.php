@@ -273,4 +273,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->get('nueva', 'VentasController::nueva');
         $routes->post('store', 'VentasController::store');
     });
+
+    $routes->get('users/searchAjaxSelect', 'UserController::searchAjaxSelect');
 });

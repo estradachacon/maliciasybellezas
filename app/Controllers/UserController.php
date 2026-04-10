@@ -303,4 +303,22 @@ class UserController extends BaseController
             'results' => $result
         ]);
     }
+    public function searchAjaxSelect()
+    {
+        $term = $this->request->getGet('term');
+
+        $builder = $this->userModel
+            ->select('id, user_name as text');
+
+        if (!empty($term)) {
+            $builder->groupStart()
+                ->like('user_name', $term)
+                ->orLike('email', $term)
+                ->groupEnd();
+        }
+
+        $users = $builder->limit(20)->findAll();
+
+        return $this->response->setJSON($users);
+    }
 }
