@@ -258,10 +258,10 @@ class PackageController extends BaseController
     }
     private function generarTituloImagen($texto)
     {
-        $rutaFuente = FCPATH . 'fonts/FleurDeLeah-Regular.ttf';
+        $rutaFuente = FCPATH . 'fonts/Ribeye-Regular.ttf';
 
         $ancho = 600;
-        $alto = 67;
+        $alto = 50;
 
         $imagen = imagecreatetruecolor($ancho, $alto);
 
@@ -271,14 +271,14 @@ class PackageController extends BaseController
 
         $color = imagecolorallocate($imagen, 102, 51, 153);
 
-        $size = 34;
+        $size = 25;
 
         $bbox = imagettfbbox($size, 0, $rutaFuente, $texto);
         $textWidth = $bbox[2] - $bbox[0];
         $textHeight = $bbox[1] - $bbox[7];
 
         $x = 8;
-        $y = $textHeight - 22;
+        $y = $textHeight + 5;
 
         imagettftext($imagen, $size, 0, $x, $y, $color, $rutaFuente, $texto);
 
