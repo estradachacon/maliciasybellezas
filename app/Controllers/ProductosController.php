@@ -44,6 +44,50 @@ class ProductosController extends BaseController
         return $this->response->setJSON($productos);
     }
 
+    public function searchAjaxSelectCompras()
+    {
+        $term = $this->request->getGet('term');
+
+        $db = \Config\Database::connect();
+
+        $builder = $db->table('productos p');
+
+        $builder->select("
+            p.id,
+            p.nombre as text,
+            p.precio,
+            p.imagen,
+
+            (
+                SELECT cd.precio
+                FROM compras_detalle cd
+                WHERE cd.producto_id = p.id
+                ORDER BY cd.id DESC
+                LIMIT 1
+            ) as ultimo_costo,
+
+            COALESCE(SUM(
+                CASE 
+                    WHEN ih.tipo = 'entrada' THEN ih.cantidad
+                    WHEN ih.tipo = 'salida' THEN -ih.cantidad
+                END
+            ), 0) as stock
+        ");
+
+        $builder->join('inventario_historico ih', 'ih.producto_id = p.id', 'left');
+
+        if ($term) {
+            $builder->like('p.nombre', $term);
+        }
+
+        $builder->groupBy('p.id');
+        $builder->limit(20);
+
+        $productos = $builder->get()->getResult();
+
+        return $this->response->setJSON($productos);
+    }
+
     public function searchAjaxSelectStock()
     {
         $db = \Config\Database::connect();

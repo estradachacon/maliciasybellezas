@@ -70,6 +70,26 @@
         padding-left: .75rem;
     }
 
+    .badge-sugerido {
+        position: absolute;
+        top: -6px;
+        right: 4px;
+        background: #198754;
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 6px;
+        pointer-events: none;
+    }
+
+    .precio-wrapper {
+        position: relative;
+    }
+
+    .precio-sugerido {
+        background-color: #e9f7ef !important;
+    }
+
     .add-line-link {
         color: #007bff;
         font-size: 14px;
@@ -435,11 +455,13 @@
             </td>
 
             <td>
-                <input type="number" class="form-control precio" step="0.01">
+                <div class="precio-wrapper">
+                    <input type="number" class="form-control precio" step="0.01">
+                </div>
             </td>
 
             <td>
-                <input type="text" class="form-control total" readonly>
+                <input type="number" class="form-control total" step="0.01">
             </td>
 
             <td class="text-right">
@@ -464,6 +486,21 @@
             document.querySelectorAll('#productosTable tbody tr').forEach((row, index) => {
                 row.querySelector('.row-index').innerText = index + 1;
             });
+        }
+
+        function mostrarBadgePrecio(row) {
+
+            let wrapper = row.querySelector('.precio-wrapper');
+
+            // eliminar anterior
+            let old = wrapper.querySelector('.badge-sugerido');
+            if (old) old.remove();
+
+            let badge = document.createElement('span');
+            badge.className = 'badge-sugerido';
+            badge.innerText = 'Último costo';
+
+            wrapper.appendChild(badge);
         }
 
         function renderAddRowLine() {
@@ -495,7 +532,43 @@
             const cantidad = row.querySelector('.cantidad');
             const precio = row.querySelector('.precio');
             const total = row.querySelector('.total');
+            let editandoDesdeTotal = false;
 
+            total.addEventListener('focus', () => editandoDesdeTotal = true);
+            precio.addEventListener('focus', () => editandoDesdeTotal = false);
+            precio.addEventListener('input', function() {
+
+                let sugerido = parseFloat(row.dataset.sugerido || 0);
+                let actual = parseFloat(precio.value || 0);
+
+                let wrapper = row.querySelector('.precio-wrapper');
+                let badge = wrapper.querySelector('.badge-sugerido');
+
+                if (actual !== sugerido) {
+                    // quitar badge
+                    if (badge) badge.remove();
+                    precio.classList.remove('precio-sugerido');
+                } else {
+                    // volver a mostrar
+                    if (!badge) mostrarBadgePrecio(row);
+                    precio.classList.add('precio-sugerido');
+                }
+            });
+
+            function calcularDesdeTotal() {
+
+                let cant = parseFloat(cantidad.value) || 0;
+                let tot = parseFloat(total.value) || 0;
+
+                if (cant > 0) {
+                    let nuevoPrecio = tot / cant;
+
+                    precio.value = nuevoPrecio.toFixed(4); 
+                    precio.dispatchEvent(new Event('input'));
+                }
+
+                calcularTotal();
+            }
             $(select).on('select2:select', function(e) {
 
                 let data = e.params.data;
@@ -530,8 +603,21 @@
                     btnImg.classList.add('d-none');
                 }
 
-                let sugerido = data.precio || 0;
-                precio.value = '';
+                let sugerido = data.ultimo_costo || data.precio || 0;
+
+                // guardar sugerido en dataset
+                row.dataset.sugerido = sugerido;
+
+                // asignar valor
+                precio.value = sugerido;
+
+                // marcar como sugerido
+                precio.classList.add('precio-sugerido');
+
+                // mostrar badge
+                mostrarBadgePrecio(row);
+
+                // focus
                 cantidad.focus();
             });
 
@@ -673,6 +759,7 @@
 
             cantidad.addEventListener('input', calcularFila);
             precio.addEventListener('input', calcularFila);
+            total.addEventListener('input', calcularDesdeTotal);
 
             row.querySelector('.removeRow').addEventListener('click', function() {
                 row.remove();
@@ -681,8 +768,12 @@
             });
 
             function calcularFila() {
+
+                if (editandoDesdeTotal) return;
+
                 const t = (cantidad.value * precio.value) || 0;
                 total.value = t.toFixed(2);
+
                 calcularTotal();
             }
         }
