@@ -53,21 +53,22 @@
     }
 
     .stock-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 12px;
-    padding: 5px 8px;
-    border-radius: 7px;
-}
-.producto-row > div {
-    border-right: 1px solid #eee;
-    padding-right: 10px;
-}
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 12px;
+        padding: 5px 8px;
+        border-radius: 7px;
+    }
 
-.producto-row > div:last-child {
-    border-right: none;
-}
+    .producto-row>div {
+        border-right: 1px solid #eee;
+        padding-right: 10px;
+    }
+
+    .producto-row>div:last-child {
+        border-right: none;
+    }
 </style>
 
 <div class="row">
@@ -164,7 +165,6 @@
             <form id="productoForm" enctype="multipart/form-data">
 
                 <div class="modal-body">
-
                     <div class="row">
 
                         <!-- Nombre -->
@@ -191,18 +191,58 @@
                             <input type="number" step="0.01" name="precio" class="form-control" required>
                         </div>
 
+                        <!-- 🔥 CÓDIGO DE BARRAS -->
+                        <div class="col-md-6 mt-2">
+                            <label>Código de barras</label>
+
+                            <div class="input-group">
+                                <input type="text" name="codigo_barras" id="codigo_barras" class="form-control" required>
+
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleScanner()">
+                                        <i class="fa fa-camera"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-success" onclick="generarCodigo()">
+                                        <i class="fa fa-barcode"></i>
+                                    </button>
+                                </div>
+
+                                <div class="input-group-append">
+                                    <span id="scanCheck" class="input-group-text text-success" style="display:none;">
+                                        ✔
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 🔥 SCANNER -->
+                        <div class="col-md-12 mt-2" id="scannerContainer" style="display:none;">
+                            <div class="border rounded p-2 text-center bg-light">
+
+                                <div id="reader" style="width:100%; max-width:400px; margin:auto;"></div>
+
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="cerrarScanner()">
+                                    Cancelar
+                                </button>
+
+                            </div>
+                        </div>
+
                         <!-- Descripción -->
                         <div class="col-md-12 mt-2">
                             <label>Descripción</label>
                             <textarea name="descripcion" class="form-control"></textarea>
                         </div>
+
+                        <!-- Imagen -->
                         <div class="col-md-12 mt-3">
                             <label>Imagen del producto</label>
                             <input type="file" name="imagen" class="form-control" accept="image/*">
                             <img id="previewImg" style="max-width:200px; margin-top:10px; display:none;">
                         </div>
-                    </div>
 
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -231,6 +271,191 @@
         </div>
     </div>
 </div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+    let html5QrCode = null;
+    let scannerActivo = false;
+
+    // 📷 SCANNER
+    function toggleScanner() {
+
+        const container = document.getElementById('scannerContainer');
+
+        if (scannerActivo) {
+            cerrarScanner();
+            return;
+        }
+
+        container.style.display = 'block';
+
+        html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start({
+                facingMode: "environment"
+            }, {
+                fps: 10,
+                qrbox: 250
+            },
+            (decodedText) => {
+
+                document.getElementById('codigo_barras').value = decodedText;
+
+                mostrarCheck();
+                cerrarScanner();
+            }
+        ).catch(err => console.error(err));
+
+        scannerActivo = true;
+    }
+
+    function cerrarScanner() {
+
+        const container = document.getElementById('scannerContainer');
+
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+            }).catch(() => {});
+        }
+
+        container.style.display = 'none';
+        scannerActivo = false;
+    }
+
+    // ✔ feedback
+    function mostrarCheck() {
+        const check = document.getElementById('scanCheck');
+        check.style.display = 'inline';
+
+        setTimeout(() => {
+            check.style.display = 'none';
+        }, 2000);
+    }
+
+    // ⚙️ GENERAR CÓDIGO
+    function generarCodigo() {
+
+        const input = document.getElementById('codigo_barras');
+
+        Swal.fire({
+            title: 'Generar código',
+            text: 'Se generará automáticamente',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Generar'
+        }).then(result => {
+
+            if (!result.isConfirmed) return;
+
+            const codigo = 'P' + Date.now(); // único simple
+
+            input.value = codigo;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Código generado',
+                text: codigo,
+                timer: 1200,
+                showConfirmButton: false
+            });
+        });
+    }
+
+    // 🚀 FORM
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const form = document.getElementById('productoForm');
+        const codigoInput = document.getElementById('codigo_barras');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        // limpiar error al escribir
+        codigoInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Guardando...';
+
+            const formData = new FormData(form);
+
+            // 🔥 VALIDACIONES
+            if (!form.nombre.value.trim()) {
+                Swal.fire('Error', 'El nombre es obligatorio', 'warning');
+                resetBtn();
+                return;
+            }
+
+            if (!form.precio.value || form.precio.value <= 0) {
+                Swal.fire('Error', 'Precio inválido', 'warning');
+                resetBtn();
+                return;
+            }
+
+            // 🔥 CÓDIGO REQUERIDO
+            if (!codigoInput.value.trim()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Código requerido',
+                    text: 'Escanea o genera un código de barras'
+                });
+
+                codigoInput.classList.add('is-invalid');
+                codigoInput.focus();
+                resetBtn();
+                return;
+            }
+
+            fetch("<?= base_url('inventario/store') ?>", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+
+                    resetBtn();
+
+                    if (data.status === 'success') {
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Producto creado',
+                            timer: 1200,
+                            showConfirmButton: false
+                        });
+
+                        $('#productoModal').modal('hide');
+                        form.reset();
+
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+
+                })
+                .catch(() => {
+                    resetBtn();
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                });
+
+            function resetBtn() {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Guardar';
+            }
+        });
+
+        // 🧹 limpiar al cerrar modal
+        $('#productoModal').on('hidden.bs.modal', function() {
+            form.reset();
+            cerrarScanner();
+            document.getElementById('scanCheck').style.display = 'none';
+        });
+
+    });
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -390,7 +615,7 @@
 
             const perPage = document.getElementById('perPageSelect').value;
             const order = document.getElementById('orderSelect').value;
-            const stock = document.getElementById('stockFilter').value; 
+            const stock = document.getElementById('stockFilter').value;
             const url = `${baseUrl}?q=${encodeURIComponent(query)}&page=${page}&perPage=${perPage}&order=${order}&stock=${stock}`;
 
             loadingSpinner.style.display = 'block';
