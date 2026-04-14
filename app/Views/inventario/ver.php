@@ -16,6 +16,14 @@
         gap: 10px;
     }
 
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+
+    #scannerModal {
+        z-index: 1055 !important;
+    }
+
     /* TAB BASE */
     .nav-tabs .nav-link {
         border: none !important;
@@ -559,18 +567,20 @@
             );
         });
     }
-
+    $('#scannerModal').on('shown.bs.modal', function() {
+        $('body').addClass('modal-open');
+    });
     $('#scannerModal').on('hidden.bs.modal', function() {
 
         if (html5QrCode) {
             html5QrCode.stop().catch(() => {});
         }
 
-        // 👇 volver a abrir producto si estaba abierto
-        if (productoModalAbierto) {
-            $('#productoModal').modal('show');
-            productoModalAbierto = false;
-        }
+        // 🔥 limpiar backdrops extra
+        $('.modal-backdrop').remove();
+
+        // 🔥 restaurar estado correcto
+        $('body').addClass('modal-open');
     });
 </script>
 <script>
