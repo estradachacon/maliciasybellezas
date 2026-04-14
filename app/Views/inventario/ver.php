@@ -484,11 +484,35 @@
                         <div class="col-md-6 mt-2"> <label>Precio</label> <input type="number" step="0.01" name="precio" class="form-control" required> </div> <!-- Descripción -->
                         <div class="col-md-6 mt-2">
                             <label>Código de barras</label>
+
                             <div class="input-group">
                                 <input type="text" name="codigo_barras" id="codigo_barras" class="form-control">
-                                <button type="button" class="btn btn-outline-secondary" onclick="abrirScanner()">
-                                    <i class="fa fa-camera"></i>
+
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleScanner()">
+                                        <i class="fa fa-camera"></i>
+                                    </button>
+                                </div>
+
+                                <!-- ✅ feedback -->
+                                <div class="input-group-append">
+                                    <span id="scanCheck" class="input-group-text text-success" style="display:none;">
+                                        ✔
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ SCANNER (FUERA del input-group) -->
+                        <div class="col-md-12 mt-2" id="scannerContainer" style="display:none;">
+                            <div class="border rounded p-2 text-center bg-light">
+
+                                <div id="reader" style="width:100%; max-width:400px; margin:auto;"></div>
+
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="cerrarScanner()">
+                                    Cancelar
                                 </button>
+
                             </div>
                         </div>
                         <div class="col-md-12 mt-2"> <label>Descripción</label>
@@ -515,73 +539,74 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="scannerModal" tabindex="-1">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Escanear código</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body text-center">
-                <div id="reader" style="width:100%;"></div>
-            </div>
-        </div>
-    </div>
-</div>
+
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
-    let html5QrCode;
-    let productoModalAbierto = false;
+    let html5QrCode = null;
+    let scannerActivo = false;
 
-    function abrirScanner() {
+    function toggleScanner() {
 
-        // 👇 verificar si estaba abierto
-        if ($('#productoModal').hasClass('show')) {
-            productoModalAbierto = true;
-            $('#productoModal').modal('hide');
+        const container = document.getElementById('scannerContainer');
+
+        if (scannerActivo) {
+            cerrarScanner();
+            return;
         }
 
-        $('#scannerModal').modal('show');
+        container.style.display = 'block';
 
-        $('#scannerModal').off('shown.bs.modal').on('shown.bs.modal', function() {
+        html5QrCode = new Html5Qrcode("reader");
 
-            html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({
+                facingMode: "environment"
+            }, {
+                fps: 10,
+                qrbox: 250
+            },
+            (decodedText) => {
 
-            html5QrCode.start({
-                    facingMode: "environment"
-                }, {
-                    fps: 10,
-                    qrbox: 250
-                },
-                (decodedText) => {
+                // 👉 llenar input
+                document.getElementById('codigo_barras').value = decodedText;
 
-                    document.getElementById('codigo_barras').value = decodedText;
+                mostrarCheck();
 
-                    html5QrCode.stop().then(() => {
-                        $('#scannerModal').modal('hide');
-                    });
-
-                }
-            );
+                cerrarScanner();
+            }
+        ).catch(err => {
+            console.error("Error cámara:", err);
         });
+
+        scannerActivo = true;
     }
-    $('#scannerModal').on('shown.bs.modal', function() {
-        $('body').addClass('modal-open');
-    });
-    $('#scannerModal').on('hidden.bs.modal', function() {
+
+    function cerrarScanner() {
+
+        const container = document.getElementById('scannerContainer');
 
         if (html5QrCode) {
-            html5QrCode.stop().catch(() => {});
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+            }).catch(() => {});
         }
 
-        // 🔥 limpiar backdrops extra
-        $('.modal-backdrop').remove();
+        container.style.display = 'none';
+        scannerActivo = false;
+    }
 
-        // 🔥 restaurar estado correcto
-        $('body').addClass('modal-open');
-    });
+    // ✅ feedback visual
+    function mostrarCheck() {
+
+        const check = document.getElementById('scanCheck');
+
+        check.style.display = 'inline';
+
+        setTimeout(() => {
+            check.style.display = 'none';
+        }, 2000);
+    }
 </script>
 <script>
     function editarProducto(producto) {
