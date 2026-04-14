@@ -54,58 +54,7 @@
     <!-- Modernizr -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
 
-    <script type="text/javascript">
-        var _date_format = "d/m/Y";
-        var _report_table = "";
-        var _backend_direction = "ltr";
-        var _currency = "$";
 
-        var $lang_alert_title = "¿Estas seguro?";
-        var $lang_alert_message = "¡Una vez eliminada, no podrá recuperar esta información!";
-        var $lang_confirm_button_text = "¡Sí, eliminalo!";
-        var $lang_cancel_button_text = "Cancelar";
-        var $lang_no_data_found = "Datos no encontrados";
-        var $lang_showing = "Mostrar";
-        var $lang_to = "a";
-        var $lang_of = "de";
-        var $lang_entries = "Entradas";
-        var $lang_showing_0_to_0_of_0_entries = "Mostrar 0 a 0 de 0 Entradas";
-        var $lang_show = "Mostrar";
-        var $lang_loading = "Cargando...";
-        var $lang_processing = "Procesando...";
-        var $lang_search = "Buscar";
-        var $lang_no_matching_records_found = "No se encontraron registros coincidentes";
-        var $lang_first = "Primero";
-        var $lang_last = "Último";
-        var $lang_next = "Siguiente";
-        var $lang_previous = "Previo";
-        var $lang_copy = "Copiar";
-        var $lang_excel = "Excel";
-        var $lang_pdf = "PDF";
-        var $lang_print = "Imprimir";
-        var $lang_income = "Ingreso";
-        var $lang_expense = "Gastos";
-        var $lang_income_vs_expense = "Ingresos vs Gastos";
-        var $lang_source = "Fuente";
-        var $lang_created = "Creado";
-        var $lang_tax_method = "Método de impuestos";
-        var $lang_inclusive = "INCLUSIVO";
-        var $lang_exclusive = "EXCLUSIVO";
-        var $lang_unit_price = "Precio unitario";
-        var $lang_quantity = "Cantidad";
-        var $lang_discount = "Descuento";
-        var $lang_tax = "impuesto";
-        var $lang_save = "Guardar";
-        var $lang_no_tax = "Sin impuestos";
-        var $lang_update_product = "Actualizar producto";
-        var $lang_none = "NINGUNO";
-        var $lang_copied_invoice_link = "Enlace de factura copiada";
-        var $lang_copied_quotation_link = "Enlace de cotización copiado";
-        var $lang_no_user_assigned = "Ningún usuario asignado";
-        var $lang_select_milestone = "Seleccionar hito";
-        var $lang_no_data_available = "Datos no disponibles";
-        var $lang_select_tax = "Seleccione IMPUESTO";
-    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />

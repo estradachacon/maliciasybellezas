@@ -166,6 +166,7 @@ class InventarioController extends BaseController
             'presentacion'  => $this->request->getPost('presentacion'),
             'precio'        => $this->request->getPost('precio'),
             'descripcion'   => $this->request->getPost('descripcion'),
+            'codigo_barras' => trim($this->request->getPost('codigo_barras')),
         ];
 
         $cambios = [];

@@ -474,6 +474,15 @@
                         <div class="col-md-6"> <label>Marca</label> <input type="text" name="marca" class="form-control"> </div> <!-- Presentación -->
                         <div class="col-md-6 mt-2"> <label>Presentación</label> <input type="text" name="presentacion" class="form-control"> </div> <!-- Precio -->
                         <div class="col-md-6 mt-2"> <label>Precio</label> <input type="number" step="0.01" name="precio" class="form-control" required> </div> <!-- Descripción -->
+                        <div class="col-md-6 mt-2">
+                            <label>Código de barras</label>
+                            <div class="input-group">
+                                <input type="text" name="codigo_barras" id="codigo_barras" class="form-control">
+                                <button type="button" class="btn btn-outline-secondary" onclick="abrirScanner()">
+                                    <i class="fa fa-camera"></i>
+                                </button>
+                            </div>
+                        </div>
                         <div class="col-md-12 mt-2"> <label>Descripción</label>
                             <textarea name="descripcion" class="form-control auto-resize"></textarea>
                         </div>
@@ -498,6 +507,63 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="scannerModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Escanear código</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="reader" style="width:100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let html5QrCode;
+
+    function abrirScanner() {
+
+        $('#scannerModal').modal('show');
+
+        // 👇 esperar a que el modal esté visible
+        $('#scannerModal').off('shown.bs.modal').on('shown.bs.modal', function() {
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            html5QrCode.start({
+                    facingMode: "environment"
+                }, {
+                    fps: 10,
+                    qrbox: 250
+                },
+                (decodedText) => {
+
+                    document.getElementById('codigo_barras').value = decodedText;
+
+                    html5QrCode.stop().then(() => {
+                        $('#scannerModal').modal('hide');
+                    });
+
+                }
+            ).catch(err => {
+                console.error("Error al iniciar cámara:", err);
+            });
+
+        });
+    }
+
+    // 🔴 IMPORTANTE: detener cámara al cerrar modal
+    $('#scannerModal').on('hidden.bs.modal', function() {
+        if (html5QrCode) {
+            html5QrCode.stop().catch(() => {});
+        }
+    });
+</script>
 <script>
     function editarProducto(producto) {
 
@@ -509,7 +575,7 @@
         document.querySelector('[name="presentacion"]').value = producto.presentacion ?? '';
         document.querySelector('[name="precio"]').value = producto.precio;
         document.querySelector('[name="descripcion"]').value = producto.descripcion ?? '';
-
+        document.querySelector('[name="codigo_barras"]').value = producto.codigo_barras ?? '';
 
         if (producto.imagen) {
             const img = document.getElementById('previewImg');
