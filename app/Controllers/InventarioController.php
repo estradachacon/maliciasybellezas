@@ -95,6 +95,7 @@ class InventarioController extends BaseController
                 'presentacion'  => trim($request->getPost('presentacion')),
                 'descripcion'   => trim($request->getPost('descripcion')),
                 'precio'        => $request->getPost('precio'),
+                'codigo_barras' => trim($request->getPost('codigo_barras')),
             ];
 
             $file = $request->getFile('imagen');
