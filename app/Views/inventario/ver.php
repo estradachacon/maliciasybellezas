@@ -492,6 +492,11 @@
                                     <button type="button" class="btn btn-outline-secondary" onclick="toggleScanner()">
                                         <i class="fa fa-camera"></i>
                                     </button>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-success" onclick="generarCodigo()">
+                                            <i class="fa fa-barcode"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- ✅ feedback -->
@@ -541,8 +546,45 @@
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    function generarCodigo() {
 
+        const input = document.getElementById('codigo_barras');
+        const id = document.getElementById('producto_id').value;
+
+        Swal.fire({
+            title: 'Generar código',
+            text: 'Este código será el identificador del producto. ¿Deseas generarlo automáticamente?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, generar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#28a745'
+        }).then((result) => {
+
+            if (!result.isConfirmed) return;
+
+            if (!id) {
+                Swal.fire('Error', 'El producto debe estar guardado primero', 'warning');
+                return;
+            }
+
+            // 👉 generar código tipo P000123
+            const codigo = 'P' + id.toString().padStart(6, '0');
+
+            input.value = codigo;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Código generado',
+                text: codigo,
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+        });
+    }
+</script>
 <script>
     let html5QrCode = null;
     let scannerActivo = false;
