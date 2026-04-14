@@ -1792,17 +1792,34 @@ $logoUrl = setting('logo')
 
         });
 
-        $('#producto_id').on('select2:select', function(e) {
-            let data = e.params.data;
+       $('#producto_id').select2({
+            language: 'es',
+            placeholder: 'Buscar producto...',
+            width: '100%',
+            minimumInputLength: 1,
 
-            $('#precio').val(data.precio || '0.00');
+            templateResult: formatProducto, // 🔥 lista con imagen
+            templateSelection: formatProductoSeleccion, // 🔥 input limpio
 
-            // 🔥 NUEVO
-            $('#producto_id').data('stock', data.stock || 0);
-            $('#producto_id').data('branch_id', data.branch_id || null);
-            $('#producto_id').data('producto_id_real', data.producto_id || data.id);
+            escapeMarkup: function(markup) {
+                return markup;
+            },
 
-            $('#cantidad').focus();
+            ajax: {
+                url: '<?= base_url('productos/searchAjaxSelectStock') ?>',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
         });
 
         $('#descuento_global, #envio').on('input', function() {

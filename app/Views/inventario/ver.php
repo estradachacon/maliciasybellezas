@@ -91,6 +91,134 @@
         background: #f8f9fa;
         transition: 0.2s;
     }
+
+    /* ── PRECIOS POR VOLUMEN ── */
+    .precio-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+
+    .precio-row:hover {
+        border-color: #adb5bd;
+    }
+
+    .precio-row.is-new {
+        border-color: #0d6efd;
+        border-style: dashed;
+    }
+
+    .precio-row.is-saving {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .precio-row.is-error {
+        border-color: #dc3545 !important;
+        background: #fff8f8;
+    }
+
+    .precio-row.is-saved {
+        border-color: #28a745;
+    }
+
+    .precio-row .pv-field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .precio-row .pv-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    .precio-row .pv-input {
+        width: 90px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 14px;
+        transition: border-color 0.15s;
+    }
+
+    .precio-row .pv-input:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, .15);
+    }
+
+    .precio-row .pv-arrow {
+        color: #9ca3af;
+        font-size: 14px;
+        margin-top: 14px;
+    }
+
+    .precio-row .pv-badge {
+        flex: 1;
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 14px;
+    }
+
+    .precio-row .pv-badge .badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+    }
+
+    .precio-row .pv-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 14px;
+        margin-left: auto;
+    }
+
+    .pv-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.15s;
+    }
+
+    .pv-btn-save {
+        border-color: #28a745;
+        color: #28a745;
+    }
+
+    .pv-btn-save:hover {
+        background: #28a745;
+        color: #fff;
+    }
+
+    .pv-btn-del {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .pv-btn-del:hover {
+        background: #dc3545;
+        color: #fff;
+    }
 </style>
 
 <div class="row">
@@ -111,7 +239,7 @@
                             <div class="mb-2">
 
                                 <!-- 🔝 FILA PRINCIPAL -->
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
 
                                     <!-- 🧾 INFO PRODUCTO -->
                                     <div>
@@ -220,6 +348,14 @@
                                     <i class="fa-solid fa-chart-line me-1"></i> Movimientos
                                 </a>
                             </li>
+
+                            <?php if (tienePermiso('ver_promociones_producto')): ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#precios">
+                                        <i class="fa-solid fa-tags me-1"></i> Precios por volumen
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
                         </ul>
 
@@ -443,7 +579,48 @@
                                 </div>
 
                             </div>
+                            <!-- TAB PANE (reemplaza el div id="promociones") -->
+                            <?php if (tienePermiso('ver_promociones_producto')): ?>
+                                <div class="tab-pane fade" id="precios">
 
+                                    <div class="precios-panel">
+
+                                        <!-- Header -->
+                                        <div class="precios-header d-flex justify-content-between mb-3">
+                                            <div>
+                                                <span class="text-muted" style="font-size:13px;">
+                                                    Precio base: <strong class="text-dark">$<?= number_format($producto->precio, 2) ?></strong>
+                                                </span>
+                                            </div>
+                                            <?php if (tienePermiso('crear_promocion_producto')): ?>
+                                                <button class="btn btn-sm btn-primary px-3" onclick="PreciosVolumen.agregar()">
+                                                    <i class="fa fa-plus mr-1"></i> Nueva regla
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Tabla de reglas -->
+                                        <div id="preciosContainer">
+                                            <?php if (!empty($promociones)): ?>
+                                                <?php foreach ($promociones as $p): ?>
+                                                    <div class="precio-row" data-id="<?= $p->id ?>">
+                                                        <?= /* se renderiza con JS */ '' ?>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Estado vacío -->
+                                        <div id="preciosVacio" class="text-center py-4" style="display:none;">
+                                            <i class="fa-solid fa-tags text-muted" style="font-size:32px; opacity:0.3;"></i>
+                                            <p class="text-muted mt-2 mb-0">Sin reglas de precios por volumen</p>
+                                            <small class="text-muted">Crea una regla para ofrecer descuentos por cantidad</small>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                     </div>
@@ -597,14 +774,340 @@
     });
 </script>
 <script>
-function imprimirEtiqueta() {
+    // ── Datos iniciales desde PHP ──────────────────────────────────────────
+    const PV_CONFIG = {
+        productoId: <?= $producto->id ?>,
+        precioBase: <?= (float)$producto->precio ?>,
+        urlSave: "<?= base_url('producto-promociones/save') ?>",
+        urlDelete: "<?= base_url('producto-promociones/delete') ?>",
+        canEdit: <?= (tienePermiso('editar_promocion_producto') || tienePermiso('crear_promocion_producto')) ? 'true' : 'false' ?>,
+        inicial: <?= json_encode(array_map(fn($p) => [
+                        'id'              => $p->id,
+                        'cantidad_minima' => (int)$p->cantidad_minima,
+                        'precio'          => (float)$p->precio,
+                    ], $promociones ?? [])) ?>
+    };
 
-    const nombre = `<?= esc($producto->nombre) ?>`;
-    const codigo = `<?= $producto->codigo_barras ?>`;
+    // ── Módulo PreciosVolumen ──────────────────────────────────────────────
+    const PreciosVolumen = (() => {
 
-    const ventana = window.open('', '', 'width=400,height=600');
+        const container = () => document.getElementById('preciosContainer');
+        const vacio = () => document.getElementById('preciosVacio');
 
-    ventana.document.write(`
+        // ── Render de una fila ────────────────────────────────────────────
+        function renderRow({
+            id = '',
+            cantidad_minima = '',
+            precio = ''
+        } = {}, isNew = false) {
+
+            const row = document.createElement('div');
+            row.className = 'precio-row' + (isNew ? ' is-new' : '');
+            if (id) row.dataset.id = id;
+
+            const descPct = precio && PV_CONFIG.precioBase ?
+                Math.round((1 - precio / PV_CONFIG.precioBase) * 100) :
+                0;
+
+            const badgeHtml = precio && cantidad_minima ?
+                `<span class="badge badge-success">-${descPct}%</span>
+               <span class="ml-1">desde ${cantidad_minima} u.</span>` :
+                `<span class="text-muted">Nueva regla</span>`;
+
+            const actionsHtml = PV_CONFIG.canEdit ? `
+            <div class="pv-actions">
+                <button class="pv-btn pv-btn-save" title="Guardar" onclick="PreciosVolumen.guardar(this)">
+                    <i class="fa fa-check"></i>
+                </button>
+                <button class="pv-btn pv-btn-del" title="Eliminar" onclick="PreciosVolumen.eliminar(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>` : '';
+
+            row.innerHTML = `
+            <div class="pv-field">
+                <span class="pv-label">Cantidad mín.</span>
+                <input class="pv-input pv-qty" type="number" min="1" step="1"
+                    value="${cantidad_minima}" placeholder="Ej: 6"
+                    inputmode="numeric"
+                    onkeypress="return event.key!='.'&&event.key!=','">
+            </div>
+            <div class="pv-arrow">→</div>
+            <div class="pv-field">
+                <span class="pv-label">Precio unitario</span>
+                <input class="pv-input pv-price" type="number" step="0.01" min="0.01"
+                    value="${precio}" placeholder="$0.00">
+            </div>
+            <div class="pv-badge">${badgeHtml}</div>
+            ${actionsHtml}
+        `;
+
+            // live preview del badge
+            row.querySelector('.pv-qty')?.addEventListener('input', () => actualizarBadge(row));
+            row.querySelector('.pv-price')?.addEventListener('input', () => actualizarBadge(row));
+
+            return row;
+        }
+
+        function actualizarBadge(row) {
+            const qty = parseInt(row.querySelector('.pv-qty').value);
+            const price = parseFloat(row.querySelector('.pv-price').value);
+            const badge = row.querySelector('.pv-badge');
+            if (qty > 0 && price > 0) {
+                const pct = Math.round((1 - price / PV_CONFIG.precioBase) * 100);
+                badge.innerHTML = pct > 0 ?
+                    `<span class="badge badge-success">-${pct}%</span> <span class="ml-1">desde ${qty} u.</span>` :
+                    `<span class="badge badge-secondary">desde ${qty} u.</span>`;
+            } else {
+                badge.innerHTML = `<span class="text-muted">Nueva regla</span>`;
+            }
+        }
+
+        // ── Validar fila ──────────────────────────────────────────────────
+        function validar(row) {
+            const qty = parseInt(row.querySelector('.pv-qty').value);
+            const price = parseFloat(row.querySelector('.pv-price').value);
+
+            if (!Number.isInteger(qty) || qty < 1)
+                return 'La cantidad mínima debe ser un número entero positivo';
+            if (isNaN(price) || price <= 0)
+                return 'El precio debe ser mayor a 0';
+            if (price >= PV_CONFIG.precioBase)
+                return `El precio ($${price.toFixed(2)}) debe ser menor al precio base ($${PV_CONFIG.precioBase.toFixed(2)})`;
+
+            // duplicados
+            const propioId = row.dataset.id || null;
+            const duplicado = [...document.querySelectorAll('.precio-row')].some(r => {
+                if (r === row) return false;
+                return parseInt(r.querySelector('.pv-qty').value) === qty;
+            });
+            if (duplicado) return `Ya existe una regla para ${qty} unidades`;
+
+            // orden lógico: a más cantidad → menor precio
+            const todasFilas = [...document.querySelectorAll('.precio-row')]
+                .map(r => ({
+                    qty: parseInt(r.querySelector('.pv-qty').value),
+                    price: parseFloat(r.querySelector('.pv-price').value),
+                    el: r
+                }))
+                .filter(v => Number.isInteger(v.qty) && !isNaN(v.price) && v.el !== row);
+
+            todasFilas.push({
+                qty,
+                price
+            });
+            todasFilas.sort((a, b) => a.qty - b.qty);
+
+            for (let i = 1; i < todasFilas.length; i++) {
+                if (todasFilas[i].price >= todasFilas[i - 1].price) {
+                    return 'Al aumentar la cantidad, el precio debe disminuir';
+                }
+            }
+
+            return null; // sin error
+        }
+
+        // ── Ordenar filas en el DOM ───────────────────────────────────────
+        function ordenar() {
+            const c = container();
+            [...c.querySelectorAll('.precio-row')]
+            .sort((a, b) => {
+                    const av = parseInt(a.querySelector('.pv-qty').value) || 0;
+                    const bv = parseInt(b.querySelector('.pv-qty').value) || 0;
+                    return av - bv;
+                })
+                .forEach(r => c.appendChild(r));
+        }
+
+        function checkVacio() {
+            const filas = container().querySelectorAll('.precio-row').length;
+            vacio().style.display = filas === 0 ? 'block' : 'none';
+
+            // 🔒 Ocultar botón si hay 5 reglas
+            const btnAgregar = document.querySelector('[onclick="PreciosVolumen.agregar()"]');
+            if (btnAgregar) btnAgregar.style.display = filas >= 5 ? 'none' : '';
+        }
+
+        // ── API ───────────────────────────────────────────────────────────
+        function agregar() {
+            // 🔒 Máximo 5 reglas
+            if (container().querySelectorAll('.precio-row').length >= 5) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Límite alcanzado',
+                    text: 'Solo se permiten hasta 5 reglas de precio por volumen',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+
+            const row = renderRow({}, true);
+            container().appendChild(row);
+            row.querySelector('.pv-qty').focus();
+            checkVacio();
+        }
+
+        function guardar(btn) {
+            const row = btn.closest('.precio-row');
+            const error = validar(row);
+
+            row.classList.remove('is-error', 'is-saved');
+
+            if (error) {
+                row.classList.add('is-error');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Revisa la regla',
+                    text: error,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+                return;
+            }
+
+            const id = row.dataset.id || null;
+            const qty = parseInt(row.querySelector('.pv-qty').value);
+            const price = parseFloat(row.querySelector('.pv-price').value);
+
+            row.classList.add('is-saving');
+
+            fetch(PV_CONFIG.urlSave, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id,
+                        producto_id: PV_CONFIG.productoId,
+                        cantidad_minima: qty,
+                        precio: price
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    row.classList.remove('is-saving', 'is-new');
+                    if (data.success) {
+                        row.dataset.id = data.id;
+                        row.classList.add('is-saved');
+                        setTimeout(() => row.classList.remove('is-saved'), 1200);
+                        ordenar();
+                    } else {
+                        row.classList.add('is-error');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.msg || 'No se pudo guardar'
+                        });
+                    }
+                })
+                .catch(() => {
+                    row.classList.remove('is-saving');
+                    row.classList.add('is-error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'Inténtalo nuevamente'
+                    });
+                });
+        }
+
+        function eliminar(btn) {
+            const row = btn.closest('.precio-row');
+            const id = row.dataset.id;
+
+            if (!id) {
+                row.remove();
+                checkVacio();
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Eliminar regla?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d'
+            }).then(r => {
+                if (!r.isConfirmed) return;
+                row.classList.add('is-saving');
+                fetch(PV_CONFIG.urlDelete, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.remove();
+                            checkVacio();
+                        } else Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo eliminar'
+                        });
+                    })
+                    .catch(() => {
+                        row.classList.remove('is-saving');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de conexión'
+                        });
+                    });
+            });
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────
+        function init() {
+            const c = container();
+            // limpiar los divs vacíos que renderizó PHP
+            c.innerHTML = '';
+            PV_CONFIG.inicial.forEach(item => c.appendChild(renderRow(item)));
+            ordenar();
+            checkVacio();
+        }
+
+        return {
+            agregar,
+            guardar,
+            eliminar,
+            init
+        };
+    })();
+
+    document.addEventListener('DOMContentLoaded', () => PreciosVolumen.init());
+</script>
+<script>
+    function marcarError(row, msg) {
+        row.classList.add('error');
+
+        Swal.fire({
+            icon: 'warning',
+            title: msg,
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
+
+    function limpiarError(row) {
+        row.classList.remove('error');
+    }
+
+    function imprimirEtiqueta() {
+
+        const nombre = `<?= esc($producto->nombre) ?>`;
+        const codigo = `<?= $producto->codigo_barras ?>`;
+
+        const ventana = window.open('', '', 'width=400,height=600');
+
+        ventana.document.write(`
         <html>
         <head>
             <title>Etiqueta</title>
@@ -675,11 +1178,12 @@ function imprimirEtiqueta() {
         </html>
     `);
 
-    ventana.document.close();
-    ventana.print();
-}
+        ventana.document.close();
+        ventana.print();
+    }
 </script>
 <script>
+
     function generarCodigo() {
 
         const input = document.getElementById('codigo_barras');
@@ -876,14 +1380,12 @@ function imprimirEtiqueta() {
                 $('#imagenModal').modal('show');
             });
         });
-
-        document.getElementById('productoForm').addEventListener('submit', function(e) {
+        $(document).on('submit', '#productoForm', function(e) {
             e.preventDefault();
 
             const form = this;
             const formData = new FormData(form);
 
-            // 🔥 CONFIRMACIÓN
             Swal.fire({
                 title: '¿Guardar cambios?',
                 text: 'Se actualizará la información del producto',
@@ -908,7 +1410,7 @@ function imprimirEtiqueta() {
                     }
                 });
 
-                // REQUEST
+                // 🔥 REQUEST
                 fetch("<?= base_url('inventario/update') ?>", {
                         method: 'POST',
                         body: formData
@@ -918,7 +1420,6 @@ function imprimirEtiqueta() {
 
                         if (data.success) {
 
-                            // ✅ ÉXITO
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Actualizado',
@@ -950,7 +1451,6 @@ function imprimirEtiqueta() {
 
             });
         });
-
         const limite = document.getElementById('filtroLimite');
         [tipo, desde, hasta, limite].forEach(el => {
             el.addEventListener('change', filtrar);

@@ -274,5 +274,21 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
         $routes->post('store', 'VentasController::store');
     });
 
+    $routes->post('paquetes/reenvio-con-cambios', 'PackageController::reenvioConCambios');
+    $routes->post('paquetes/actualizar-foto', 'PackageController::actualizarFoto');
+
     $routes->get('users/searchAjaxSelect', 'UserController::searchAjaxSelect');
+    $routes->group('producto-promociones', function ($routes) {
+        $routes->post('save', 'InventarioController::promoSave');
+        $routes->post('delete', 'InventarioController::promoDelete');
+    });
+
+    // ── Traslados ──────────────────────────────────────────────────────
+    $routes->get('traslados',                  'TrasladosController::index');
+    $routes->get('traslados/crear',            'TrasladosController::crear');
+    $routes->post('traslados/guardar',          'TrasladosController::guardar');
+    $routes->get('traslados/(:num)',           'TrasladosController::ver/$1');
+    $routes->get('traslados/buscar-productos', 'TrasladosController::buscarProductos');
+    $routes->get('traslados/searchAjax',      'TrasladosController::searchAjax');
+    $routes->get('productos/searchAjaxSelectStockBranch', 'ProductosController::searchAjaxSelectStockBranch');
 });

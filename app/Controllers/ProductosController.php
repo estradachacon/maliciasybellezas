@@ -155,6 +155,61 @@ class ProductosController extends BaseController
 
         return $this->response->setJSON($result);
     }
+
+    public function searchAjaxSelectStockBranch()
+    {
+        $db       = \Config\Database::connect();
+        $q        = $this->request->getGet('term');
+        $branchId = (int)$this->request->getGet('branch_id');
+
+        if (!$q || !$branchId) {
+            return $this->response->setJSON([]);
+        }
+
+        $rows = $db->table('productos p')
+            ->select("
+            p.id          AS producto_id,
+            p.nombre,
+            p.precio,
+            p.imagen,
+            i.branch_id,
+            b.branch_name AS sucursal_nombre,
+            SUM(
+                CASE
+                    WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
+                    WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
+                    ELSE 0
+                END
+            ) AS stock
+        ")
+            ->join('inventario_historico i', 'i.producto_id = p.id AND i.branch_id = ' . $branchId, 'inner')
+            ->join('branches b',             'b.id = i.branch_id', 'left')
+            ->groupStart()
+            ->like('p.nombre',         $q)
+            ->orLike('p.codigo_barras', $q)
+            ->groupEnd()
+            ->where('i.branch_id', $branchId)
+            ->groupBy('p.id, p.nombre, p.precio, p.imagen, i.branch_id, b.branch_name')
+            ->having('stock >', 0)
+            ->get()
+            ->getResult();
+
+        $result = [];
+
+        foreach ($rows as $r) {
+            $result[] = [
+                'id'          => $r->producto_id,
+                'producto_id' => $r->producto_id,
+                'branch_id'   => $r->branch_id,
+                'text'        => $r->nombre,
+                'precio'      => $r->precio,
+                'stock'       => (int)$r->stock,
+                'imagen'      => $r->imagen,
+            ];
+        }
+
+        return $this->response->setJSON($result);
+    }
     public function storeAjax()
     {
         $model = new ProductoModel();

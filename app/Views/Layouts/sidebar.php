@@ -181,13 +181,37 @@
                     </div>
                 <?php endif; ?>
 
-                <?php if (tienePermiso('ver_inventario')): ?>
-                    <a class="nav-link" href="/inventario">
-                        <div class="sb-nav-link-icon">
-                            <i class="fa-solid fa-warehouse"></i>
-                        </div>
+                <?php if (
+                    tienePermiso('ver_inventario') ||
+                    tienePermiso('ver_traslados_entre_sucursales') ||
+                    tienePermiso('crear_traslado')
+                ): ?>
+
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#inventarioMenu"
+                        aria-expanded="false" aria-controls="inventarioMenu">
+                        <div class="sb-nav-link-icon"><i class="fa-solid fa-warehouse"></i></div>
                         Inventario
+                        <div class="sb-sidenav-collapse-arrow"><i class="fa-solid fa-angle-down"></i></div>
                     </a>
+
+                    <div class="collapse" id="inventarioMenu" data-parent="#sidenavAccordion">
+                        <nav class="sb-sidenav-menu-nested nav">
+
+                            <?php if (tienePermiso('ver_inventario')): ?>
+                                <a class="nav-link" href="/inventario">
+                                    <i class="fa-solid fa-boxes-stacked mr-1"></i> Productos
+                                </a>
+                            <?php endif; ?>
+
+                            <?php if (tienePermiso('ver_traslados_entre_sucursales') || tienePermiso('crear_traslado')): ?>
+                                <a class="nav-link" href="<?= base_url('traslados') ?>">
+                                    <i class="fa-solid fa-right-left mr-1"></i> Traslados
+                                </a>
+                            <?php endif; ?>
+
+                        </nav>
+                    </div>
+
                 <?php endif; ?>
 
                 <?php if (tienePermiso('ver_compras')): ?>

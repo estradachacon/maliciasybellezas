@@ -48,6 +48,11 @@ class Permisos extends BaseConfig
             'ver_inventario',
             'crear_producto',
             'editar_producto',
+            'ver_promociones_producto',
+            'crear_promocion_producto',
+            'actualizar_foto_paquete',
+            'ver_traslados_entre_sucursales',
+            'crear_traslado',
         ],
 
         'Compras' => [

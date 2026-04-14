@@ -326,13 +326,13 @@ class InventarioController extends BaseController
         // TAB 1: ÚLTIMAS COMPRAS
         $compras = $db->table('compra_detalle cd')
             ->select("
-                c.id,
-                c.fecha_compra,
-                p.nombre as proveedor,
-                cd.cantidad,
-                cd.precio_unitario,
-                (cd.cantidad * cd.precio_unitario) as total_producto
-            ")
+            c.id,
+            c.fecha_compra,
+            p.nombre as proveedor,
+            cd.cantidad,
+            cd.precio_unitario,
+            (cd.cantidad * cd.precio_unitario) as total_producto
+        ")
             ->join('compras c', 'c.id = cd.compra_id')
             ->join('proveedores p', 'p.id = c.proveedor_id')
             ->where('cd.producto_id', $id)
@@ -344,15 +344,15 @@ class InventarioController extends BaseController
         // TAB 2: STOCK POR SUCURSAL
         $stockPorSucursal = $db->table('inventario_historico ih')
             ->select("
-                ih.branch_id,
-                b.branch_name,
-                SUM(
-                    CASE 
-                        WHEN ih.tipo = 'entrada' THEN ih.cantidad
-                        WHEN ih.tipo = 'salida' THEN -ih.cantidad
-                    END
-                ) as stock
-            ")
+            ih.branch_id,
+            b.branch_name,
+            SUM(
+                CASE 
+                    WHEN ih.tipo = 'entrada' THEN ih.cantidad
+                    WHEN ih.tipo = 'salida' THEN -ih.cantidad
+                END
+            ) as stock
+        ")
             ->join('branches b', 'b.id = ih.branch_id', 'left')
             ->where('ih.producto_id', $id)
             ->groupBy('ih.branch_id')
@@ -367,13 +367,48 @@ class InventarioController extends BaseController
             ->get()
             ->getResult();
 
+        // 🆕 TAB 4: PROMOCIONES
+        $promociones = $db->table('producto_precios')
+            ->where('producto_id', $id)
+            ->orderBy('cantidad_minima', 'ASC') // 🔥 importante para la lógica
+            ->get()
+            ->getResult();
+
+        // 🔢 TOTAL STOCK
         $totalStock = array_sum(array_map(fn($s) => $s->stock, $stockPorSucursal));
+
         return view('inventario/ver', [
             'producto' => $producto,
             'compras' => $compras,
             'stockPorSucursal' => $stockPorSucursal,
             'movimientos' => $movimientos,
+            'promociones' => $promociones,
             'totalStock' => $totalStock
         ]);
+    }
+    public function promoSave()
+    {
+        $data = $this->request->getJSON(true);
+
+        $model = new \App\Models\ProductoPreciosModel();
+
+        if (!empty($data['id'])) {
+            $model->update($data['id'], $data);
+            return $this->response->setJSON(['success' => true, 'id' => $data['id']]);
+        }
+
+        $id = $model->insert($data);
+
+        return $this->response->setJSON(['success' => true, 'id' => $id]);
+    }
+    public function promoDelete()
+    {
+        $data = $this->request->getJSON(true);
+
+        $model = new \App\Models\ProductoPreciosModel();
+
+        $model->delete($data['id']);
+
+        return $this->response->setJSON(['success' => true]);
     }
 }

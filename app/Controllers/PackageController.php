@@ -82,36 +82,7 @@ class PackageController extends BaseController
         }
 
         $model = $model->orderBy('paquetes.id', 'DESC');
-log_message('error', '========== DEBUG PACKAGE FILTER ==========');
 
-// 🔹 parámetros crudos
-log_message('error', 'GET RAW: ' . json_encode($_GET));
-
-// 🔹 valores ya procesados
-log_message('error', 'Cliente: ' . json_encode($cliente));
-log_message('error', 'Encomendista: ' . json_encode($encomendista));
-log_message('error', 'Vendedor: ' . json_encode($vendedor));
-
-// 🔹 tipos (IMPORTANTE 🔥)
-log_message('error', 'Tipo vendedor: ' . gettype($vendedor));
-
-// 🔹 validaciones
-log_message('error', 'is_numeric(vendedor): ' . (is_numeric($vendedor) ? 'YES' : 'NO'));
-log_message('error', '(int)vendedor: ' . (int)$vendedor);
-
-// 🔹 query final
-log_message('error', 'SQL: ' . $model->builder()->getCompiledSelect());
-
-// 🔹 ejecutar consulta sin paginate para ver resultados reales
-$tmp = $model->builder()->get()->getResult();
-
-log_message('error', 'TOTAL REAL DB: ' . count($tmp));
-
-// 🔹 IDs encontrados
-$ids = array_map(fn($p) => $p->id ?? null, $tmp);
-log_message('error', 'IDS: ' . json_encode($ids));
-
-log_message('error', '========== END DEBUG ==========');
         $paquetes = $model->orderBy('paquetes.id', 'DESC')->paginate(12);
         $pager = $model->pager;
 
@@ -232,6 +203,97 @@ log_message('error', '========== END DEBUG ==========');
         addPackLog($paqueteId, $mensaje);
 
         return redirect()->back()->with('success', 'Estado actualizado correctamente');
+    }
+
+    public function reenvioConCambios()
+    {
+        try {
+            $data = $this->request->getJSON(true);
+            $id   = (int)($data['paquete_id'] ?? 0);
+
+            if (!$id) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'ID inválido']);
+            }
+
+            $model   = new PackageModel();
+            $paquete = $model->find($id);
+
+            if (!$paquete) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'Paquete no encontrado']);
+            }
+
+            // Misma lógica de reenvío que actualizarEstado()
+            $model->set('reenvios', 'reenvios + 1', false);
+            $model->update($id, [
+                'estado1'          => 'en_encomendista',
+                'estado2'          => 'reenvio',
+                'cliente_nombre'   => $data['cliente_nombre'],
+                'cliente_telefono' => $data['cliente_telefono'],
+                'destino'          => $data['destino'],
+                'dia_entrega'      => $data['dia_entrega'],
+                'hora_inicio'      => $data['hora_inicio'],
+                'hora_fin'         => $data['hora_fin'],
+            ]);
+
+            addPackLog($id, 'Estado actualizado a: Cliente solicitó reenvío (con datos actualizados)');
+
+            registrar_bitacora(
+                'Reenvío con cambios — Paquete ID ' . $id,
+                'Paquetes',
+                'Cliente: ' . $data['cliente_nombre'] . ' | Destino: ' . $data['destino'],
+                session('id')
+            );
+
+            return $this->response->setJSON(['status' => 'ok']);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg'    => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function actualizarFoto()
+    {
+        try {
+            $id   = (int)$this->request->getPost('paquete_id');
+            $model = new PackageModel();
+
+            $paquete = $model->find($id);
+            if (!$paquete) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'Paquete no encontrado']);
+            }
+
+            $file = $this->request->getFile('foto');
+
+            if (!$file || !$file->isValid() || $file->hasMoved()) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'Archivo inválido']);
+            }
+
+            $nombre = $file->getRandomName();
+            $path   = ROOTPATH . 'public/upload/paquetes/';
+
+            if (!is_dir($path)) {
+                mkdir($path, 0777, true);
+            }
+
+            $file->move($path, $nombre);
+
+            $model->update($id, ['foto' => $nombre]);
+
+            addPackLog($id, 'Foto del paquete actualizada');
+
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'nueva_foto' => base_url('upload/paquetes/' . $nombre)
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'msg'    => $e->getMessage(),
+                'line'   => $e->getLine()
+            ]);
+        }
     }
     public function new()
     {
@@ -552,6 +614,7 @@ log_message('error', '========== END DEBUG ==========');
             ]);
         }
     }
+
     public function generarCodigo()
     {
         $model = new PackageModel();

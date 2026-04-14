@@ -156,39 +156,36 @@ foreach ($detalles as $d) {
 
                         <div class="d-flex flex-wrap w-100" style="gap:10px;">
                             <!-- BOX ACTUALIZAR -->
-                                <?php
-                                $estado1 = trim(strtolower($paquete->estado1 ?? ''));
-                                ?>
+                            <?php
+                            $estado1 = trim(strtolower($paquete->estado1 ?? ''));
+                            ?>
 
-                                <?php if (
-                                    !in_array($estado1, ['finalizado', 'pendiente']) &&
-                                    tienePermiso('actualizar_estado_paquete_en_detalle')
-                                ): ?>
+                            <?php if (
+                                !in_array($estado1, ['finalizado', 'pendiente']) &&
+                                tienePermiso('actualizar_estado_paquete_en_detalle')
+                            ): ?>
                                 <div class="border rounded px-3 py-2 bg-light flex-grow-1" style="min-width:250px;">
 
                                     <small class="text-muted d-block mb-2">Actualizar estado</small>
 
-                                    <form action="<?= base_url('paquetes/actualizar-estado') ?>" method="post">
-                                        <input type="hidden" name="paquete_id" value="<?= $paquete->id ?>">
+                                    <select id="selectNuevoEstado" class="form-control form-control-sm mb-2">
+                                        <option value="">Seleccionar</option>
+                                        <?php if ($paquete->estado2 === 'no_retirado'): ?>
+                                            <option value="reenvio">Reenvio</option>
+                                        <?php endif; ?>
+                                        <option value="entregado">Entregado</option>
+                                        <?php if ($paquete->estado2 != 'no_retirado'): ?>
+                                            <option value="no_retirado">No retirado</option>
+                                        <?php endif; ?>
+                                        <?php if ($paquete->estado2 === 'no_retirado'): ?>
+                                            <option value="devuelto">Devuelto</option>
+                                        <?php endif; ?>
+                                    </select>
 
-                                        <select name="nuevo_estado" class="form-control form-control-sm mb-2" required>
-                                            <option value="">Seleccionar</option>
-                                                <?php if ($paquete->estado2 === 'no_retirado'): ?>
-                                                    <option value="reenvio">Reenvio</option>
-                                                <?php endif; ?>
-                                            <option value="entregado">Entregado</option>
-                                            <?php if ($paquete->estado2 != 'no_retirado'): ?>
-                                                <option value="no_retirado">No retirado</option>
-                                            <?php endif; ?>
-                                            <?php if ($paquete->estado2 === 'no_retirado'): ?>
-                                                <option value="devuelto">Devuelto</option>
-                                            <?php endif; ?>
-                                        </select>
-
-                                        <button type="submit" class="btn btn-primary btn-sm w-100">
-                                            Actualizar
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-primary btn-sm w-100"
+                                        onclick="procesarEstado()">
+                                        Actualizar
+                                    </button>
 
                                 </div>
                             <?php endif; ?>
@@ -537,25 +534,38 @@ foreach ($detalles as $d) {
                                 <div class="info-label mb-2">Foto del paquete</div>
 
                                 <?php if (!empty($paquete->foto)): ?>
-                                    <img src="<?= base_url('upload/paquetes/' . $paquete->foto) ?>"
+                                    <img id="fotoActual"
+                                        src="<?= base_url('upload/paquetes/' . $paquete->foto) ?>"
                                         class="img-fluid rounded shadow-sm"
                                         style="max-height:350px; cursor:pointer;"
                                         onclick="verImagen(this.src)">
-                                    <?php if (!empty($paquete->foto)): ?>
-                                        <button
-                                            class="btn btn-sm btn-outline-primary mt-2 w-100"
-                                            onclick="compartirImagen('<?= base_url('upload/paquetes/' . $paquete->foto) ?>')">
-                                            📤 Compartir imagen
-                                        </button>
-                                    <?php endif; ?>
+
+                                    <button
+                                        class="btn btn-sm btn-outline-primary mt-2 w-100"
+                                        onclick="compartirImagen('<?= base_url('upload/paquetes/' . $paquete->foto) ?>')">
+                                        📤 Compartir imagen
+                                    </button>
                                 <?php else: ?>
-                                    <div class="text-muted">
-                                        Sin imagen
-                                    </div>
+                                    <div id="sinFotoMsg" class="text-muted mb-2">Sin imagen</div>
+                                    <img id="fotoActual" src="" class="img-fluid rounded shadow-sm mb-2"
+                                        style="max-height:350px; cursor:pointer; display:none;"
+                                        onclick="verImagen(this.src)">
+                                <?php endif; ?>
+
+                                <?php if (tienePermiso('actualizar_foto_paquete')): ?>
+                                    <!-- Botón trigger -->
+                                    <button class="btn btn-sm btn-outline-secondary mt-2 w-100"
+                                        onclick="document.getElementById('inputNuevaFoto').click()">
+                                        📷 Cambiar foto
+                                    </button>
+
+                                    <!-- Input oculto -->
+                                    <input type="file" id="inputNuevaFoto" accept="image/*"
+                                        style="display:none;"
+                                        onchange="subirNuevaFoto(this)">
                                 <?php endif; ?>
 
                             </div>
-
                         </div>
 
                     </div>
@@ -577,8 +587,296 @@ foreach ($detalles as $d) {
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalReenvio" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
 
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa fa-redo mr-2 text-primary"></i> Reenvío — Actualizar datos
+                    </h5>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="info-label">Cliente</label>
+                            <input type="text" id="r_cliente_nombre"
+                                class="form-control form-control-sm"
+                                value="<?= esc($paquete->cliente_nombre) ?>">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="info-label">Teléfono</label>
+                            <input type="text" id="r_cliente_telefono"
+                                class="form-control form-control-sm"
+                                value="<?= esc($paquete->cliente_telefono) ?>">
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <label class="info-label">Destino</label>
+                            <input type="text" id="r_destino"
+                                class="form-control form-control-sm"
+                                value="<?= esc($paquete->destino) ?>">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="info-label">Fecha entrega</label>
+                            <input type="date" id="r_dia_entrega"
+                                class="form-control form-control-sm"
+                                value="<?= $paquete->dia_entrega ?>">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="info-label">Hora inicio</label>
+                            <input type="time" id="r_hora_inicio"
+                                class="form-control form-control-sm"
+                                value="<?= $paquete->hora_inicio ?>">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="info-label">Hora fin</label>
+                            <input type="time" id="r_hora_fin"
+                                class="form-control form-control-sm"
+                                value="<?= $paquete->hora_fin ?>">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success btn-sm"
+                        onclick="confirmarReenvio(true)">
+                        <i class="fa fa-check mr-1"></i> Guardar y reenviar
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        data-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
     <script>
+        function subirNuevaFoto(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Preview inmediato
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById('fotoActual');
+                img.src = e.target.result;
+                img.style.display = 'block';
+
+                const sinFoto = document.getElementById('sinFotoMsg');
+                if (sinFoto) sinFoto.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+
+            // Confirmar antes de subir
+            Swal.fire({
+                title: '¿Actualizar foto?',
+                text: 'La foto anterior se mantendrá en el servidor',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, subir',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#6c757d',
+            }).then(result => {
+                if (!result.isConfirmed) {
+                    // Revertir preview si cancela
+                    input.value = '';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('paquete_id', PAQUETE_ID);
+                formData.append('foto', file);
+
+                Swal.fire({
+                    title: 'Subiendo foto...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                fetch('<?= base_url('paquetes/actualizar-foto') ?>', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            // Actualizar src con la URL real del servidor
+                            document.getElementById('fotoActual').src = data.nueva_foto;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Foto actualizada',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                html: '<pre style="text-align:left;font-size:12px;">' +
+                                    JSON.stringify(data, null, 2) +
+                                    '</pre>'
+                            });
+                        }
+                        input.value = '';
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de conexión',
+                            text: err.message
+                        });
+                        input.value = '';
+                    });
+            });
+        }
+        const PAQUETE_ID = <?= $paquete->id ?>;
+
+        function procesarEstado() {
+            const estado = document.getElementById('selectNuevoEstado').value;
+
+            if (!estado) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Selecciona un estado',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                return;
+            }
+
+            // Si NO es reenvío → flujo normal
+            if (estado !== 'reenvio') {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<?= base_url('paquetes/actualizar-estado') ?>';
+
+                [
+                    ['paquete_id', PAQUETE_ID],
+                    ['nuevo_estado', estado]
+                ].forEach(([name, val]) => {
+                    const i = document.createElement('input');
+                    i.type = 'hidden';
+                    i.name = name;
+                    i.value = val;
+                    form.appendChild(i);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+                return;
+            }
+
+            // Es reenvío → preguntar
+            Swal.fire({
+                title: 'Reenvío #<?= (int)$paquete->reenvios + 1 ?>',
+                text: '¿Deseas actualizar los datos del paquete o mantener los actuales?',
+                icon: 'question',
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: '✏️ Actualizar datos',
+                denyButtonText: '📦 Mantener datos',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d6efd',
+                denyButtonColor: '#6c757d',
+            }).then(result => {
+                if (result.isConfirmed) {
+                    $('#modalReenvio').modal('show');
+                } else if (result.isDenied) {
+                    confirmarReenvio(false);
+                }
+            });
+        }
+
+        function confirmarReenvio(conCambios) {
+
+            if (!conCambios) {
+                // ── Mismo flujo que los demás estados → form POST ──
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<?= base_url('paquetes/actualizar-estado') ?>';
+
+                [
+                    ['paquete_id', PAQUETE_ID],
+                    ['nuevo_estado', 'reenvio']
+                ].forEach(([name, val]) => {
+                    const i = document.createElement('input');
+                    i.type = 'hidden';
+                    i.name = name;
+                    i.value = val;
+                    form.appendChild(i);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+                return;
+            }
+
+            // ── Con cambios → validar y fetch ──────────────────────
+            const payload = {
+                paquete_id: PAQUETE_ID,
+                cliente_nombre: document.getElementById('r_cliente_nombre').value.trim(),
+                cliente_telefono: document.getElementById('r_cliente_telefono').value.trim(),
+                destino: document.getElementById('r_destino').value.trim(),
+                dia_entrega: document.getElementById('r_dia_entrega').value,
+                hora_inicio: document.getElementById('r_hora_inicio').value,
+                hora_fin: document.getElementById('r_hora_fin').value,
+            };
+
+            if (!payload.cliente_nombre || !payload.destino || !payload.dia_entrega) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos requeridos',
+                    text: 'Cliente, destino y fecha son obligatorios',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+
+            $('#modalReenvio').modal('hide');
+
+            Swal.fire({
+                title: 'Procesando reenvío...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            fetch('<?= base_url('paquetes/reenvio-con-cambios') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Reenvío registrado',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.msg || 'No se pudo procesar'
+                        });
+                    }
+                })
+                .catch(() => Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión'
+                }));
+        }
+
         function verImagen(src) {
             $('#imagenGrande').attr('src', src);
             new bootstrap.Modal(document.getElementById('modalImagen')).show();
