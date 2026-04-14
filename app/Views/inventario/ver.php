@@ -108,29 +108,41 @@
                         <div class="p-3 border rounded mb-3 bg-light">
 
                             <!-- 🧾 HEADER -->
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="mb-2">
 
-                                <div>
-                                    <h5 class="mb-0"><?= esc($producto->nombre) ?></h5>
+                                <!-- 🔝 FILA PRINCIPAL -->
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
 
-                                    <small class="text-muted">Producto #<?= $producto->id ?></small>
+                                    <!-- 🧾 INFO PRODUCTO -->
+                                    <div>
+                                        <h5 class="mb-0"><?= esc($producto->nombre) ?></h5>
+                                        <small class="text-muted">Producto #<?= $producto->id ?></small>
+                                    </div>
+
+                                    <!-- 💰 PRECIO -->
+                                    <div class="mt-2 mt-md-0 text-md-end">
+                                        <div class="text-muted" style="font-size:13px;">
+                                            Precio
+                                        </div>
+                                        <div class="fw-bold text-success" style="font-size:20px;">
+                                            $<?= number_format($producto->precio, 2) ?>
+                                        </div>
+                                    </div>
+
                                 </div>
 
-                                <div class="text-end">
-                                    <div class="text-muted" style="font-size:13px;">
-                                        Precio
-                                    </div>
-                                    <div class="fw-bold text-success" style="font-size:20px;">
-                                        $<?= number_format($producto->precio, 2) ?>
-                                    </div>
-                                </div>
+                                <!-- 🔘 BOTÓN -->
                                 <?php if (tienePermiso('editar_producto')): ?>
-                                    <button
-                                        class="btn btn-sm btn-primary mt-2 mb-2"
-                                        data-producto='<?= json_encode($producto) ?>'
-                                        onclick="editarProductoDesdeBtn(this)">
-                                        <i class="fa fa-edit"></i> Editar </button>
+                                    <div class="mt-2">
+                                        <button
+                                            class="btn btn-sm btn-primary w-100 w-md-auto"
+                                            data-producto='<?= json_encode($producto) ?>'
+                                            onclick="editarProductoDesdeBtn(this)">
+                                            <i class="fa fa-edit"></i> Editar
+                                        </button>
+                                    </div>
                                 <?php endif; ?>
+
                             </div>
 
                             <hr class="my-2">
