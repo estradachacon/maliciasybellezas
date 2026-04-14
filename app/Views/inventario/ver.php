@@ -525,12 +525,18 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
     let html5QrCode;
+    let productoModalAbierto = false;
 
     function abrirScanner() {
 
+        // 👇 verificar si estaba abierto
+        if ($('#productoModal').hasClass('show')) {
+            productoModalAbierto = true;
+            $('#productoModal').modal('hide');
+        }
+
         $('#scannerModal').modal('show');
 
-        // 👇 esperar a que el modal esté visible
         $('#scannerModal').off('shown.bs.modal').on('shown.bs.modal', function() {
 
             html5QrCode = new Html5Qrcode("reader");
@@ -550,17 +556,20 @@
                     });
 
                 }
-            ).catch(err => {
-                console.error("Error al iniciar cámara:", err);
-            });
-
+            );
         });
     }
 
-    // 🔴 IMPORTANTE: detener cámara al cerrar modal
     $('#scannerModal').on('hidden.bs.modal', function() {
+
         if (html5QrCode) {
             html5QrCode.stop().catch(() => {});
+        }
+
+        // 👇 volver a abrir producto si estaba abierto
+        if (productoModalAbierto) {
+            $('#productoModal').modal('show');
+            productoModalAbierto = false;
         }
     });
 </script>
