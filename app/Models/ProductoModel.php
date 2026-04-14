@@ -15,7 +15,8 @@ class ProductoModel extends Model
         'precio',
         'marca',
         'presentacion',
-        'imagen'
+        'imagen',
+        'codigo_barras',
     ];
 
     protected $useTimestamps = true;
