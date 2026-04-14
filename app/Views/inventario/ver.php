@@ -127,6 +127,7 @@
                                         <div class="fw-bold text-success" style="font-size:20px;">
                                             $<?= number_format($producto->precio, 2) ?>
                                         </div>
+
                                     </div>
 
                                 </div>
@@ -450,26 +451,46 @@
                     <!-- 🟩 DERECHA (IMAGEN FULL ALTURA) -->
                     <div class="col-md-4">
 
-                        <div class="h-100 d-flex align-items-center justify-content-center border rounded">
+                        <!-- 🖼️ IMAGEN -->
+                        <div class="mb-3 text-center border rounded p-2">
 
                             <?php if (!empty($producto->imagen)): ?>
                                 <img
                                     src="<?= base_url('upload/productos/' . $producto->imagen) ?>"
                                     class="img-header-producto"
-                                    data-img="<?= base_url('upload/productos/' . $producto->imagen) ?>"
-                                    style="
-                                width:100%;
-                                height:100%;
-                                max-height:400px;
-                                object-fit:cover;
-                                border-radius:10px;
-                                cursor:pointer;
-                            ">
+                                    style="width:100%; max-height:200px; object-fit:cover; border-radius:10px;">
                             <?php else: ?>
                                 <div class="text-muted">Sin imagen</div>
                             <?php endif; ?>
 
                         </div>
+
+                        <!-- 🏷️ ETIQUETA -->
+                        <div class="border rounded p-3 text-center bg-white" id="etiquetaProducto">
+
+                            <!-- Nombre -->
+                            <div style="font-size:14px; font-weight:600; line-height:1.2;">
+                                <?= esc($producto->nombre) ?>
+                            </div>
+
+                            <!-- Código -->
+                            <?php if (!empty($producto->codigo_barras)): ?>
+                                <svg id="barcode" style="margin-top:5px;"></svg>
+                                <div style="font-size:12px;">
+                                    <?= esc($producto->codigo_barras) ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-muted mt-2" style="font-size:12px;">
+                                    Sin código
+                                </div>
+                            <?php endif; ?>
+
+                        </div>
+
+                        <!-- 🖨️ BOTÓN -->
+                        <button class="btn btn-dark btn-sm w-100 mt-2" onclick="imprimirEtiqueta()">
+                            <i class="fa fa-print"></i> Imprimir etiqueta
+                        </button>
 
                     </div>
 
@@ -558,6 +579,106 @@
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode/dist/JsBarcode.all.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const codigo = "<?= $producto->codigo_barras ?>";
+
+        if (codigo) {
+            JsBarcode("#barcode", codigo, {
+                format: "CODE128",
+                width: 2,
+                height: 50,
+                displayValue: false
+            });
+        }
+
+    });
+</script>
+<script>
+function imprimirEtiqueta() {
+
+    const nombre = `<?= esc($producto->nombre) ?>`;
+    const codigo = `<?= $producto->codigo_barras ?>`;
+
+    const ventana = window.open('', '', 'width=400,height=600');
+
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Etiqueta</title>
+
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode/dist/JsBarcode.all.min.js"><\/script>
+
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial;
+                }
+
+                #contenedor {
+                    width: 2in;
+                    height: 1in;
+                    padding: 4px;
+                    box-sizing: border-box;
+
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .nombre {
+                    font-size: 8px;
+                    text-align: center;
+                    line-height: 1;
+                }
+
+                svg {
+                    width: 100%;
+                    height: 55px; /* 🔥 más grande */
+                }
+
+                .codigo {
+                    font-size: 10px;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                }
+
+            </style>
+        </head>
+
+        <body>
+
+            <div id="contenedor">
+
+                <div class="nombre">${nombre}</div>
+
+                <svg id="barcodePrint"></svg>
+
+                <div class="codigo">${codigo}</div>
+
+            </div>
+
+            <script>
+                JsBarcode("#barcodePrint", "${codigo}", {
+                    format: "CODE128",
+                    width: 2,
+                    height: 55,
+                    displayValue: false
+                });
+            <\/script>
+
+        </body>
+        </html>
+    `);
+
+    ventana.document.close();
+    ventana.print();
+}
+</script>
 <script>
     function generarCodigo() {
 
