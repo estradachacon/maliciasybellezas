@@ -298,7 +298,11 @@ class ProductosController extends BaseController
             ->getRowObject();
 
         if (!$row) {
-            return $this->response->setJSON(['found' => false]);
+            return $this->response->setJSON(['found' => false, 'msg' => 'Producto no encontrado']);
+        }
+
+        if ((int)($row->stock ?? 0) <= 0) {
+            return $this->response->setJSON(['found' => false, 'msg' => 'Sin stock en esta sucursal para: ' . $row->nombre]);
         }
 
         $ofertas = $db->table('producto_precios')

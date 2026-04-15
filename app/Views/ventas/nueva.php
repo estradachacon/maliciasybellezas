@@ -78,6 +78,72 @@
 
     #barcodeInput:focus { border-color: #198754; box-shadow: 0 0 0 .2rem rgba(25,135,84,.25); }
     #barcodeInput.is-invalid { border-color: #dc3545 !important; }
+
+    /* ── MOBILE ─────────────────────────────────────────── */
+    @media (max-width: 767px) {
+
+        /* Tabla productos: cada fila como tarjeta */
+        #productosTable thead { display: none; }
+
+        #productosTable tbody tr {
+            display: block;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            padding: 10px 10px 6px;
+            position: relative;
+            background: #fff;
+        }
+
+        #productosTable tbody td {
+            display: inline-block;
+            border: none !important;
+            padding: 2px 3px !important;
+            vertical-align: top;
+        }
+
+        /* Ocultar columna # */
+        #productosTable tbody td.i { display: none; }
+
+        /* Producto: ancho completo menos botón eliminar */
+        #productosTable tbody td:nth-child(2) { width: calc(100% - 42px); }
+        #productosTable .select2-container { width: 100% !important; }
+
+        /* Cant / Precio / Total en una fila */
+        #productosTable tbody td:nth-child(3) { width: 28%; }
+        #productosTable tbody td:nth-child(4) { width: 44%; }
+        #productosTable tbody td:nth-child(5) { width: 24%; }
+
+        #productosTable tbody td:nth-child(3) input,
+        #productosTable tbody td:nth-child(4) input,
+        #productosTable tbody td:nth-child(5) input { width: 100% !important; }
+
+        /* Etiquetas mini encima de cada input */
+        #productosTable tbody td:nth-child(3)::before { content: "Cant";   display:block; font-size:10px; color:#6c757d; }
+        #productosTable tbody td:nth-child(4)::before { content: "Precio"; display:block; font-size:10px; color:#6c757d; }
+        #productosTable tbody td:nth-child(5)::before { content: "Total";  display:block; font-size:10px; color:#6c757d; }
+
+        /* Botón eliminar: esquina superior derecha de la tarjeta */
+        #productosTable tbody td:nth-child(6) {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: auto;
+        }
+
+        /* Inputs táctiles más altos */
+        #productosTable input,
+        #productosTable .select2-selection { min-height: 40px !important; }
+
+        /* Total de venta más visible */
+        #totalVenta { font-size: 36px !important; }
+
+        /* Botón guardar full width */
+        #ventaForm .btn-success { width: 100%; padding: .6rem; font-size: 1.1rem; }
+
+        /* Link agregar producto */
+        .add-line-link { font-size: 1rem; display: block; text-align: center; padding: 10px 0; }
+    }
 </style>
 
 <div class="row">
@@ -102,18 +168,18 @@
 
                     <div class="row mb-3">
 
-                        <div class="col-md-2">
+                        <div class="col-6 col-md-2">
                             <label>Fecha</label>
                             <input type="date" name="fecha" class="form-control"
                                 value="<?= date('Y-m-d') ?>">
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4 order-md-0 order-last mt-2 mt-md-0">
                             <label>Cliente</label>
                             <select id="cliente_id" name="cliente_id" class="form-control"></select>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-3">
                             <label>Agencia</label>
                             <input type="text" class="form-control"
                                 value="<?= session('branch_name') ?>" readonly>
@@ -122,7 +188,7 @@
 
                     <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
                     <div class="row mb-2">
-                        <div class="col-md-5">
+                        <div class="col-12 col-md-5">
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text bg-white">
@@ -178,7 +244,7 @@
                     <div class="row mt-4">
 
                         <!-- 🧾 TABLA PAGOS (2/3) -->
-                        <div class="col-md-8">
+                        <div class="col-12 col-md-8">
 
                             <h5>Pagos</h5>
 
@@ -201,7 +267,7 @@
                         </div>
 
                         <!-- 💰 RESUMEN (1/3) -->
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4 mt-3 mt-md-0">
 
                             <div class="card p-3 shadow-sm">
 
@@ -585,15 +651,15 @@
                 .then(data => {
                     if (!data.found) {
                         barcodeInput.classList.add('is-invalid');
-                        barcodeInput.placeholder = `No encontrado: ${codigo}`;
+                        barcodeInput.placeholder = data.msg || `No encontrado: ${codigo}`;
                         setTimeout(() => {
                             barcodeInput.classList.remove('is-invalid');
                             barcodeInput.placeholder = 'Escanear código de barras...';
-                        }, 2000);
+                        }, 2500);
                         return;
                     }
 
-                    // ¿Ya está en la tabla?
+                    // ¿Ya está en la tabla? → incrementar cantidad
                     let existingRow = null;
                     document.querySelectorAll('#productosTable tbody tr').forEach(r => {
                         if (r.dataset.productoId == data.producto_id) existingRow = r;
@@ -609,6 +675,17 @@
                         }
                         cantInput.value = newCant;
                         cantInput.dispatchEvent(new Event('input'));
+                        return;
+                    }
+
+                    // ¿Hay una fila vacía disponible? → reutilizarla
+                    let emptyRow = null;
+                    document.querySelectorAll('#productosTable tbody tr').forEach(r => {
+                        if (!r.dataset.productoId && !emptyRow) emptyRow = r;
+                    });
+
+                    if (emptyRow) {
+                        fillRow(emptyRow, data);
                     } else {
                         addRow(data);
                     }
