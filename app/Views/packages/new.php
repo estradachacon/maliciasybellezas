@@ -1481,20 +1481,20 @@ $logoUrl = setting('logo')
 
                                 <div class="row g-1 mt-1 align-items-start">
 
-                                    <div class="col-3">
+                                    <div class="col-12 col-md-3">
                                         <small class="text-muted" style="font-size:10px;">Cantidad</small>
                                         <input type="number" class="form-control form-control-sm item-cantidad"
                                             data-index="${i}" value="${p.cantidad}" min="1" max="${p.stock}">
                                     </div>
 
-                                    <div class="col-5">
+                                    <div class="col-12 col-md-5">
                                         <small class="text-muted" style="font-size:10px;">Precio</small>
                                         <input type="text" class="form-control form-control-sm item-precio"
                                             data-index="${i}" value="${formatearMoneda(p.precio)}">
                                         <div class="mt-1">${ofertasHtml}</div>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-md-4">
                                         <small class="text-muted" style="font-size:10px;">Subtotal</small>
                                         <input type="text" class="form-control form-control-sm item-sub"
                                             data-index="${i}" value="$${formatearMoneda(subtotal)}" readonly
