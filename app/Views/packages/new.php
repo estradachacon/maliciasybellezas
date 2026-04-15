@@ -622,7 +622,7 @@ $logoUrl = setting('logo')
                                                     autocomplete="off">
 
                                                 <button type="button" class="btn btn-success" id="btnBuscarCodigo">
-                                                    OK
+                                                    <i class="fa-solid fa-magnifying-glass"></i>
                                                 </button>
 
                                                 <button type="button" class="btn btn-outline-secondary" id="btnCamara">
