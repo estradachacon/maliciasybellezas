@@ -277,39 +277,42 @@ class ProductosController extends BaseController
         $db = \Config\Database::connect();
 
         $select = "
-            p.id          AS producto_id,
-            p.nombre,
-            p.precio,
-            p.imagen,
-            p.codigo_barras,
-            i.branch_id,
-            SUM(
-                CASE
-                    WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
-                    WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
-                    ELSE 0
-                END
-            ) AS stock
-        ";
+        p.id          AS producto_id,
+        p.nombre,
+        p.precio,
+        p.imagen,
+        p.codigo_barras,
+        i.branch_id,
+        b.branch_name AS sucursal_nombre,
+        SUM(
+            CASE
+                WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
+                WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
+                ELSE 0
+            END
+        ) AS stock
+    ";
 
-        // Siempre buscar primero en la sucursal del usuario
+        // 🔒 Buscar primero en sucursal del usuario
         $row = $db->table('productos p')
             ->select($select)
             ->join('inventario_historico i', 'i.producto_id = p.id', 'inner')
+            ->join('branches b', 'b.id = i.branch_id', 'left')
             ->where('p.codigo_barras', $codigo)
             ->where('i.branch_id', $branchId)
-            ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id')
+            ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id, b.branch_name')
             ->having('stock >', 0)
             ->get()
             ->getRowObject();
 
-        // Si no hay stock en su sucursal y tiene permiso, buscar en cualquiera
+        // 🔥 Si no hay en su sucursal y tiene permiso
         if (!$row && $puedeTodo) {
             $row = $db->table('productos p')
                 ->select($select)
                 ->join('inventario_historico i', 'i.producto_id = p.id', 'inner')
+                ->join('branches b', 'b.id = i.branch_id', 'left')
                 ->where('p.codigo_barras', $codigo)
-                ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id')
+                ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id, b.branch_name')
                 ->having('stock >', 0)
                 ->orderBy('stock', 'DESC')
                 ->limit(1)
@@ -321,11 +324,26 @@ class ProductosController extends BaseController
             $msg = $puedeTodo
                 ? 'Producto no encontrado o sin stock'
                 : 'Producto no encontrado en esta sucursal';
-            return $this->response->setJSON(['found' => false, 'msg' => $msg]);
+
+            return $this->response->setJSON([
+                'found' => false,
+                'msg'   => $msg
+            ]);
         }
 
+        // 🔥 FORMATEAR TEXTO IGUAL QUE SELECT2
+        $text = $row->nombre;
+
+        if ($puedeTodo && !empty($row->sucursal_nombre)) {
+            $text .= " - {$row->sucursal_nombre}";
+        }
+
+        // 🔥 OFERTAS LIMPIAS
         $ofertas = $db->table('producto_precios')
+            ->select('cantidad_minima, precio')
             ->where('producto_id', $row->producto_id)
+            ->where('cantidad_minima >', 0)
+            ->where('precio >', 0)
             ->orderBy('cantidad_minima', 'ASC')
             ->limit(5)
             ->get()
@@ -333,14 +351,17 @@ class ProductosController extends BaseController
 
         return $this->response->setJSON([
             'found'       => true,
-            'id'          => $puedeTodo ? ($row->producto_id . '_' . $row->branch_id) : $row->producto_id,
+            'id'          => $puedeTodo
+                ? ($row->producto_id . '_' . $row->branch_id)
+                : $row->producto_id,
+
             'producto_id' => (int)$row->producto_id,
             'branch_id'   => (int)$row->branch_id,
-            'text'        => $row->nombre,
-            'precio'      => $row->precio,
+            'text'        => $text, // 🔥 ya con sucursal
+            'precio'      => (float)$row->precio,
             'stock'       => (int)($row->stock ?? 0),
             'imagen'      => $row->imagen,
-            'ofertas'     => $ofertas,
+            'ofertas'     => $ofertas
         ]);
     }
 

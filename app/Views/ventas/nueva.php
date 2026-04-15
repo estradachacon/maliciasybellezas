@@ -4,21 +4,44 @@
 <style>
     /* Desktop: inputs minimalistas en tabla de productos */
     @media (min-width: 768px) {
+
         #productosTable input,
         #productosTable .select2-selection {
             border: none !important;
             border-bottom: 1px solid #ccc !important;
             box-shadow: none !important;
         }
-        #productosTable input:not(.precio) { background: transparent !important; }
-        #productosTable input { height: 38px !important; line-height: 38px; padding: 0 8px; }
-        #productosTable input:focus { border-bottom: 2px solid #007bff !important; }
-        .producto-row:hover { background: #f9fafb; }
+
+        #productosTable input:not(.precio) {
+            background: transparent !important;
+        }
+
+        #productosTable input {
+            height: 38px !important;
+            line-height: 38px;
+            padding: 0 8px;
+        }
+
+        #productosTable input:focus {
+            border-bottom: 2px solid #007bff !important;
+        }
+
+        .producto-row:hover {
+            background: #f9fafb;
+        }
     }
 
-    #pagosTable input { height: 38px !important; padding: 0 8px; }
+    #pagosTable input {
+        height: 38px !important;
+        padding: 0 8px;
+    }
 
-    .producto, .cantidad, .precio, .total { height: 38px !important; }
+    .producto,
+    .cantidad,
+    .precio,
+    .total {
+        height: 38px !important;
+    }
 
     .add-line-link {
         color: #007bff;
@@ -38,7 +61,11 @@
         padding-left: .75rem;
     }
 
-    .ofertas-display { line-height: 1.9; min-height: 0; }
+    .ofertas-display {
+        line-height: 1.9;
+        min-height: 0;
+    }
+
     .oferta-pill {
         font-size: 10px;
         padding: 1px 5px;
@@ -51,13 +78,38 @@
         transition: opacity .15s;
         user-select: none;
     }
-    .oferta-pill:hover { opacity: .75; }
-    .oferta-activa    { background:#e9f7ef; border-color:#198754 !important; color:#198754; font-weight:700; }
-    .oferta-alcanzable{ background:#f8f9fa; border-color:#ced4da !important; color:#495057; }
-    .oferta-pendiente { background:#f8f9fa; border-color:#dee2e6 !important; color:#adb5bd; }
 
-    #barcodeInput:focus { border-color: #198754; box-shadow: 0 0 0 .2rem rgba(25,135,84,.25); }
-    #barcodeInput.is-invalid { border-color: #dc3545 !important; }
+    .oferta-pill:hover {
+        opacity: .75;
+    }
+
+    .oferta-activa {
+        background: #e9f7ef;
+        border-color: #198754 !important;
+        color: #198754;
+        font-weight: 700;
+    }
+
+    .oferta-alcanzable {
+        background: #f8f9fa;
+        border-color: #ced4da !important;
+        color: #495057;
+    }
+
+    .oferta-pendiente {
+        background: #f8f9fa;
+        border-color: #dee2e6 !important;
+        color: #adb5bd;
+    }
+
+    #barcodeInput:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 .2rem rgba(25, 135, 84, .25);
+    }
+
+    #barcodeInput.is-invalid {
+        border-color: #dc3545 !important;
+    }
 
     /* ── PRODUCTO ROW — desktop ─────────────────────────── */
     .producto-row {
@@ -67,6 +119,7 @@
         padding: 6px 0;
         border-bottom: 1px solid #f0f0f0;
     }
+
     .producto-row .i {
         min-width: 22px;
         padding-top: 9px;
@@ -74,18 +127,42 @@
         color: #6c757d;
         flex-shrink: 0;
     }
-    .producto-row .pr-select { flex: 1; min-width: 0; }
-    .producto-row .pr-select .select2-container { width: 100% !important; }
+
+    .producto-row .pr-select {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .producto-row .pr-select .select2-container {
+        width: 100% !important;
+    }
+
     .producto-row .pr-subfields {
         display: flex;
         gap: 6px;
         align-items: flex-start;
         flex-shrink: 0;
     }
-    .producto-row .pr-subfields > div:first-child  { width: 70px;  flex-shrink:0; }
-    .producto-row .pr-precio-wrap                  { width: 110px; flex-shrink:0; }
-    .producto-row .pr-subfields > div:last-child   { width: 85px;  flex-shrink:0; }
-    .producto-row .del { flex-shrink: 0; margin-top: 2px; }
+
+    .producto-row .pr-subfields>div:first-child {
+        width: 70px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-precio-wrap {
+        width: 110px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-subfields>div:last-child {
+        width: 85px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .del {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
 
     /* ── PRODUCTO ROW — mobile ──────────────────────────── */
     @media (max-width: 767px) {
@@ -99,39 +176,83 @@
             border-bottom: 1px solid #dee2e6 !important;
             position: relative;
         }
-        .producto-row .i { display: none; }
+
+        .producto-row .i {
+            display: none;
+        }
 
         /* Producto ocupa todo menos botón eliminar */
-        .producto-row .pr-select { width: calc(100% - 44px); flex: none; }
-        .producto-row .pr-select .select2-container { width: 100% !important; }
+        .producto-row .pr-select {
+            width: calc(100% - 44px);
+            flex: none;
+        }
+
+        .producto-row .pr-select .select2-container {
+            width: 100% !important;
+        }
 
         /* Campos debajo del producto, en fila */
         .producto-row .pr-subfields {
             width: 100%;
             margin-top: 8px;
         }
-        .producto-row .pr-subfields > div:first-child { flex: 1;   width: auto !important; min-width: 0; }
-        .producto-row .pr-precio-wrap                { flex: 2;   width: auto !important; min-width: 0; }
-        .producto-row .pr-subfields > div:last-child { flex: 1.5; width: auto !important; min-width: 0; }
+
+        .producto-row .pr-subfields>div:first-child {
+            flex: 1;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        .producto-row .pr-precio-wrap {
+            flex: 2;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        .producto-row .pr-subfields>div:last-child {
+            flex: 1.5;
+            width: auto !important;
+            min-width: 0;
+        }
 
         /* Botón eliminar: esquina superior derecha */
-        .producto-row .del { position: absolute; top: 8px; right: 8px; margin-top: 0; }
+        .producto-row .del {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            margin-top: 0;
+        }
 
         /* Ofertas ocupa fila completa */
-        .producto-row .ofertas-display { width: 100%; }
+        .producto-row .ofertas-display {
+            width: 100%;
+        }
 
         /* Inputs táctiles */
         .producto-row input.form-control,
-        .producto-row .select2-selection { min-height: 40px !important; }
+        .producto-row .select2-selection {
+            min-height: 40px !important;
+        }
 
         /* Total venta más visible */
-        #totalVenta { font-size: 36px !important; }
+        #totalVenta {
+            font-size: 36px !important;
+        }
 
         /* Botón guardar full width */
-        #ventaForm .btn-success { width: 100%; padding: .6rem; font-size: 1.1rem; }
+        #ventaForm .btn-success {
+            width: 100%;
+            padding: .6rem;
+            font-size: 1.1rem;
+        }
 
         /* Agregar producto centrado */
-        .add-line-link { font-size: 1rem; display: block; text-align: center; padding: 10px 0; }
+        .add-line-link {
+            font-size: 1rem;
+            display: block;
+            text-align: center;
+            padding: 10px 0;
+        }
     }
 </style>
 
@@ -430,9 +551,9 @@
                 inputPrecio.placeholder = 'Precio: $' + (data.precio || 0);
 
                 row.dataset.precioSugerido = data.precio || 0;
-                row.dataset.stock          = data.stock || 0;
-                row.dataset.branch         = data.branch_id || null;
-                row.dataset.productoId     = data.producto_id || data.id;
+                row.dataset.stock = data.stock || 0;
+                row.dataset.branch = data.branch_id || null;
+                row.dataset.productoId = data.producto_id || data.id;
 
                 aplicarColorPrecio(row);
                 fetchOfertas(row, parseInt(data.producto_id || data.id));
@@ -480,7 +601,12 @@
                 calcTotal();
             }
 
-            function aplicarColorPrecio(row) {
+            // Si viene con datos pre-cargados (barcode), rellenar el row
+            if (preData) fillRow(row, preData);
+
+            return row;
+        }
+function aplicarColorPrecio(row) {
 
                 let input = row.querySelector('.precio');
 
@@ -519,13 +645,6 @@
                     input.style.fontWeight = 'bold';
                 }
             }
-
-            // Si viene con datos pre-cargados (barcode), rellenar el row
-            if (preData) fillRow(row, preData);
-
-            return row;
-        }
-
         function index() {
             document.querySelectorAll('#productosTable .producto-row').forEach((r, i) => {
                 r.querySelector('.i').innerText = i + 1;
@@ -569,47 +688,78 @@
             let ofertas = normalizarOfertas(data.ofertas);
 
             select.empty();
-            let option = new Option(data.text, optionValue, true, true);
+            let optionData = {
+                id: optionValue,
+                text: data.text,
+                precio: data.precio,
+                stock: data.stock,
+                imagen: data.imagen
+            };
+
+            let option = new Option(optionData.text, optionData.id, true, true);
+            $(option).data('data', optionData);
+
             select.append(option).trigger('change');
 
             let inputPrecio = row.querySelector('.precio');
-            inputPrecio.value          = parseFloat(data.precio || 0).toFixed(2);
-            inputPrecio.placeholder    = 'Precio: $' + (data.precio || 0);
+            inputPrecio.value = parseFloat(data.precio || 0).toFixed(2);
+            inputPrecio.placeholder = 'Precio: $' + (data.precio || 0);
             row.dataset.precioSugerido = data.precio || 0;
-            row.dataset.stock          = data.stock  || 0;
-            row.dataset.branch         = data.branch_id || null;
-            row.dataset.productoId     = productoId;
+            row.dataset.stock = data.stock || 0;
+            row.dataset.branch = data.branch_id || null;
+            row.dataset.productoId = productoId;
 
             row.querySelector('.cantidad').value = cantidad;
-            row.querySelector('.total').value    = parseFloat(data.precio || 0).toFixed(2);
+            row.querySelector('.total').value = parseFloat(data.precio || 0).toFixed(2);
             calcTotal();
             aplicarColorPrecio(row);
 
             row.dataset.ofertas = JSON.stringify(ofertas);
-            showOfertas(row, ofertas, cantidad);
+            //showOfertas(row, ofertas, cantidad);
 
-            // Fuerza sincronización desde servidor para los casos de escáner/cámara.
+            // 🔥 APLICAR PRECIO AUTOMÁTICO
+            //applyMejorOferta(row, cantidad);
+
+            // Fuerza sincronización desde servidor
             fetchOfertas(row, productoId);
         }
 
         // ── Obtener ofertas del servidor ─────────────────────────────
         function fetchOfertas(row, productoId) {
+
             if (!productoId) return;
+
             fetch(`<?= base_url('productos/ofertasPorProducto') ?>?producto_id=${productoId}`)
                 .then(r => r.json())
                 .then(ofertas => {
-                    ofertas = normalizarOfertas(ofertas);
-                    row.dataset.ofertas = JSON.stringify(ofertas);
+
+                    // 🔥 LOG 1 - lo que viene del backend
+                    console.log('OFERTAS RAW:', ofertas);
+
+                    let normalizadas = normalizarOfertas(ofertas);
+
+                    // 🔥 LOG 2 - después del filtro
+                    console.log('OFERTAS NORMALIZADAS:', normalizadas);
+
+                    row.dataset.ofertas = JSON.stringify(normalizadas);
+
                     let cantidad = parseFloat(row.querySelector('.cantidad').value) || 1;
-                    showOfertas(row, ofertas, cantidad);
+
+                    showOfertas(row, normalizadas, cantidad);
+
+                    applyMejorOferta(row, cantidad);
                 });
         }
 
         // ── Renderizar pills de ofertas ──────────────────────────────
         function showOfertas(row, ofertas, cantidad) {
+            console.log('SHOW OFERTAS:', ofertas);
             let div = row.querySelector('.ofertas-display');
             ofertas = normalizarOfertas(ofertas);
-            if (!ofertas || ofertas.length === 0) { div.innerHTML = ''; return; }
+            if (!ofertas || ofertas.length === 0) {
+                div.innerHTML = '';
+                return;
+            }
 
             // Mejor oferta aplicable = mayor cantidad_minima ≤ cantidad actual
             let mejorMin = 0;
@@ -619,9 +769,9 @@
             });
 
             div.innerHTML = ofertas.map(o => {
-                let cls = cantidad >= o.cantidad_minima
-                    ? (o.cantidad_minima === mejorMin ? 'oferta-activa' : 'oferta-alcanzable')
-                    : 'oferta-pendiente';
+                let cls = cantidad >= o.cantidad_minima ?
+                    (o.cantidad_minima === mejorMin ? 'oferta-activa' : 'oferta-alcanzable') :
+                    'oferta-pendiente';
                 return `<span class="oferta-pill ${cls}"
                     data-precio="${o.precio}" data-min="${o.cantidad_minima}">
                     ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
@@ -690,10 +840,14 @@
 
                     if (existingRow) {
                         let cantInput = existingRow.querySelector('.cantidad');
-                        let newCant   = (parseFloat(cantInput.value) || 0) + 1;
-                        let stock     = parseFloat(existingRow.dataset.stock) || 0;
+                        let newCant = (parseFloat(cantInput.value) || 0) + 1;
+                        let stock = parseFloat(existingRow.dataset.stock) || 0;
                         if (newCant > stock) {
-                            Swal.fire({ icon: 'warning', title: 'Stock insuficiente', text: `Solo hay ${stock} unidades` });
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Stock insuficiente',
+                                text: `Solo hay ${stock} unidades`
+                            });
                             return;
                         }
                         cantInput.value = newCant;
@@ -736,9 +890,15 @@
                 html5QrCode = new Html5Qrcode('camaraReader');
             }
 
-            html5QrCode.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 260, height: 100 } },
+            html5QrCode.start({
+                    facingMode: 'environment'
+                }, {
+                    fps: 10,
+                    qrbox: {
+                        width: 260,
+                        height: 100
+                    }
+                },
                 (codigoLeido) => {
                     html5QrCode.stop().then(() => {
                         container.style.display = 'none';
