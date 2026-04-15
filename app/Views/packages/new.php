@@ -18,11 +18,18 @@ $logoUrl = setting('logo')
         /* centra texto */
         padding-left: .75rem;
     }
-@media (max-width: 768px) {
-    .producto-info {
-        padding-right: 10px; /* o 0 */
+
+    @media (max-width: 768px) {
+        .producto-info {
+            padding-right: 10px;
+            /* o 0 */
+        }
+
+        #listaProductos .producto-nombre {
+            text-indent: 0;
+        }
     }
-}
+
     #overlayPreview {
         position: fixed;
         top: 0;
@@ -59,35 +66,37 @@ $logoUrl = setting('logo')
     * {
         box-sizing: border-box;
     }
-.grid-valores {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-}
 
-.grid-valores .item {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 6px;
-    text-align: center;
-    border: 1px solid #eee;
-}
+    .grid-valores {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
 
-.grid-valores .item small {
-    display: block;
-    font-size: 11px;
-    color: #6c757d;
-}
+    .grid-valores .item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 6px;
+        text-align: center;
+        border: 1px solid #eee;
+    }
 
-.grid-valores .item span {
-    font-weight: bold;
-    font-size: 14px;
-}
+    .grid-valores .item small {
+        display: block;
+        font-size: 11px;
+        color: #6c757d;
+    }
 
-.grid-valores .item.total {
-    background: #e9f7ef;
-    border-color: #c3e6cb;
-}
+    .grid-valores .item span {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .grid-valores .item.total {
+        background: #e9f7ef;
+        border-color: #c3e6cb;
+    }
+
     #previewCard {
         transform: scale(1.5);
     }
@@ -339,9 +348,11 @@ $logoUrl = setting('logo')
 
         .producto-info {
             padding-right: 45px;
-            min-width: 0; /* 🔥 ESTA ES LA MAGIA */
+            min-width: 0;
+            /* 🔥 ESTA ES LA MAGIA */
             /* espacio para botón */
         }
+
         #listaProductos .producto-nombre {
             text-indent: 25px;
         }
@@ -395,10 +406,13 @@ $logoUrl = setting('logo')
         padding: 3px 8px;
         /* 🔥 más compacto */
     }
+
     #listaProductos .card {
         position: relative;
-        overflow: visible; /* 🔥 importante para que la imagen se salga */
+        overflow: visible;
+        /* 🔥 importante para que la imagen se salga */
     }
+
     #listaProductos .row {
         margin-top: 4px !important;
     }
@@ -455,20 +469,21 @@ $logoUrl = setting('logo')
         background-color: #0d6efd !important;
     }
 
-.img-producto-mini {
-    position: absolute;
-    left: -50px; /* 🔥 se sale hacia la izquierda */
-    top: 50%;
-    transform: translateY(-50%);
-    
-    width: 55px;
-    height: 55px;
-    
-    object-fit: cover;
-    border-radius: 8px;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
+    .img-producto-mini {
+        position: absolute;
+        left: -50px;
+        /* 🔥 se sale hacia la izquierda */
+        top: 50%;
+        transform: translateY(-50%);
+
+        width: 55px;
+        height: 55px;
+
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
 
     .img-producto-mini:hover {
         transform: scale(1.05);
@@ -476,18 +491,55 @@ $logoUrl = setting('logo')
     }
 
     /* ── OFERTAS DE PRECIO ──────────────────────────── */
-    .ofertas-display { min-height:0; line-height:1.9; }
-    .oferta-pill {
-        font-size:10px; padding:1px 5px; border-radius:3px; border:1px solid;
-        cursor:pointer; display:inline-block; margin:1px 2px 0 0;
-        white-space:nowrap; transition:opacity .15s; user-select:none;
+    .ofertas-display {
+        min-height: 0;
+        line-height: 1.9;
     }
-    .oferta-pill:hover { opacity:.75; }
-    .oferta-activa     { background:#e9f7ef; border-color:#198754 !important; color:#198754; font-weight:700; }
-    .oferta-alcanzable { background:#f8f9fa; border-color:#ced4da !important; color:#495057; }
-    .oferta-pendiente  { background:#f8f9fa; border-color:#dee2e6 !important; color:#adb5bd; }
-    #barcodeInput:focus { border-color:#198754; box-shadow:0 0 0 .2rem rgba(25,135,84,.25); }
-    #barcodeInput.is-invalid { border-color:#dc3545 !important; }
+
+    .oferta-pill {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        border: 1px solid;
+        cursor: pointer;
+        display: inline-block;
+        margin: 1px 2px 0 0;
+        white-space: nowrap;
+        transition: opacity .15s;
+        user-select: none;
+    }
+
+    .oferta-pill:hover {
+        opacity: .75;
+    }
+
+    .oferta-activa {
+        background: #e9f7ef;
+        border-color: #198754 !important;
+        color: #198754;
+        font-weight: 700;
+    }
+
+    .oferta-alcanzable {
+        background: #f8f9fa;
+        border-color: #ced4da !important;
+        color: #495057;
+    }
+
+    .oferta-pendiente {
+        background: #f8f9fa;
+        border-color: #dee2e6 !important;
+        color: #adb5bd;
+    }
+
+    #barcodeInput:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 .2rem rgba(25, 135, 84, .25);
+    }
+
+    #barcodeInput.is-invalid {
+        border-color: #dc3545 !important;
+    }
 </style>
 
 <div class="row">
@@ -546,7 +598,7 @@ $logoUrl = setting('logo')
 
                                 <div class="card-body">
 
-                                        <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
+                                    <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
                                     <div class="row g-2 mb-2">
                                         <div class="col-md-8">
                                             <div class="input-group">
@@ -1454,7 +1506,7 @@ $logoUrl = setting('logo')
                     ofertasHtml = p.ofertas.map(o => {
                         let cls = 'oferta-pendiente';
                         if (Math.abs(o.precio - p.precio) < 0.01) cls = 'oferta-activa';
-                        else if (p.cantidad >= o.cantidad_minima)  cls = 'oferta-alcanzable';
+                        else if (p.cantidad >= o.cantidad_minima) cls = 'oferta-alcanzable';
                         return `<span class="oferta-pill ${cls}"
                             data-index="${i}" data-precio="${o.precio}" data-min="${o.cantidad_minima}">
                             ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
@@ -1568,12 +1620,12 @@ $logoUrl = setting('logo')
 
             // Actualizar colores de badges según cantidad y precio actuales
             document.querySelectorAll(`.oferta-pill[data-index="${i}"]`).forEach(function(pill) {
-                let min       = parseInt(pill.dataset.min);
+                let min = parseInt(pill.dataset.min);
                 let pillPrecio = parseFloat(pill.dataset.precio);
                 pill.className = 'oferta-pill';
                 if (Math.abs(pillPrecio - p.precio) < 0.01) pill.className += ' oferta-activa';
-                else if (p.cantidad >= min)                  pill.className += ' oferta-alcanzable';
-                else                                         pill.className += ' oferta-pendiente';
+                else if (p.cantidad >= min) pill.className += ' oferta-alcanzable';
+                else pill.className += ' oferta-pendiente';
             });
 
             calcularTotalProductos();
@@ -1597,11 +1649,11 @@ $logoUrl = setting('logo')
             // 🔥 PRODUCTOS CON SUBTOTAL
             let productosDetalle = productos.map(p => ({
                 producto_id: p.producto_id,
-                branch_id:   p.branch_id,
-                nombre:      p.nombre,
-                cantidad:    p.cantidad,
-                precio:      p.precio,
-                subtotal:    p.cantidad * p.precio
+                branch_id: p.branch_id,
+                nombre: p.nombre,
+                cantidad: p.cantidad,
+                precio: p.precio,
+                subtotal: p.cantidad * p.precio
             }));
 
             return {
@@ -1844,10 +1896,14 @@ $logoUrl = setting('logo')
                 dataType: 'json',
                 delay: 250,
                 data: function(params) {
-                    return { term: params.term };
+                    return {
+                        term: params.term
+                    };
                 },
                 processResults: function(data) {
-                    return { results: data };
+                    return {
+                        results: data
+                    };
                 }
             }
         });
@@ -1856,10 +1912,10 @@ $logoUrl = setting('logo')
             let data = e.params.data;
             productoActual = {
                 producto_id: data.producto_id || data.id,
-                branch_id:   data.branch_id,
-                stock:       data.stock || 0,
-                imagen:      data.imagen || null,
-                precio:      data.precio || 0
+                branch_id: data.branch_id,
+                stock: data.stock || 0,
+                imagen: data.imagen || null,
+                precio: data.precio || 0
             };
             $('#precio').val(parseFloat(data.precio || 0).toFixed(2));
             fetchOfertas(parseInt(data.producto_id || data.id));
@@ -1902,7 +1958,10 @@ $logoUrl = setting('logo')
             let div = document.getElementById('ofertasDisplay');
             if (!div) return;
             ofertas = normalizarOfertas(ofertas);
-            if (!ofertas.length) { div.innerHTML = ''; return; }
+            if (!ofertas.length) {
+                div.innerHTML = '';
+                return;
+            }
 
             let precioActual = limpiarNumero($('#precio').val());
             let ofertaActiva = null;
@@ -1981,13 +2040,13 @@ $logoUrl = setting('logo')
                     // Agregar nuevo
                     productos.push({
                         producto_id: data.producto_id,
-                        branch_id:   data.branch_id,
-                        nombre:      data.text,
-                        cantidad:    1,
-                        precio:      parseFloat(data.precio || 0),
-                        imagen:      data.imagen || null,
-                        stock:       data.stock || 0,
-                        ofertas:     normalizarOfertas(data.ofertas || [])
+                        branch_id: data.branch_id,
+                        nombre: data.text,
+                        cantidad: 1,
+                        precio: parseFloat(data.precio || 0),
+                        imagen: data.imagen || null,
+                        stock: data.stock || 0,
+                        ofertas: normalizarOfertas(data.ofertas || [])
                     });
                     renderTabla();
                     calcularTotalProductos();
@@ -2014,9 +2073,15 @@ $logoUrl = setting('logo')
                 html5QrCodeBarcode = new Html5Qrcode('camaraReader');
             }
 
-            html5QrCodeBarcode.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 260, height: 100 } },
+            html5QrCodeBarcode.start({
+                    facingMode: 'environment'
+                }, {
+                    fps: 10,
+                    qrbox: {
+                        width: 260,
+                        height: 100
+                    }
+                },
                 (codigoLeido) => {
                     html5QrCodeBarcode.stop().then(() => {
                         container.style.display = 'none';
@@ -2122,8 +2187,8 @@ $logoUrl = setting('logo')
             let cantidad = parseFloat($('#cantidad').val());
             let precio = limpiarNumero($('#precio').val());
 
-            let stock      = productoActual.stock || 0;
-            let branch_id  = productoActual.branch_id;
+            let stock = productoActual.stock || 0;
+            let branch_id = productoActual.branch_id;
             let producto_id_real = productoActual.producto_id;
 
             if (!productoSelect || !producto_id_real) {
@@ -2157,13 +2222,13 @@ $logoUrl = setting('logo')
 
             let producto = {
                 producto_id: producto_id_real,
-                branch_id:   branch_id,
-                nombre:      productoSelect.text,
-                cantidad:    cantidad,
-                precio:      precio,
-                imagen:      productoActual.imagen || null,
-                stock:       stock,
-                ofertas:     normalizarOfertas(ofertasActuales)
+                branch_id: branch_id,
+                nombre: productoSelect.text,
+                cantidad: cantidad,
+                precio: precio,
+                imagen: productoActual.imagen || null,
+                stock: stock,
+                ofertas: normalizarOfertas(ofertasActuales)
             };
 
             // 🔥 BUSCAR EXISTENTE (IMPORTANTE: producto + sucursal)
