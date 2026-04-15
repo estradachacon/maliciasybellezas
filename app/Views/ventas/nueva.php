@@ -351,7 +351,7 @@
         <div class="card">
 
             <!-- HEADER -->
-            <div class="card-header d-flex align-items-center">
+            <div class="card-header d-flex">
                 <h5 class="mb-0">
                     <i class="fa fa-cash-register"></i> Nueva Venta Local
                 </h5>
@@ -1245,7 +1245,7 @@
 
             let pagos = [];
 
-            document.querySelectorAll('#pagosTable tbody tr').forEach(row => {
+            document.querySelectorAll('#pagosTable .pago-row').forEach(row => {
 
                 let cuenta = $(row).find('.cuenta').val();
                 let monto = parseFloat(row.querySelector('.monto').value) || 0;
