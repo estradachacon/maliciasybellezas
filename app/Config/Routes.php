@@ -231,6 +231,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->get('productos/searchAjaxSelect', 'ProductosController::searchAjaxSelect');
     $routes->get('productos/searchAjaxSelectCompras', 'ProductosController::searchAjaxSelectCompras');
     $routes->get('productos/searchAjaxSelectStock', 'ProductosController::searchAjaxSelectStock');
+    $routes->get('productos/buscarPorCodigo',       'ProductosController::buscarPorCodigo');
+    $routes->get('productos/ofertasPorProducto',    'ProductosController::ofertasPorProducto');
     $routes->post('productos/storeAjax', 'ProductosController::storeAjax');
 
     // Módulo de mantenimiento de proveedores

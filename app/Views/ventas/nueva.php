@@ -57,6 +57,27 @@
         /* centra texto */
         padding-left: .75rem;
     }
+
+    .ofertas-display { line-height: 1.9; min-height: 0; }
+    .oferta-pill {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        border: 1px solid;
+        cursor: pointer;
+        display: inline-block;
+        margin: 1px 2px 0 0;
+        white-space: nowrap;
+        transition: opacity .15s;
+        user-select: none;
+    }
+    .oferta-pill:hover { opacity: .75; }
+    .oferta-activa    { background:#e9f7ef; border-color:#198754 !important; color:#198754; font-weight:700; }
+    .oferta-alcanzable{ background:#f8f9fa; border-color:#ced4da !important; color:#495057; }
+    .oferta-pendiente { background:#f8f9fa; border-color:#dee2e6 !important; color:#adb5bd; }
+
+    #barcodeInput:focus { border-color: #198754; box-shadow: 0 0 0 .2rem rgba(25,135,84,.25); }
+    #barcodeInput.is-invalid { border-color: #dc3545 !important; }
 </style>
 
 <div class="row">
@@ -96,6 +117,21 @@
                             <label>Agencia</label>
                             <input type="text" class="form-control"
                                 value="<?= session('branch_name') ?>" readonly>
+                        </div>
+                    </div>
+
+                    <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
+                    <div class="row mb-2">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white">
+                                        <i class="fa fa-barcode"></i>
+                                    </span>
+                                </div>
+                                <input type="text" id="barcodeInput" class="form-control"
+                                    placeholder="Escanear código de barras..." autocomplete="off">
+                            </div>
                         </div>
                     </div>
 
@@ -260,7 +296,7 @@
             }
         }
 
-        function addRow() {
+        function addRow(preData = null) {
 
             let row = document.createElement('tr');
 
@@ -269,7 +305,8 @@
                 <td><select class="producto"></select></td>
                 <td><input type="number" class="cantidad" min="1"></td>
                 <td>
-                    <input type="number" class="precio" step="0.01" min="0" placeholder="Sugerido">
+                    <input type="number" class="precio" step="0.01" min="0" placeholder="Precio">
+                    <div class="ofertas-display"></div>
                 </td>
                 <td><input type="text" class="total" readonly></td>
                 <td><button class="btn btn-danger btn-sm del">X</button></td>
@@ -312,20 +349,23 @@
 
                 let inputPrecio = row.querySelector('.precio');
 
-                inputPrecio.value = data.precio || 0;
-                inputPrecio.placeholder = 'Sugerido: $' + (data.precio || 0);
+                inputPrecio.value = parseFloat(data.precio || 0).toFixed(2);
+                inputPrecio.placeholder = 'Precio: $' + (data.precio || 0);
 
                 row.dataset.precioSugerido = data.precio || 0;
-                row.dataset.stock = data.stock || 0;
-                row.dataset.branch = data.branch_id || null;
+                row.dataset.stock          = data.stock || 0;
+                row.dataset.branch         = data.branch_id || null;
+                row.dataset.productoId     = data.producto_id || data.id;
 
                 aplicarColorPrecio(row);
+                fetchOfertas(row, parseInt(data.producto_id || data.id));
             });
 
             // eventos
-            row.querySelector('.cantidad').oninput = calc;
-            row.querySelector('.precio').oninput = calc;
-
+            row.querySelector('.cantidad').addEventListener('input', function() {
+                applyMejorOferta(row, parseFloat(this.value) || 0);
+                calc();
+            });
             row.querySelector('.precio').addEventListener('input', function() {
                 aplicarColorPrecio(row);
                 calc();
@@ -402,6 +442,11 @@
                     input.style.fontWeight = 'bold';
                 }
             }
+
+            // Si viene con datos pre-cargados (barcode), rellenar el row
+            if (preData) fillRow(row, preData);
+
+            return row;
         }
 
         function index() {
@@ -420,10 +465,145 @@
             actualizarResumen();
         }
 
+        // ── Rellenar un row con datos pre-cargados (barcode / addRow) ──
+        function fillRow(row, data) {
+            let select = $(row).find('.producto');
+            let option = new Option(data.text, data.id, true, true);
+            select.append(option).trigger('change');
+
+            let inputPrecio = row.querySelector('.precio');
+            inputPrecio.value          = parseFloat(data.precio || 0).toFixed(2);
+            inputPrecio.placeholder    = 'Precio: $' + (data.precio || 0);
+            row.dataset.precioSugerido = data.precio || 0;
+            row.dataset.stock          = data.stock  || 0;
+            row.dataset.branch         = data.branch_id || null;
+            row.dataset.productoId     = data.producto_id;
+
+            row.querySelector('.cantidad').value = 1;
+            row.querySelector('.total').value    = parseFloat(data.precio || 0).toFixed(2);
+            calcTotal();
+            aplicarColorPrecio(row);
+
+            if (data.ofertas && data.ofertas.length > 0) {
+                row.dataset.ofertas = JSON.stringify(data.ofertas);
+                showOfertas(row, data.ofertas, 1);
+            } else {
+                fetchOfertas(row, data.producto_id);
+            }
+        }
+
+        // ── Obtener ofertas del servidor ─────────────────────────────
+        function fetchOfertas(row, productoId) {
+            if (!productoId) return;
+            fetch(`<?= base_url('productos/ofertasPorProducto') ?>?producto_id=${productoId}`)
+                .then(r => r.json())
+                .then(ofertas => {
+                    row.dataset.ofertas = JSON.stringify(ofertas);
+                    let cantidad = parseFloat(row.querySelector('.cantidad').value) || 1;
+                    showOfertas(row, ofertas, cantidad);
+                });
+        }
+
+        // ── Renderizar pills de ofertas ──────────────────────────────
+        function showOfertas(row, ofertas, cantidad) {
+            let div = row.querySelector('.ofertas-display');
+            if (!ofertas || ofertas.length === 0) { div.innerHTML = ''; return; }
+
+            // Mejor oferta aplicable = mayor cantidad_minima ≤ cantidad actual
+            let mejorMin = 0;
+            ofertas.forEach(o => {
+                if (cantidad >= o.cantidad_minima && o.cantidad_minima > mejorMin)
+                    mejorMin = o.cantidad_minima;
+            });
+
+            div.innerHTML = ofertas.map(o => {
+                let cls = cantidad >= o.cantidad_minima
+                    ? (o.cantidad_minima === mejorMin ? 'oferta-activa' : 'oferta-alcanzable')
+                    : 'oferta-pendiente';
+                return `<span class="oferta-pill ${cls}"
+                    data-precio="${o.precio}" data-min="${o.cantidad_minima}">
+                    ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
+                </span>`;
+            }).join('');
+
+            div.querySelectorAll('.oferta-pill').forEach(pill => {
+                pill.addEventListener('click', function() {
+                    let inputPrecio = row.querySelector('.precio');
+                    inputPrecio.value = parseFloat(this.dataset.precio).toFixed(2);
+                    inputPrecio.dispatchEvent(new Event('input')); // dispara calc + colorPrecio
+                });
+            });
+        }
+
+        // ── Auto-aplicar la mejor oferta según cantidad ──────────────
+        function applyMejorOferta(row, cantidad) {
+            let ofertas = JSON.parse(row.dataset.ofertas || '[]');
+            if (!ofertas.length) return;
+
+            let mejor = null;
+            ofertas.forEach(o => {
+                if (cantidad >= o.cantidad_minima)
+                    if (!mejor || o.cantidad_minima > mejor.cantidad_minima) mejor = o;
+            });
+
+            let inputPrecio = row.querySelector('.precio');
+            if (mejor) {
+                inputPrecio.value = parseFloat(mejor.precio).toFixed(2);
+            } else {
+                inputPrecio.value = parseFloat(row.dataset.precioSugerido || 0).toFixed(2);
+            }
+            aplicarColorPrecio(row);
+            showOfertas(row, ofertas, cantidad);
+        }
+
         document.getElementById('addRowBtn').onclick = e => {
             e.preventDefault();
             addRow();
         };
+
+        // ── Escáner de código de barras ──────────────────────────────
+        document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+
+            let codigo = this.value.trim();
+            if (!codigo) return;
+            this.value = '';
+
+            fetch(`<?= base_url('productos/buscarPorCodigo') ?>?codigo=${encodeURIComponent(codigo)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.found) {
+                        this.classList.add('is-invalid');
+                        this.placeholder = `No encontrado: ${codigo}`;
+                        setTimeout(() => {
+                            this.classList.remove('is-invalid');
+                            this.placeholder = 'Escanear código de barras...';
+                        }, 2000);
+                        return;
+                    }
+
+                    // ¿Ya está en la tabla?
+                    let existingRow = null;
+                    document.querySelectorAll('#productosTable tbody tr').forEach(r => {
+                        if (r.dataset.productoId == data.producto_id) existingRow = r;
+                    });
+
+                    if (existingRow) {
+                        let cantInput = existingRow.querySelector('.cantidad');
+                        let newCant   = (parseFloat(cantInput.value) || 0) + 1;
+                        let stock     = parseFloat(existingRow.dataset.stock) || 0;
+                        if (newCant > stock) {
+                            Swal.fire({ icon: 'warning', title: 'Stock insuficiente', text: `Solo hay ${stock} unidades` });
+                            return;
+                        }
+                        cantInput.value = newCant;
+                        cantInput.dispatchEvent(new Event('input'));
+                    } else {
+                        addRow(data);
+                    }
+                });
+        });
 
         addRow();
 

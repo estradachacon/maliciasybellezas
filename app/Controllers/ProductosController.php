@@ -262,4 +262,83 @@ class ProductosController extends BaseController
             ]
         ]);
     }
+
+    // ── BUSCAR POR CÓDIGO DE BARRAS (para escáner en venta) ──────
+    public function buscarPorCodigo()
+    {
+        $codigo   = $this->request->getGet('codigo');
+        $branchId = (int)session('branch_id');
+
+        if (!$codigo) {
+            return $this->response->setJSON(['found' => false]);
+        }
+
+        $db  = \Config\Database::connect();
+
+        $row = $db->table('productos p')
+            ->select("
+                p.id          AS producto_id,
+                p.nombre,
+                p.precio,
+                p.imagen,
+                p.codigo_barras,
+                i.branch_id,
+                SUM(
+                    CASE
+                        WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
+                        WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
+                        ELSE 0
+                    END
+                ) AS stock
+            ")
+            ->join('inventario_historico i', 'i.producto_id = p.id AND i.branch_id = ' . $branchId, 'left')
+            ->where('p.codigo_barras', $codigo)
+            ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id')
+            ->get()
+            ->getRowObject();
+
+        if (!$row) {
+            return $this->response->setJSON(['found' => false]);
+        }
+
+        $ofertas = $db->table('producto_precios')
+            ->where('producto_id', $row->producto_id)
+            ->orderBy('cantidad_minima', 'ASC')
+            ->limit(5)
+            ->get()
+            ->getResultObject();
+
+        return $this->response->setJSON([
+            'found'       => true,
+            'id'          => $row->producto_id,
+            'producto_id' => (int)$row->producto_id,
+            'branch_id'   => $branchId,
+            'text'        => $row->nombre,
+            'precio'      => $row->precio,
+            'stock'       => (int)($row->stock ?? 0),
+            'imagen'      => $row->imagen,
+            'ofertas'     => $ofertas,
+        ]);
+    }
+
+    // ── OFERTAS DE PRECIOS POR PRODUCTO ──────────────────────────
+    public function ofertasPorProducto()
+    {
+        $productoId = (int)$this->request->getGet('producto_id');
+
+        if (!$productoId) {
+            return $this->response->setJSON([]);
+        }
+
+        $db = \Config\Database::connect();
+
+        $ofertas = $db->table('producto_precios')
+            ->where('producto_id', $productoId)
+            ->orderBy('cantidad_minima', 'ASC')
+            ->limit(5)
+            ->get()
+            ->getResultObject();
+
+        return $this->response->setJSON($ofertas);
+    }
 }
