@@ -112,12 +112,10 @@
             flex-wrap: wrap;
             align-items: flex-start;
             gap: 8px;
-
-            border-radius: 10px;
             padding: 10px;
         }
 
-        /* inputs ocupan mejor el espacio */
+        /* inputs */
         .precio-row .pv-field {
             flex: 1;
             min-width: 0;
@@ -125,10 +123,11 @@
 
         .precio-row .pv-input {
             width: 100%;
-            /* 🔥 clave */
+            min-height: 40px;
+            font-size: 15px;
         }
 
-        /* flecha en nueva línea */
+        /* flecha centrada */
         .precio-row .pv-arrow {
             width: 100%;
             text-align: center;
@@ -136,25 +135,31 @@
             font-size: 12px;
         }
 
-        /* badge abajo full width */
+        /* 🔥 CONTENEDOR INFERIOR EN UNA SOLA LÍNEA */
         .precio-row .pv-badge {
             width: 100%;
-            margin-top: 4px;
-            font-size: 11px;
+            margin-top: 6px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+
+            font-size: 12px;
         }
 
-        /* botones arriba derecha */
+        /* texto del badge */
+        .precio-row .pv-badge span {
+            white-space: nowrap;
+        }
+
+        /* 🔥 BOTONES YA NO FLOAT */
         .precio-row .pv-actions {
-            position: absolute;
-            top: 8px;
-            right: 8px;
+            position: static;
+            /* 🔥 clave */
             margin: 0;
-        }
-
-        /* inputs más táctiles */
-        .precio-row .pv-input {
-            min-height: 40px;
-            font-size: 15px;
+            display: flex;
+            gap: 6px;
         }
     }
 
