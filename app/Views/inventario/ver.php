@@ -107,12 +107,6 @@
     }
 
     @media (max-width: 767px) {
-        .precio-row .pv-arrow {
-            display: none;
-        }
-    }
-
-    @media (max-width: 767px) {
 
         .precio-row {
             flex-wrap: wrap;
@@ -684,7 +678,7 @@
                     </div>
 
                     <!-- 🟩 DERECHA (IMAGEN FULL ALTURA) -->
-                    <div class="col-md-4">
+                    <div class="col-md-4 mt-4">
 
                         <!-- 🖼️ IMAGEN -->
                         <div class="mb-3 text-center border rounded p-2">
