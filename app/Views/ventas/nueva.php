@@ -131,6 +131,19 @@
                                 </div>
                                 <input type="text" id="barcodeInput" class="form-control"
                                     placeholder="Escanear código de barras..." autocomplete="off">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" id="btnCamara" title="Usar cámara">
+                                        <i class="fa fa-camera"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Visor de cámara -->
+                            <div id="camaraContainer" style="display:none; margin-top:8px;">
+                                <div id="camaraReader" style="width:100%; border-radius:8px; overflow:hidden;"></div>
+                                <button type="button" class="btn btn-sm btn-danger mt-1" id="btnCerrarCamara">
+                                    <i class="fa fa-times"></i> Cerrar cámara
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -561,24 +574,21 @@
             addRow();
         };
 
-        // ── Escáner de código de barras ──────────────────────────────
-        document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
+        // ── Lógica de búsqueda por código (compartida entre input y cámara) ─
+        const barcodeInput = document.getElementById('barcodeInput');
 
-            let codigo = this.value.trim();
+        function buscarCodigo(codigo) {
             if (!codigo) return;
-            this.value = '';
 
             fetch(`<?= base_url('productos/buscarPorCodigo') ?>?codigo=${encodeURIComponent(codigo)}`)
                 .then(r => r.json())
                 .then(data => {
                     if (!data.found) {
-                        this.classList.add('is-invalid');
-                        this.placeholder = `No encontrado: ${codigo}`;
+                        barcodeInput.classList.add('is-invalid');
+                        barcodeInput.placeholder = `No encontrado: ${codigo}`;
                         setTimeout(() => {
-                            this.classList.remove('is-invalid');
-                            this.placeholder = 'Escanear código de barras...';
+                            barcodeInput.classList.remove('is-invalid');
+                            barcodeInput.placeholder = 'Escanear código de barras...';
                         }, 2000);
                         return;
                     }
@@ -603,6 +613,57 @@
                         addRow(data);
                     }
                 });
+        }
+
+        // Input manual / lector físico (Enter)
+        barcodeInput.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            let codigo = this.value.trim();
+            this.value = '';
+            buscarCodigo(codigo);
+        });
+
+        // ── Cámara ───────────────────────────────────────────────────
+        let html5QrCode = null;
+
+        document.getElementById('btnCamara').addEventListener('click', function() {
+            let container = document.getElementById('camaraContainer');
+            container.style.display = 'block';
+            this.disabled = true;
+
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode('camaraReader');
+            }
+
+            html5QrCode.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 260, height: 100 } },
+                (codigoLeido) => {
+                    html5QrCode.stop().then(() => {
+                        container.style.display = 'none';
+                        document.getElementById('btnCamara').disabled = false;
+                        buscarCodigo(codigoLeido);
+                    });
+                },
+                () => {} // errores de frame ignorados
+            ).catch(err => {
+                container.style.display = 'none';
+                document.getElementById('btnCamara').disabled = false;
+                Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err, 'error');
+            });
+        });
+
+        document.getElementById('btnCerrarCamara').addEventListener('click', function() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('camaraContainer').style.display = 'none';
+                    document.getElementById('btnCamara').disabled = false;
+                });
+            } else {
+                document.getElementById('camaraContainer').style.display = 'none';
+                document.getElementById('btnCamara').disabled = false;
+            }
         });
 
         addRow();
@@ -922,5 +983,7 @@
 
     });
 </script>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <?= $this->endSection() ?>
