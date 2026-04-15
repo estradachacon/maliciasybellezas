@@ -21,8 +21,8 @@ $logoUrl = setting('logo')
 
     @media (max-width: 768px) {
         .producto-info {
-            width: calc(100% + 30px);
-            margin-right: -30px;
+            width: calc(100% + 25px);
+            margin-right: -27px;
         }
     }
 
@@ -625,24 +625,6 @@ $logoUrl = setting('logo')
                                         <div class="col-md-5">
                                             <label>Producto</label>
                                             <select id="producto_id" class="form-control"></select>
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Cantidad</label>
-                                            <input type="number" id="cantidad" class="form-control" min="1" value="1">
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label>Precio</label>
-                                            <input type="text" id="precio" class="form-control">
-                                            <div id="ofertasDisplay" class="ofertas-display mt-1"></div>
-                                        </div>
-
-                                        <div class="col-md-2 align-items-end">
-                                            <label></label>
-                                            <button type="button" id="btnAgregarProducto" class="btn btn-primary w-100">
-                                                + Agregar
-                                            </button>
                                         </div>
                                     </div>
 
@@ -1906,15 +1888,47 @@ $logoUrl = setting('logo')
 
         $('#producto_id').on('select2:select', function(e) {
             let data = e.params.data;
-            productoActual = {
-                producto_id: data.producto_id || data.id,
-                branch_id: data.branch_id,
-                stock: data.stock || 0,
-                imagen: data.imagen || null,
-                precio: data.precio || 0
-            };
-            $('#precio').val(parseFloat(data.precio || 0).toFixed(2));
-            fetchOfertas(parseInt(data.producto_id || data.id));
+
+            let producto_id = data.producto_id || data.id;
+            let branch_id   = data.branch_id;
+            let stock       = data.stock || 0;
+            let precio      = parseFloat(data.precio || 0);
+
+            if (!producto_id) return;
+
+            // 🔥 buscar si ya existe
+            let existente = productos.find(p =>
+                p.producto_id == producto_id &&
+                p.branch_id == branch_id
+            );
+
+            if (existente) {
+                let nuevaCant = existente.cantidad + 1;
+
+                if (nuevaCant > existente.stock) {
+                    Swal.fire('Stock insuficiente', `Solo hay ${existente.stock}`, 'warning');
+                    return;
+                }
+
+                existente.cantidad = nuevaCant;
+            } else {
+                productos.push({
+                    producto_id: producto_id,
+                    branch_id: branch_id,
+                    nombre: data.text,
+                    cantidad: 1,
+                    precio: precio,
+                    imagen: data.imagen || null,
+                    stock: stock,
+                    ofertas: normalizarOfertas(data.ofertas || [])
+                });
+            }
+
+            renderTabla();
+            calcularTotalProductos();
+
+            // 🔥 limpiar select
+            $('#producto_id').val(null).trigger('change');
         });
 
         $('#cantidad').on('input', function() {
