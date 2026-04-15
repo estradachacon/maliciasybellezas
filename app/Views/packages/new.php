@@ -25,7 +25,11 @@ $logoUrl = setting('logo')
             margin-right: -27px;
         }
     }
-
+#barcodeInput {
+    height: 50px;
+    font-size: 18px;
+    font-weight: 600;
+}
     #overlayPreview {
         position: fixed;
         top: 0;
