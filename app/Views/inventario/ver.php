@@ -106,62 +106,6 @@
         position: relative;
     }
 
-    @media (max-width: 767px) {
-
-        .precio-row {
-            flex-wrap: wrap;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 10px;
-        }
-
-        /* inputs */
-        .precio-row .pv-field {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .precio-row .pv-input {
-            width: 100%;
-            min-height: 40px;
-            font-size: 15px;
-        }
-
-        /* flecha centrada */
-        .precio-row .pv-arrow {
-            width: 100%;
-            text-align: center;
-            margin: 0;
-            font-size: 12px;
-        }
-
-        /* 🔥 CONTENEDOR INFERIOR EN UNA SOLA LÍNEA */
-        .precio-row .pv-badge {
-            width: 100%;
-            margin-top: 6px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-
-            font-size: 12px;
-        }
-
-        /* texto del badge */
-        .precio-row .pv-badge span {
-            white-space: nowrap;
-        }
-
-        /* 🔥 BOTONES YA NO FLOAT */
-        .precio-row .pv-actions {
-            position: static;
-            /* 🔥 clave */
-            margin: 0;
-            display: flex;
-            gap: 6px;
-        }
-    }
 @media (max-width: 767px) {
 
     /* 🔥 Cada campo ya no apila feo */
