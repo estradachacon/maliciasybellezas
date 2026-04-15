@@ -347,10 +347,6 @@
                 <h5 class="mb-0">
                     <i class="fa fa-cash-register"></i> Nueva Venta Local
                 </h5>
-
-                <a href="<?= base_url('ventas') ?>" class="btn btn-secondary btn-sm ml-auto">
-                    Volver
-                </a>
             </div>
 
             <div class="card-body">

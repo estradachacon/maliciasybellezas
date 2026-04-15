@@ -106,6 +106,64 @@
         position: relative;
     }
 
+    @media (max-width: 767px) {
+        .precio-row .pv-arrow {
+            display: none;
+        }
+    }
+
+    @media (max-width: 767px) {
+
+        .precio-row {
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 8px;
+
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        /* inputs ocupan mejor el espacio */
+        .precio-row .pv-field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .precio-row .pv-input {
+            width: 100%;
+            /* 🔥 clave */
+        }
+
+        /* flecha en nueva línea */
+        .precio-row .pv-arrow {
+            width: 100%;
+            text-align: center;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        /* badge abajo full width */
+        .precio-row .pv-badge {
+            width: 100%;
+            margin-top: 4px;
+            font-size: 11px;
+        }
+
+        /* botones arriba derecha */
+        .precio-row .pv-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            margin: 0;
+        }
+
+        /* inputs más táctiles */
+        .precio-row .pv-input {
+            min-height: 40px;
+            font-size: 15px;
+        }
+    }
+
     .precio-row:hover {
         border-color: #adb5bd;
     }
@@ -1183,7 +1241,6 @@
     }
 </script>
 <script>
-
     function generarCodigo() {
 
         const input = document.getElementById('codigo_barras');
