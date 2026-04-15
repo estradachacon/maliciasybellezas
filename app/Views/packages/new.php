@@ -25,10 +25,9 @@ $logoUrl = setting('logo')
             margin-right: -27px;
         }
 
-        #barcodeInput {
-            height: 50px;
+        #barcodeInput::placeholder {
             font-size: 14px;
-            font-weight: 500;
+            color: #999; /* opcional */
         }
     }
 
