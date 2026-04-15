@@ -18,7 +18,11 @@ $logoUrl = setting('logo')
         /* centra texto */
         padding-left: .75rem;
     }
-
+@media (max-width: 768px) {
+    .producto-info {
+        padding-right: 10px; /* o 0 */
+    }
+}
     #overlayPreview {
         position: fixed;
         top: 0;
