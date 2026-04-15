@@ -27,7 +27,8 @@ $logoUrl = setting('logo')
 
         #barcodeInput::placeholder {
             font-size: 14px;
-            color: #999; /* opcional */
+            color: #999;
+            /* opcional */
         }
     }
 
@@ -608,19 +609,26 @@ $logoUrl = setting('logo')
                                     <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
                                     <div class="row g-2 mb-2">
                                         <div class="col-md-8">
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text bg-white">
-                                                        <i class="fa fa-barcode"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" id="barcodeInput" class="form-control"
-                                                    placeholder="Escanear código de barras..." autocomplete="off">
-                                                <div class="input-group-append">
-                                                    <button type="button" class="btn btn-outline-secondary" id="btnCamara" title="Usar cámara">
-                                                        <i class="fa fa-camera"></i>
-                                                    </button>
-                                                </div>
+                                            <div class="input-group flex-nowrap">
+
+                                                <span class="input-group-text bg-white">
+                                                    <i class="fa fa-barcode"></i>
+                                                </span>
+
+                                                <input type="text"
+                                                    id="barcodeInput"
+                                                    class="form-control"
+                                                    placeholder="Escanear código de barras..."
+                                                    autocomplete="off">
+
+                                                <button type="button" class="btn btn-success" id="btnBuscarCodigo">
+                                                    OK
+                                                </button>
+
+                                                <button type="button" class="btn btn-outline-secondary" id="btnCamara">
+                                                    <i class="fa fa-camera"></i>
+                                                </button>
+
                                             </div>
                                             <div id="camaraContainer" style="display:none; margin-top:8px;">
                                                 <div id="camaraReader" style="width:100%; border-radius:8px; overflow:hidden;"></div>
@@ -2117,7 +2125,15 @@ $logoUrl = setting('logo')
                 Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err, 'error');
             });
         });
+        document.getElementById('btnBuscarCodigo').addEventListener('click', function() {
+            let input = document.getElementById('barcodeInput');
+            let codigo = input.value.trim();
 
+            if (!codigo) return;
+
+            input.value = '';
+            buscarCodigo(codigo);
+        });
         document.getElementById('btnCerrarCamara').addEventListener('click', function() {
             if (html5QrCodeBarcode && html5QrCodeBarcode.isScanning) {
                 html5QrCodeBarcode.stop().then(() => {
