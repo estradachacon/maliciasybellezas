@@ -470,6 +470,20 @@ $logoUrl = setting('logo')
         transform: scale(1.05);
         border-color: #0d6efd;
     }
+
+    /* ── OFERTAS DE PRECIO ──────────────────────────── */
+    .ofertas-display { min-height:0; line-height:1.9; }
+    .oferta-pill {
+        font-size:10px; padding:1px 5px; border-radius:3px; border:1px solid;
+        cursor:pointer; display:inline-block; margin:1px 2px 0 0;
+        white-space:nowrap; transition:opacity .15s; user-select:none;
+    }
+    .oferta-pill:hover { opacity:.75; }
+    .oferta-activa     { background:#e9f7ef; border-color:#198754 !important; color:#198754; font-weight:700; }
+    .oferta-alcanzable { background:#f8f9fa; border-color:#ced4da !important; color:#495057; }
+    .oferta-pendiente  { background:#f8f9fa; border-color:#dee2e6 !important; color:#adb5bd; }
+    #barcodeInput:focus { border-color:#198754; box-shadow:0 0 0 .2rem rgba(25,135,84,.25); }
+    #barcodeInput.is-invalid { border-color:#dc3545 !important; }
 </style>
 
 <div class="row">
@@ -528,8 +542,35 @@ $logoUrl = setting('logo')
 
                                 <div class="card-body">
 
+                                        <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
                                     <div class="row g-2 mb-2">
-                                        <div class="col-md-4">
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-white">
+                                                        <i class="fa fa-barcode"></i>
+                                                    </span>
+                                                </div>
+                                                <input type="text" id="barcodeInput" class="form-control"
+                                                    placeholder="Escanear código de barras..." autocomplete="off">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-outline-secondary" id="btnCamara" title="Usar cámara">
+                                                        <i class="fa fa-camera"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="camaraContainer" style="display:none; margin-top:8px;">
+                                                <div id="camaraReader" style="width:100%; border-radius:8px; overflow:hidden;"></div>
+                                                <button type="button" class="btn btn-sm btn-danger mt-1" id="btnCerrarCamara">
+                                                    <i class="fa fa-times"></i> Cerrar cámara
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- FORMULARIO AGREGAR PRODUCTO -->
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-5">
                                             <label>Producto</label>
                                             <select id="producto_id" class="form-control"></select>
                                         </div>
@@ -539,13 +580,10 @@ $logoUrl = setting('logo')
                                             <input type="number" id="cantidad" class="form-control" min="1" value="1">
                                         </div>
 
-                                        <div class="col-md-2">
+                                        <div class="col-md-3">
                                             <label>Precio</label>
                                             <input type="text" id="precio" class="form-control">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label>Descuento en ítem</label>
-                                            <input type="text" id="descuento_item" class="form-control" value="0">
+                                            <div id="ofertasDisplay" class="ofertas-display mt-1"></div>
                                         </div>
 
                                         <div class="col-md-2 align-items-end">
@@ -782,6 +820,8 @@ $logoUrl = setting('logo')
         let stream = null;
         let procesandoImagen = false;
         let productos = [];
+        let productoActual = {};
+        let ofertasActuales = [];
         /* Fin de Variables globales */
 
         $('#btnImprimirFinal').click(function() {
@@ -1399,7 +1439,7 @@ $logoUrl = setting('logo')
 
             productos.forEach((p, i) => {
 
-                let subtotal = (p.cantidad * p.precio) - p.descuento;
+                let subtotal = p.cantidad * p.precio;
 
                 let foto = p.imagen ?
                     `<?= base_url('upload/productos/') ?>/${p.imagen}` :
@@ -1436,8 +1476,8 @@ $logoUrl = setting('logo')
                                     ${p.nombre}
                                 </div>
 
-                                <div class="grid-valores mt-2">
-                                    
+                                <div class="grid-valores mt-2" style="grid-template-columns:repeat(3,1fr);">
+
                                     <div class="item">
                                         <small>Cant</small>
                                         <span>${p.cantidad}</span>
@@ -1446,11 +1486,6 @@ $logoUrl = setting('logo')
                                     <div class="item">
                                         <small>Precio</small>
                                         <span>$${formatearMoneda(p.precio)}</span>
-                                    </div>
-
-                                    <div class="item">
-                                        <small>Desc</small>
-                                        <span>$${formatearMoneda(p.descuento)}</span>
                                     </div>
 
                                     <div class="item total">
@@ -1475,7 +1510,7 @@ $logoUrl = setting('logo')
         function construirPayload() {
 
             let subtotal = productos.reduce((sum, p) => {
-                return sum + ((p.cantidad * p.precio) - p.descuento);
+                return sum + (p.cantidad * p.precio);
             }, 0);
 
             let descuentoGlobal = limpiarNumero($('#descuento_global').val());
@@ -1490,12 +1525,11 @@ $logoUrl = setting('logo')
             // 🔥 PRODUCTOS CON SUBTOTAL
             let productosDetalle = productos.map(p => ({
                 producto_id: p.producto_id,
-                branch_id: p.branch_id, // 🔥 NUEVO
-                nombre: p.nombre,
-                cantidad: p.cantidad,
-                precio: p.precio,
-                descuento: p.descuento,
-                subtotal: (p.cantidad * p.precio) - p.descuento
+                branch_id:   p.branch_id,
+                nombre:      p.nombre,
+                cantidad:    p.cantidad,
+                precio:      p.precio,
+                subtotal:    p.cantidad * p.precio
             }));
 
             return {
@@ -1542,7 +1576,7 @@ $logoUrl = setting('logo')
         function calcularTotalProductos() {
 
             let subtotal = productos.reduce((sum, p) => {
-                return sum + ((p.cantidad * p.precio) - p.descuento);
+                return sum + (p.cantidad * p.precio);
             }, 0);
 
             let descuentoGlobal = limpiarNumero($('#descuento_global').val());
@@ -1726,8 +1760,8 @@ $logoUrl = setting('logo')
             width: '100%',
             minimumInputLength: 1,
 
-            templateResult: formatProducto, // 🔥 lista con imagen
-            templateSelection: formatProductoSeleccion, // 🔥 input limpio
+            templateResult: formatProducto,
+            templateSelection: formatProductoSeleccion,
 
             escapeMarkup: function(markup) {
                 return markup;
@@ -1738,15 +1772,202 @@ $logoUrl = setting('logo')
                 dataType: 'json',
                 delay: 250,
                 data: function(params) {
-                    return {
-                        term: params.term
-                    };
+                    return { term: params.term };
                 },
                 processResults: function(data) {
-                    return {
-                        results: data
-                    };
+                    return { results: data };
                 }
+            }
+        });
+
+        $('#producto_id').on('select2:select', function(e) {
+            let data = e.params.data;
+            productoActual = {
+                producto_id: data.producto_id || data.id,
+                branch_id:   data.branch_id,
+                stock:       data.stock || 0,
+                imagen:      data.imagen || null,
+                precio:      data.precio || 0
+            };
+            $('#precio').val(parseFloat(data.precio || 0).toFixed(2));
+            fetchOfertas(parseInt(data.producto_id || data.id));
+        });
+
+        $('#cantidad').on('input', function() {
+            applyMejorOferta(parseFloat(this.value) || 0);
+        });
+
+        // ── FUNCIONES DE OFERTAS ─────────────────────────────────────
+        function normalizarOfertas(ofertas) {
+            if (Array.isArray(ofertas)) {
+                return ofertas
+                    .map(o => ({
+                        cantidad_minima: parseInt(o.cantidad_minima || 0),
+                        precio: parseFloat(o.precio || 0)
+                    }))
+                    .filter(o => o.cantidad_minima > 0 && o.precio > 0)
+                    .sort((a, b) => a.cantidad_minima - b.cantidad_minima);
+            }
+            if (ofertas && typeof ofertas === 'object') {
+                return normalizarOfertas(Object.values(ofertas));
+            }
+            return [];
+        }
+
+        function fetchOfertas(productoId) {
+            if (!productoId) return;
+            fetch(`<?= base_url('productos/ofertasPorProducto') ?>?producto_id=${productoId}`)
+                .then(r => r.json())
+                .then(data => {
+                    ofertasActuales = normalizarOfertas(data);
+                    let cantidad = parseFloat($('#cantidad').val()) || 1;
+                    showOfertas(ofertasActuales, cantidad);
+                    applyMejorOferta(cantidad);
+                });
+        }
+
+        function showOfertas(ofertas, cantidad) {
+            let div = document.getElementById('ofertasDisplay');
+            if (!div) return;
+            ofertas = normalizarOfertas(ofertas);
+            if (!ofertas.length) { div.innerHTML = ''; return; }
+
+            let precioActual = limpiarNumero($('#precio').val());
+            let ofertaActiva = null;
+            ofertas.forEach(o => {
+                if (Math.abs(o.precio - precioActual) < 0.01) ofertaActiva = o;
+            });
+
+            div.innerHTML = ofertas.map(o => {
+                let cls = '';
+                if (ofertaActiva && o.precio === ofertaActiva.precio) cls = 'oferta-activa';
+                else if (cantidad >= o.cantidad_minima) cls = 'oferta-alcanzable';
+                else cls = 'oferta-pendiente';
+                return `<span class="oferta-pill ${cls}" data-precio="${o.precio}" data-min="${o.cantidad_minima}">
+                    ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
+                </span>`;
+            }).join('');
+
+            div.querySelectorAll('.oferta-pill').forEach(pill => {
+                pill.addEventListener('click', function() {
+                    $('#precio').val(parseFloat(this.dataset.precio).toFixed(2));
+                    showOfertas(ofertasActuales, parseFloat($('#cantidad').val()) || 1);
+                });
+            });
+        }
+
+        function applyMejorOferta(cantidad) {
+            if (!ofertasActuales.length) return;
+            let mejor = null;
+            ofertasActuales.forEach(o => {
+                if (cantidad >= o.cantidad_minima)
+                    if (!mejor || o.cantidad_minima > mejor.cantidad_minima) mejor = o;
+            });
+            if (mejor) {
+                $('#precio').val(parseFloat(mejor.precio).toFixed(2));
+            } else {
+                $('#precio').val(parseFloat(productoActual.precio || 0).toFixed(2));
+            }
+            showOfertas(ofertasActuales, cantidad);
+        }
+
+        // ── CÓDIGO DE BARRAS ─────────────────────────────────────────
+        const barcodeInput = document.getElementById('barcodeInput');
+
+        function buscarCodigo(codigo) {
+            if (!codigo) return;
+            fetch(`<?= base_url('productos/buscarPorCodigo') ?>?codigo=${encodeURIComponent(codigo)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.found) {
+                        barcodeInput.classList.add('is-invalid');
+                        barcodeInput.placeholder = data.msg || `No encontrado: ${codigo}`;
+                        setTimeout(() => {
+                            barcodeInput.classList.remove('is-invalid');
+                            barcodeInput.placeholder = 'Escanear código de barras...';
+                        }, 2500);
+                        return;
+                    }
+
+                    // ¿Ya está en la lista? → incrementar cantidad
+                    let existente = productos.find(p =>
+                        p.producto_id == data.producto_id && p.branch_id == data.branch_id
+                    );
+
+                    if (existente) {
+                        let nuevaCant = existente.cantidad + 1;
+                        if (nuevaCant > existente.stock) {
+                            Swal.fire('Stock insuficiente', `Solo hay ${existente.stock} unidades`, 'warning');
+                            return;
+                        }
+                        existente.cantidad = nuevaCant;
+                        renderTabla();
+                        calcularTotalProductos();
+                        return;
+                    }
+
+                    // Agregar nuevo
+                    productos.push({
+                        producto_id: data.producto_id,
+                        branch_id:   data.branch_id,
+                        nombre:      data.text,
+                        cantidad:    1,
+                        precio:      parseFloat(data.precio || 0),
+                        imagen:      data.imagen || null,
+                        stock:       data.stock || 0
+                    });
+                    renderTabla();
+                    calcularTotalProductos();
+                });
+        }
+
+        barcodeInput.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            let codigo = this.value.trim();
+            this.value = '';
+            buscarCodigo(codigo);
+        });
+
+        // ── CÁMARA ──────────────────────────────────────────────────
+        let html5QrCodeBarcode = null;
+
+        document.getElementById('btnCamara').addEventListener('click', function() {
+            let container = document.getElementById('camaraContainer');
+            container.style.display = 'block';
+            this.disabled = true;
+
+            if (!html5QrCodeBarcode) {
+                html5QrCodeBarcode = new Html5Qrcode('camaraReader');
+            }
+
+            html5QrCodeBarcode.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 260, height: 100 } },
+                (codigoLeido) => {
+                    html5QrCodeBarcode.stop().then(() => {
+                        container.style.display = 'none';
+                        document.getElementById('btnCamara').disabled = false;
+                        buscarCodigo(codigoLeido);
+                    });
+                },
+                () => {}
+            ).catch(err => {
+                container.style.display = 'none';
+                document.getElementById('btnCamara').disabled = false;
+                Swal.fire('Error', 'No se pudo acceder a la cámara: ' + err, 'error');
+            });
+        });
+
+        document.getElementById('btnCerrarCamara').addEventListener('click', function() {
+            if (html5QrCodeBarcode && html5QrCodeBarcode.isScanning) {
+                html5QrCodeBarcode.stop().then(() => {
+                    document.getElementById('camaraContainer').style.display = 'none';
+                    document.getElementById('btnCamara').disabled = false;
+                });
+            } else {
+                document.getElementById('camaraContainer').style.display = 'none';
+                document.getElementById('btnCamara').disabled = false;
             }
         });
 
@@ -1792,36 +2013,6 @@ $logoUrl = setting('logo')
 
         });
 
-       $('#producto_id').select2({
-            language: 'es',
-            placeholder: 'Buscar producto...',
-            width: '100%',
-            minimumInputLength: 1,
-
-            templateResult: formatProducto, // 🔥 lista con imagen
-            templateSelection: formatProductoSeleccion, // 🔥 input limpio
-
-            escapeMarkup: function(markup) {
-                return markup;
-            },
-
-            ajax: {
-                url: '<?= base_url('productos/searchAjaxSelectStock') ?>',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        term: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data
-                    };
-                }
-            }
-        });
-
         $('#descuento_global, #envio').on('input', function() {
             calcularTotalProductos();
         });
@@ -1858,11 +2049,11 @@ $logoUrl = setting('logo')
             let cantidad = parseFloat($('#cantidad').val());
             let precio = limpiarNumero($('#precio').val());
 
-            let stock = $('#producto_id').data('stock') || 0;
-            let branch_id = $('#producto_id').data('branch_id');
-            let producto_id_real = $('#producto_id').data('producto_id_real');
+            let stock      = productoActual.stock || 0;
+            let branch_id  = productoActual.branch_id;
+            let producto_id_real = productoActual.producto_id;
 
-            if (!productoSelect) {
+            if (!productoSelect || !producto_id_real) {
                 Swal.fire('Error', 'Seleccione un producto', 'warning');
                 return;
             }
@@ -1886,8 +2077,6 @@ $logoUrl = setting('logo')
                 return;
             }
 
-            let descuento = limpiarNumero($('#descuento_item').val());
-
             if (!branch_id) {
                 Swal.fire('Error', 'El producto no tiene sucursal asignada', 'error');
                 return;
@@ -1895,13 +2084,12 @@ $logoUrl = setting('logo')
 
             let producto = {
                 producto_id: producto_id_real,
-                branch_id: branch_id,
-                nombre: productoSelect.text,
-                cantidad: cantidad,
-                precio: precio,
-                descuento: descuento,
-                imagen: productoSelect.imagen || null,
-                stock: stock
+                branch_id:   branch_id,
+                nombre:      productoSelect.text,
+                cantidad:    cantidad,
+                precio:      precio,
+                imagen:      productoActual.imagen || null,
+                stock:       stock
             };
 
             // 🔥 BUSCAR EXISTENTE (IMPORTANTE: producto + sucursal)
@@ -1924,7 +2112,6 @@ $logoUrl = setting('logo')
                 }
 
                 existente.cantidad = nuevaCantidad;
-                existente.descuento += descuento;
 
             } else {
                 productos.push(producto);
@@ -1934,11 +2121,14 @@ $logoUrl = setting('logo')
             calcularTotalProductos();
 
             // limpiar
+            productoActual = {};
+            ofertasActuales = [];
             $('#producto_id').val(null).trigger('change');
             $('#cantidad').val(1);
             $('#precio').val('');
-            $('#descuento_item').val('0');
+            $('#ofertasDisplay').html('');
         });
     });
 </script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <?= $this->endSection() ?>

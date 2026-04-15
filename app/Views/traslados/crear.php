@@ -141,11 +141,7 @@
                                 <span id="totalProductosBadge" class="badge badge-primary">0</span>
                             </div>
 
-                            <div id="productosContainer">
-                                <p id="sinProductosMsg" class="text-muted text-center py-3">
-                                    Sin productos agregados
-                                </p>
-                            </div>
+                            <div id="productosContainer"></div>
 
                             <hr>
 
@@ -175,55 +171,55 @@
 </div>
 
 <script>
-const BASE_URL = '<?= base_url() ?>';
-let productos  = [];
+    const BASE_URL = '<?= base_url() ?>';
+    let productos = [];
 
-// ── Costo cambió ─────────────────────────────────────────────────
-function onCostoChange() {
-    const costo     = parseFloat(document.getElementById('costoTraslado').value) || 0;
-    const container = document.getElementById('cuentaContainer');
-    const resumen   = document.getElementById('resumenCosto');
-    const valor     = document.getElementById('resumenCostoValor');
+    // ── Costo cambió ─────────────────────────────────────────────────
+    function onCostoChange() {
+        const costo = parseFloat(document.getElementById('costoTraslado').value) || 0;
+        const container = document.getElementById('cuentaContainer');
+        const resumen = document.getElementById('resumenCosto');
+        const valor = document.getElementById('resumenCostoValor');
 
-    container.style.display = costo > 0 ? 'block' : 'none';
-    resumen.style.display   = costo > 0 ? 'block' : 'none';
-    valor.textContent       = '$' + costo.toFixed(2);
-}
-
-// ── Origen cambió ─────────────────────────────────────────────────
-function onOrigenChange() {
-    const branchId = document.getElementById('origenBranch').value;
-    const selectEl = document.getElementById('producto_id');
-    const btnEl    = document.getElementById('btnAgregarProducto');
-
-    if (branchId) {
-        selectEl.disabled = false;
-        if ($.fn.select2 && $(selectEl).data('select2')) {
-            $('#producto_id').val(null).trigger('change');
-        } else {
-            initSelect2();
-        }
-    } else {
-        selectEl.disabled = true;
-        btnEl.disabled    = true;
+        container.style.display = costo > 0 ? 'block' : 'none';
+        resumen.style.display = costo > 0 ? 'block' : 'none';
+        valor.textContent = '$' + costo.toFixed(2);
     }
 
-    productos = [];
-    renderProductos();
-}
+    // ── Origen cambió ─────────────────────────────────────────────────
+    function onOrigenChange() {
+        const branchId = document.getElementById('origenBranch').value;
+        const selectEl = document.getElementById('producto_id');
+        const btnEl = document.getElementById('btnAgregarProducto');
 
-// ── Init Select2 ─────────────────────────────────────────────────
-function initSelect2() {
-    $('#producto_id').select2({
-        language: 'es',
-        placeholder: 'Buscar producto...',
-        width: '100%',
-        minimumInputLength: 1,
-        escapeMarkup: markup => markup,
+        if (branchId) {
+            selectEl.disabled = false;
+            if ($.fn.select2 && $(selectEl).data('select2')) {
+                $('#producto_id').val(null).trigger('change');
+            } else {
+                initSelect2();
+            }
+        } else {
+            selectEl.disabled = true;
+            btnEl.disabled = true;
+        }
 
-        templateResult: function(p) {
-            if (p.loading) return 'Buscando...';
-            return `
+        productos = [];
+        renderProductos();
+    }
+
+    // ── Init Select2 ─────────────────────────────────────────────────
+    function initSelect2() {
+        $('#producto_id').select2({
+            language: 'es',
+            placeholder: 'Buscar producto...',
+            width: '100%',
+            minimumInputLength: 1,
+            escapeMarkup: markup => markup,
+
+            templateResult: function(p) {
+                if (p.loading) return 'Buscando...';
+                return `
                 <div class="d-flex" style="gap:8px;">
                     ${p.imagen
                         ? `<img src="${BASE_URL}upload/productos/${p.imagen}"
@@ -238,203 +234,282 @@ function initSelect2() {
                         <small class="text-muted">Stock: ${p.stock ?? 0}</small>
                     </div>
                 </div>`;
-        },
+            },
 
-        templateSelection: p => p.text || p.id,
+            templateSelection: p => p.text || p.id,
 
-        ajax: {
-            url: `${BASE_URL}productos/searchAjaxSelectStockBranch`,
-            dataType: 'json',
-            delay: 250,
-            data: params => ({
-                term:      params.term,
-                branch_id: document.getElementById('origenBranch').value
-            }),
-            processResults: data => ({ results: data })
-        }
-    });
+            ajax: {
+                url: `${BASE_URL}productos/searchAjaxSelectStockBranch`,
+                dataType: 'json',
+                delay: 250,
+                data: params => ({
+                    term: params.term,
+                    branch_id: document.getElementById('origenBranch').value
+                }),
 
-    $('#producto_id').on('select2:select', function() {
-        document.getElementById('btnAgregarProducto').disabled = false;
-    });
-}
+                processResults: function(data) {
+                    return {
+                        results: data.map(p => ({
+                            id: p.id,
+                            text: p.text,
+                            stock: p.stock,
+                            imagen: p.imagen
+                        }))
+                    };
+                },
 
-// ── Agregar desde select2 ─────────────────────────────────────────
-function agregarDesdeSelect() {
-    const select   = $('#producto_id');
-    const selected = select.select2('data')[0];
+                cache: true
+            },
 
-    if (!selected || !selected.id) return;
-
-    const id     = parseInt(selected.id);
-    const nombre = selected.text;
-    const stock  = parseInt(selected.stock ?? 0);
-
-    if (stock <= 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin stock',
-            text: 'Este producto no tiene stock disponible en esta sucursal',
-            timer: 1800,
-            showConfirmButton: false
+            escapeMarkup: function(m) {
+                return m;
+            }
         });
-        return;
+
+        $('#producto_id').on('select2:select', function(e) {
+            let data = e.params.data;
+
+            let option = $(this).find(`option[value="${data.id}"]`);
+
+            option.data('stock', data.stock);
+            option.data('imagen', data.imagen);
+
+            document.getElementById('btnAgregarProducto').disabled = false;
+        });
     }
 
-    const existente = productos.find(p => p.producto_id === id);
-    if (existente) {
-        if (existente.cantidad < existente.stock) {
-            existente.cantidad++;
-            renderProductos();
-        } else {
+    // ── Agregar desde select2 ─────────────────────────────────────────
+    function agregarDesdeSelect() {
+        const select = $('#producto_id');
+        const selected = select.select2('data')[0];
+
+        if (!selected || !selected.id) return;
+
+        // 🔥 fallback sólido
+        const optionEl = select.find(`option[value="${selected.id}"]`);
+
+        const id = parseInt(selected.id);
+
+        const nombre =
+            selected.text ||
+            optionEl.text() ||
+            'Producto';
+
+        const stock =
+            selected.stock ??
+            optionEl.data('stock') ??
+            0;
+
+        if (stock <= 0) {
             Swal.fire({
                 icon: 'warning',
-                title: 'Stock insuficiente',
-                text: `Solo hay ${stock} unidades disponibles`,
+                title: 'Sin stock',
+                text: 'Este producto no tiene stock disponible en esta sucursal',
                 timer: 1800,
                 showConfirmButton: false
             });
+            return;
         }
-        return;
+
+        const existente = productos.find(p => p.producto_id === id);
+        if (existente) {
+            if (existente.cantidad < existente.stock) {
+                existente.cantidad++;
+                renderProductos();
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock insuficiente',
+                    text: `Solo hay ${stock} unidades disponibles`,
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+            }
+            return;
+        }
+
+        productos.push({
+            producto_id: id,
+            nombre,
+            cantidad: 1,
+            stock
+        });
+        renderProductos();
+
+        select.val(null).trigger('change');
+        document.getElementById('btnAgregarProducto').disabled = true;
     }
 
-    productos.push({ producto_id: id, nombre, cantidad: 1, stock });
-    renderProductos();
+    // ── Render lista ──────────────────────────────────────────────────
+    function renderProductos() {
+        const container = document.getElementById('productosContainer');
+        const badge = document.getElementById('totalProductosBadge');
+        const btnGuardar = document.getElementById('btnGuardar');
 
-    select.val(null).trigger('change');
-    document.getElementById('btnAgregarProducto').disabled = true;
-}
+        badge.textContent = productos.length;
+        btnGuardar.disabled = productos.length === 0;
 
-// ── Render lista ──────────────────────────────────────────────────
-function renderProductos() {
-    const container  = document.getElementById('productosContainer');
-    const sinMsg     = document.getElementById('sinProductosMsg');
-    const badge      = document.getElementById('totalProductosBadge');
-    const btnGuardar = document.getElementById('btnGuardar');
+        if (!productos.length) {
+            container.innerHTML = `
+            <p class="text-muted text-center py-3">
+                Sin productos agregados
+            </p>
+        `;
+            return;
+        }
 
-    badge.textContent       = productos.length;
-    btnGuardar.disabled     = productos.length === 0;
-
-    if (!productos.length) {
-        container.innerHTML = '';
-        container.appendChild(sinMsg);
-        sinMsg.style.display = 'block';
-        return;
-    }
-
-    sinMsg.style.display = 'none';
-    container.innerHTML  = productos.map((p, i) => `
-        <div class="producto-item">
-            <div style="flex:1;">
-                <div class="prod-nombre">${escapeHtml(p.nombre)}</div>
-                <div class="prod-stock">Stock disponible: ${p.stock}</div>
+        container.innerHTML = productos.map((p, i) => `
+            <div class="producto-item">
+                <div style="flex:1;">
+                    <div class="prod-nombre">${escapeHtml(p.nombre)}</div>
+                    <div class="prod-stock">Stock disponible: ${p.stock}</div>
+                </div>
+                <input type="number"
+                    class="form-control prod-qty"
+                    value="${p.cantidad}"
+                    min="1"
+                    max="${p.stock}"
+                    onchange="cambiarCantidad(${i}, this.value)">
+                <button class="btn btn-sm btn-outline-danger"
+                    onclick="eliminarProducto(${i})">
+                    <i class="fa fa-times"></i>
+                </button>
             </div>
-            <input type="number"
-                class="form-control prod-qty"
-                value="${p.cantidad}"
-                min="1"
-                max="${p.stock}"
-                onchange="cambiarCantidad(${i}, this.value)">
-            <button class="btn btn-sm btn-outline-danger"
-                onclick="eliminarProducto(${i})">
-                <i class="fa fa-times"></i>
-            </button>
-        </div>
-    `).join('');
-}
+        `).join('');
+    }
 
-function cambiarCantidad(idx, val) {
-    const qty = parseInt(val);
-    if (qty < 1 || qty > productos[idx].stock) {
-        Swal.fire({
+    function cambiarCantidad(idx, val) {
+        const qty = parseInt(val);
+        if (qty < 1 || qty > productos[idx].stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cantidad inválida',
+                text: `Debe ser entre 1 y ${productos[idx].stock}`,
+                timer: 1800,
+                showConfirmButton: false
+            });
+            renderProductos();
+            return;
+        }
+        productos[idx].cantidad = qty;
+    }
+
+    function eliminarProducto(idx) {
+        productos.splice(idx, 1);
+        renderProductos();
+    }
+
+    // ── Guardar ───────────────────────────────────────────────────────
+    function guardarTraslado() {
+        const origenId = document.getElementById('origenBranch').value;
+        const destinoId = document.getElementById('destinoBranch').value;
+        const costo = parseFloat(document.getElementById('costoTraslado').value) || 0;
+        const cuentaId = document.getElementById('cuentaId').value;
+        const notas = document.getElementById('notas').value.trim();
+
+        if (!origenId) return Swal.fire({
             icon: 'warning',
-            title: 'Cantidad inválida',
-            text: `Debe ser entre 1 y ${productos[idx].stock}`,
+            title: 'Selecciona la sucursal origen',
             timer: 1800,
             showConfirmButton: false
         });
-        renderProductos();
-        return;
-    }
-    productos[idx].cantidad = qty;
-}
+        if (!destinoId) return Swal.fire({
+            icon: 'warning',
+            title: 'Selecciona la sucursal destino',
+            timer: 1800,
+            showConfirmButton: false
+        });
+        if (origenId === destinoId) return Swal.fire({
+            icon: 'warning',
+            title: 'Origen y destino no pueden ser iguales',
+            timer: 1800,
+            showConfirmButton: false
+        });
+        if (!productos.length) return Swal.fire({
+            icon: 'warning',
+            title: 'Agrega al menos un producto',
+            timer: 1800,
+            showConfirmButton: false
+        });
+        if (costo > 0 && !cuentaId) return Swal.fire({
+            icon: 'warning',
+            title: 'Selecciona una cuenta para el gasto',
+            timer: 1800,
+            showConfirmButton: false
+        });
 
-function eliminarProducto(idx) {
-    productos.splice(idx, 1);
-    renderProductos();
-}
-
-// ── Guardar ───────────────────────────────────────────────────────
-function guardarTraslado() {
-    const origenId  = document.getElementById('origenBranch').value;
-    const destinoId = document.getElementById('destinoBranch').value;
-    const costo     = parseFloat(document.getElementById('costoTraslado').value) || 0;
-    const cuentaId  = document.getElementById('cuentaId').value;
-    const notas     = document.getElementById('notas').value.trim();
-
-    if (!origenId)              return Swal.fire({ icon: 'warning', title: 'Selecciona la sucursal origen',          timer: 1800, showConfirmButton: false });
-    if (!destinoId)             return Swal.fire({ icon: 'warning', title: 'Selecciona la sucursal destino',         timer: 1800, showConfirmButton: false });
-    if (origenId === destinoId) return Swal.fire({ icon: 'warning', title: 'Origen y destino no pueden ser iguales', timer: 1800, showConfirmButton: false });
-    if (!productos.length)      return Swal.fire({ icon: 'warning', title: 'Agrega al menos un producto',            timer: 1800, showConfirmButton: false });
-    if (costo > 0 && !cuentaId) return Swal.fire({ icon: 'warning', title: 'Selecciona una cuenta para el gasto',   timer: 1800, showConfirmButton: false });
-
-    Swal.fire({
-        title: '¿Confirmar traslado?',
-        html: `<div style="text-align:left;font-size:14px;">
+        Swal.fire({
+            title: '¿Confirmar traslado?',
+            html: `<div style="text-align:left;font-size:14px;">
             <strong>${productos.length} producto(s)</strong> serán trasladados.<br>
             ${costo > 0
                 ? `Costo: <span class="text-danger">$${costo.toFixed(2)}</span>`
                 : 'Sin costo de traslado.'}
         </div>`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, trasladar',
-        cancelButtonText:  'Cancelar',
-        confirmButtonColor: '#28a745',
-        cancelButtonColor:  '#6c757d',
-    }).then(result => {
-        if (!result.isConfirmed) return;
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, trasladar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+        }).then(result => {
+            if (!result.isConfirmed) return;
 
-        Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({
+                title: 'Procesando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
 
-        fetch(`${BASE_URL}traslados/guardar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                origen_branch_id:  parseInt(origenId),
-                destino_branch_id: parseInt(destinoId),
-                costo_traslado:    costo,
-                cuenta_id:         cuentaId || null,
-                notas,
-                productos: productos.map(p => ({
-                    producto_id: p.producto_id,
-                    cantidad:    p.cantidad,
-                }))
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                Swal.fire({ icon: 'success', title: 'Traslado registrado', timer: 1500, showConfirmButton: false })
-                    .then(() => window.location.href = `${BASE_URL}traslados/${data.id}`);
-            } else {
-                Swal.fire({
+            fetch(`${BASE_URL}traslados/guardar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        origen_branch_id: parseInt(origenId),
+                        destino_branch_id: parseInt(destinoId),
+                        costo_traslado: costo,
+                        cuenta_id: cuentaId || null,
+                        notas,
+                        productos: productos.map(p => ({
+                            producto_id: p.producto_id,
+                            cantidad: p.cantidad,
+                        }))
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Traslado registrado',
+                                timer: 1500,
+                                showConfirmButton: false
+                            })
+                            .then(() => window.location.href = `${BASE_URL}traslados/${data.id}`);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            html: '<pre style="text-align:left;font-size:12px;">' + JSON.stringify(data, null, 2) + '</pre>'
+                        });
+                    }
+                })
+                .catch(err => Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    html: '<pre style="text-align:left;font-size:12px;">' + JSON.stringify(data, null, 2) + '</pre>'
-                });
-            }
-        })
-        .catch(err => Swal.fire({ icon: 'error', title: 'Error de conexión', text: err.message }));
-    });
-}
+                    title: 'Error de conexión',
+                    text: err.message
+                }));
+        });
+    }
 
-function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;');
-}
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
 </script>
 <?= $this->endSection() ?>
