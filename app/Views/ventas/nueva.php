@@ -31,6 +31,14 @@
         }
     }
 
+    .oferta-pill {
+        font-size: 12px;
+        /* antes 10px */
+        padding: 3px 8px;
+        /* más aire */
+        border-radius: 6px;
+    }
+
     #pagosTable input {
         height: 38px !important;
         padding: 0 8px;
@@ -643,6 +651,11 @@
             });
             row.querySelector('.precio').addEventListener('input', function() {
                 aplicarColorPrecio(row);
+
+                let cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
+                let ofertas = JSON.parse(row.dataset.ofertas || '[]');
+
+                showOfertas(row, ofertas, cantidad); // 🔥 refresca colores
                 calc();
             });
 
@@ -825,36 +838,51 @@
 
         // ── Renderizar pills de ofertas ──────────────────────────────
         function showOfertas(row, ofertas, cantidad) {
-            console.log('SHOW OFERTAS:', ofertas);
+
             let div = row.querySelector('.ofertas-display');
             ofertas = normalizarOfertas(ofertas);
+
             if (!ofertas || ofertas.length === 0) {
                 div.innerHTML = '';
                 return;
             }
 
-            // Mejor oferta aplicable = mayor cantidad_minima ≤ cantidad actual
-            let mejorMin = 0;
+            let precioActual = parseFloat(row.querySelector('.precio').value) || 0;
+
+            // detectar oferta activa por PRECIO
+            let ofertaActiva = null;
             ofertas.forEach(o => {
-                if (cantidad >= o.cantidad_minima && o.cantidad_minima > mejorMin)
-                    mejorMin = o.cantidad_minima;
+                if (Math.abs(o.precio - precioActual) < 0.01) {
+                    ofertaActiva = o;
+                }
             });
 
             div.innerHTML = ofertas.map(o => {
-                let cls = cantidad >= o.cantidad_minima ?
-                    (o.cantidad_minima === mejorMin ? 'oferta-activa' : 'oferta-alcanzable') :
-                    'oferta-pendiente';
-                return `<span class="oferta-pill ${cls}"
-                    data-precio="${o.precio}" data-min="${o.cantidad_minima}">
-                    ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
-                </span>`;
+
+                let cls = '';
+
+                if (ofertaActiva && o.precio === ofertaActiva.precio) {
+                    cls = 'oferta-activa'; // 🔥 match exacto precio
+                } else if (cantidad >= o.cantidad_minima) {
+                    cls = 'oferta-alcanzable';
+                } else {
+                    cls = 'oferta-pendiente';
+                }
+
+                return `
+                    <span class="oferta-pill ${cls}"
+                        data-precio="${o.precio}" data-min="${o.cantidad_minima}">
+                        ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
+                    </span>
+                `;
             }).join('');
 
+            // click
             div.querySelectorAll('.oferta-pill').forEach(pill => {
                 pill.addEventListener('click', function() {
                     let inputPrecio = row.querySelector('.precio');
                     inputPrecio.value = parseFloat(this.dataset.precio).toFixed(2);
-                    inputPrecio.dispatchEvent(new Event('input')); // dispara calc + colorPrecio
+                    inputPrecio.dispatchEvent(new Event('input'));
                 });
             });
         }
