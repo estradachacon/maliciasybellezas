@@ -1445,66 +1445,134 @@ $logoUrl = setting('logo')
                     `<?= base_url('upload/productos/') ?>/${p.imagen}` :
                     'https://via.placeholder.com/60';
 
+                let ofertasHtml = '';
+                if (p.ofertas && p.ofertas.length > 0) {
+                    ofertasHtml = p.ofertas.map(o => {
+                        let cls = 'oferta-pendiente';
+                        if (Math.abs(o.precio - p.precio) < 0.01) cls = 'oferta-activa';
+                        else if (p.cantidad >= o.cantidad_minima)  cls = 'oferta-alcanzable';
+                        return `<span class="oferta-pill ${cls}"
+                            data-index="${i}" data-precio="${o.precio}" data-min="${o.cantidad_minima}">
+                            ${o.cantidad_minima}+ → $${parseFloat(o.precio).toFixed(2)}
+                        </span>`;
+                    }).join('');
+                }
+
                 html += `
                 <div class="card mb-2 shadow-sm border-0 position-relative">
 
-                    <!-- 🔢 INDEX -->
                     <span class="badge bg-primary text-white position-absolute"
-                        style="top:5px; left:5px;">
-                        ${i + 1}
-                    </span>
+                        style="top:5px; left:5px;">${i + 1}</span>
 
                     <button type="button"
                         class="btn btn-danger btn-sm btn-eliminar btn-delete"
-                        data-index="${i}">
-                        ×
-                    </button>
+                        data-index="${i}">×</button>
 
                     <div class="card-body p-2">
-
                         <div class="d-flex gap-2">
 
-                            <!-- 🖼️ IMAGEN -->
-                            <img src="${foto}" 
+                            <img src="${foto}"
                                 class="img-producto-mini"
                                 onclick="verImagen('${foto}', ${i + 1}, ${p.cantidad}, ${p.precio})">
 
-                            <!-- 📦 INFO -->
                             <div class="flex-grow-1 producto-info">
 
-                                <div class="fw-semibold producto-nombre">
-                                    ${p.nombre}
-                                </div>
+                                <div class="fw-semibold producto-nombre">${p.nombre}</div>
 
-                                <div class="grid-valores mt-2" style="grid-template-columns:repeat(3,1fr);">
+                                <div class="row g-1 mt-1 align-items-start">
 
-                                    <div class="item">
-                                        <small>Cant</small>
-                                        <span>${p.cantidad}</span>
+                                    <div class="col-3">
+                                        <small class="text-muted" style="font-size:10px;">Cantidad</small>
+                                        <input type="number" class="form-control form-control-sm item-cantidad"
+                                            data-index="${i}" value="${p.cantidad}" min="1" max="${p.stock}">
                                     </div>
 
-                                    <div class="item">
-                                        <small>Precio</small>
-                                        <span>$${formatearMoneda(p.precio)}</span>
+                                    <div class="col-5">
+                                        <small class="text-muted" style="font-size:10px;">Precio</small>
+                                        <input type="text" class="form-control form-control-sm item-precio"
+                                            data-index="${i}" value="${formatearMoneda(p.precio)}">
+                                        <div class="mt-1">${ofertasHtml}</div>
                                     </div>
 
-                                    <div class="item total">
-                                        <small>Sub</small>
-                                        <span>$${formatearMoneda(subtotal)}</span>
+                                    <div class="col-4">
+                                        <small class="text-muted" style="font-size:10px;">Subtotal</small>
+                                        <input type="text" class="form-control form-control-sm item-sub"
+                                            data-index="${i}" value="$${formatearMoneda(subtotal)}" readonly
+                                            style="background:#e9f7ef; font-weight:bold; color:#198754;">
                                     </div>
 
                                 </div>
 
                             </div>
-
                         </div>
-
                     </div>
                 </div>
                 `;
             });
 
             $('#listaProductos').html(html);
+            bindItemEvents();
+        }
+
+        function bindItemEvents() {
+
+            document.querySelectorAll('.item-cantidad').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    let i = parseInt(this.dataset.index);
+                    let nuevaCant = parseFloat(this.value) || 0;
+                    let maxStock = productos[i].stock;
+
+                    if (nuevaCant > maxStock) {
+                        this.value = maxStock;
+                        nuevaCant = maxStock;
+                        Swal.fire('Stock insuficiente', `Solo hay ${maxStock} unidades`, 'warning');
+                    }
+
+                    productos[i].cantidad = nuevaCant;
+                    recalcItem(i);
+                });
+            });
+
+            document.querySelectorAll('.item-precio').forEach(function(input) {
+                input.addEventListener('change', function() {
+                    let i = parseInt(this.dataset.index);
+                    let nuevoPrecio = limpiarNumero(this.value);
+                    this.value = formatearMoneda(nuevoPrecio);
+                    productos[i].precio = nuevoPrecio;
+                    recalcItem(i);
+                });
+            });
+
+            document.querySelectorAll('.oferta-pill[data-index]').forEach(function(pill) {
+                pill.addEventListener('click', function() {
+                    let i = parseInt(this.dataset.index);
+                    let precio = parseFloat(this.dataset.precio);
+                    productos[i].precio = precio;
+                    let precioInput = document.querySelector(`.item-precio[data-index="${i}"]`);
+                    if (precioInput) precioInput.value = formatearMoneda(precio);
+                    recalcItem(i);
+                });
+            });
+        }
+
+        function recalcItem(i) {
+            let p = productos[i];
+            let subtotal = p.cantidad * p.precio;
+
+            let subInput = document.querySelector(`.item-sub[data-index="${i}"]`);
+            if (subInput) subInput.value = '$' + formatearMoneda(subtotal);
+
+            // Actualizar colores de badges según cantidad y precio actuales
+            document.querySelectorAll(`.oferta-pill[data-index="${i}"]`).forEach(function(pill) {
+                let min       = parseInt(pill.dataset.min);
+                let pillPrecio = parseFloat(pill.dataset.precio);
+                pill.className = 'oferta-pill';
+                if (Math.abs(pillPrecio - p.precio) < 0.01) pill.className += ' oferta-activa';
+                else if (p.cantidad >= min)                  pill.className += ' oferta-alcanzable';
+                else                                         pill.className += ' oferta-pendiente';
+            });
+
+            calcularTotalProductos();
         }
 
         function construirPayload() {
@@ -1914,7 +1982,8 @@ $logoUrl = setting('logo')
                         cantidad:    1,
                         precio:      parseFloat(data.precio || 0),
                         imagen:      data.imagen || null,
-                        stock:       data.stock || 0
+                        stock:       data.stock || 0,
+                        ofertas:     normalizarOfertas(data.ofertas || [])
                     });
                     renderTabla();
                     calcularTotalProductos();
@@ -2089,7 +2158,8 @@ $logoUrl = setting('logo')
                 cantidad:    cantidad,
                 precio:      precio,
                 imagen:      productoActual.imagen || null,
-                stock:       stock
+                stock:       stock,
+                ofertas:     normalizarOfertas(ofertasActuales)
             };
 
             // 🔥 BUSCAR EXISTENTE (IMPORTANTE: producto + sucursal)
