@@ -266,43 +266,62 @@ class ProductosController extends BaseController
     // ── BUSCAR POR CÓDIGO DE BARRAS (para escáner en venta) ──────
     public function buscarPorCodigo()
     {
-        $codigo   = $this->request->getGet('codigo');
-        $branchId = (int)session('branch_id');
+        $codigo    = $this->request->getGet('codigo');
+        $branchId  = (int)session('branch_id');
+        $puedeTodo = requerirPermiso('descargar_de_todos_los_stock') === true;
 
         if (!$codigo) {
             return $this->response->setJSON(['found' => false]);
         }
 
-        $db  = \Config\Database::connect();
+        $db = \Config\Database::connect();
 
+        $select = "
+            p.id          AS producto_id,
+            p.nombre,
+            p.precio,
+            p.imagen,
+            p.codigo_barras,
+            i.branch_id,
+            SUM(
+                CASE
+                    WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
+                    WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
+                    ELSE 0
+                END
+            ) AS stock
+        ";
+
+        // Siempre buscar primero en la sucursal del usuario
         $row = $db->table('productos p')
-            ->select("
-                p.id          AS producto_id,
-                p.nombre,
-                p.precio,
-                p.imagen,
-                p.codigo_barras,
-                i.branch_id,
-                SUM(
-                    CASE
-                        WHEN LOWER(i.tipo) = 'entrada' THEN  i.cantidad
-                        WHEN LOWER(i.tipo) = 'salida'  THEN -i.cantidad
-                        ELSE 0
-                    END
-                ) AS stock
-            ")
-            ->join('inventario_historico i', 'i.producto_id = p.id AND i.branch_id = ' . $branchId, 'left')
+            ->select($select)
+            ->join('inventario_historico i', 'i.producto_id = p.id', 'inner')
             ->where('p.codigo_barras', $codigo)
+            ->where('i.branch_id', $branchId)
             ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id')
+            ->having('stock >', 0)
             ->get()
             ->getRowObject();
 
-        if (!$row) {
-            return $this->response->setJSON(['found' => false, 'msg' => 'Producto no encontrado']);
+        // Si no hay stock en su sucursal y tiene permiso, buscar en cualquiera
+        if (!$row && $puedeTodo) {
+            $row = $db->table('productos p')
+                ->select($select)
+                ->join('inventario_historico i', 'i.producto_id = p.id', 'inner')
+                ->where('p.codigo_barras', $codigo)
+                ->groupBy('p.id, p.nombre, p.precio, p.imagen, p.codigo_barras, i.branch_id')
+                ->having('stock >', 0)
+                ->orderBy('stock', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRowObject();
         }
 
-        if ((int)($row->stock ?? 0) <= 0) {
-            return $this->response->setJSON(['found' => false, 'msg' => 'Sin stock en esta sucursal para: ' . $row->nombre]);
+        if (!$row) {
+            $msg = $puedeTodo
+                ? 'Producto no encontrado o sin stock'
+                : 'Producto no encontrado en esta sucursal';
+            return $this->response->setJSON(['found' => false, 'msg' => $msg]);
         }
 
         $ofertas = $db->table('producto_precios')

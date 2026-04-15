@@ -2,43 +2,23 @@
 <?= $this->section('content') ?>
 
 <style>
-    #productosTable input,
-    #productosTable .select2-selection {
-        border: none !important;
-        border-bottom: 1px solid #ccc !important;
-        box-shadow: none !important;
+    /* Desktop: inputs minimalistas en tabla de productos */
+    @media (min-width: 768px) {
+        #productosTable input,
+        #productosTable .select2-selection {
+            border: none !important;
+            border-bottom: 1px solid #ccc !important;
+            box-shadow: none !important;
+        }
+        #productosTable input:not(.precio) { background: transparent !important; }
+        #productosTable input { height: 38px !important; line-height: 38px; padding: 0 8px; }
+        #productosTable input:focus { border-bottom: 2px solid #007bff !important; }
+        .producto-row:hover { background: #f9fafb; }
     }
 
-    /* 🔥 SOLO inputs normales */
-    #productosTable input:not(.precio) {
-        background: transparent !important;
-    }
+    #pagosTable input { height: 38px !important; padding: 0 8px; }
 
-    #pagosTable input {
-        height: 38px !important;
-        padding: 0 8px;
-    }
-
-    .producto,
-    .cantidad,
-    .precio,
-    .total {
-        height: 38px !important;
-    }
-
-    #productosTable input {
-        height: 38px !important;
-        line-height: 38px;
-        padding: 0 8px;
-    }
-
-    #productosTable input:focus {
-        border-bottom: 2px solid #007bff !important;
-    }
-
-    #productosTable tbody tr:hover {
-        background: #f9fafb;
-    }
+    .producto, .cantidad, .precio, .total { height: 38px !important; }
 
     .add-line-link {
         color: #007bff;
@@ -79,69 +59,78 @@
     #barcodeInput:focus { border-color: #198754; box-shadow: 0 0 0 .2rem rgba(25,135,84,.25); }
     #barcodeInput.is-invalid { border-color: #dc3545 !important; }
 
-    /* ── MOBILE ─────────────────────────────────────────── */
+    /* ── PRODUCTO ROW — desktop ─────────────────────────── */
+    .producto-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .producto-row .i {
+        min-width: 22px;
+        padding-top: 9px;
+        font-size: 13px;
+        color: #6c757d;
+        flex-shrink: 0;
+    }
+    .producto-row .pr-select { flex: 1; min-width: 0; }
+    .producto-row .pr-select .select2-container { width: 100% !important; }
+    .producto-row .pr-subfields {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+        flex-shrink: 0;
+    }
+    .producto-row .pr-subfields > div:first-child  { width: 70px;  flex-shrink:0; }
+    .producto-row .pr-precio-wrap                  { width: 110px; flex-shrink:0; }
+    .producto-row .pr-subfields > div:last-child   { width: 85px;  flex-shrink:0; }
+    .producto-row .del { flex-shrink: 0; margin-top: 2px; }
+
+    /* ── PRODUCTO ROW — mobile ──────────────────────────── */
     @media (max-width: 767px) {
 
-        /* Tabla productos: cada fila como tarjeta */
-        #productosTable thead { display: none; }
-
-        #productosTable tbody tr {
-            display: block;
+        .producto-row {
+            flex-wrap: wrap;
             border: 1px solid #dee2e6;
             border-radius: 10px;
-            margin-bottom: 10px;
-            padding: 10px 10px 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #dee2e6 !important;
             position: relative;
-            background: #fff;
         }
+        .producto-row .i { display: none; }
 
-        #productosTable tbody td {
-            display: inline-block;
-            border: none !important;
-            padding: 2px 3px !important;
-            vertical-align: top;
+        /* Producto ocupa todo menos botón eliminar */
+        .producto-row .pr-select { width: calc(100% - 44px); flex: none; }
+        .producto-row .pr-select .select2-container { width: 100% !important; }
+
+        /* Campos debajo del producto, en fila */
+        .producto-row .pr-subfields {
+            width: 100%;
+            margin-top: 8px;
         }
+        .producto-row .pr-subfields > div:first-child { flex: 1;   width: auto !important; min-width: 0; }
+        .producto-row .pr-precio-wrap                { flex: 2;   width: auto !important; min-width: 0; }
+        .producto-row .pr-subfields > div:last-child { flex: 1.5; width: auto !important; min-width: 0; }
 
-        /* Ocultar columna # */
-        #productosTable tbody td.i { display: none; }
+        /* Botón eliminar: esquina superior derecha */
+        .producto-row .del { position: absolute; top: 8px; right: 8px; margin-top: 0; }
 
-        /* Producto: ancho completo menos botón eliminar */
-        #productosTable tbody td:nth-child(2) { width: calc(100% - 42px); }
-        #productosTable .select2-container { width: 100% !important; }
+        /* Ofertas ocupa fila completa */
+        .producto-row .ofertas-display { width: 100%; }
 
-        /* Cant / Precio / Total en una fila */
-        #productosTable tbody td:nth-child(3) { width: 28%; }
-        #productosTable tbody td:nth-child(4) { width: 44%; }
-        #productosTable tbody td:nth-child(5) { width: 24%; }
+        /* Inputs táctiles */
+        .producto-row input.form-control,
+        .producto-row .select2-selection { min-height: 40px !important; }
 
-        #productosTable tbody td:nth-child(3) input,
-        #productosTable tbody td:nth-child(4) input,
-        #productosTable tbody td:nth-child(5) input { width: 100% !important; }
-
-        /* Etiquetas mini encima de cada input */
-        #productosTable tbody td:nth-child(3)::before { content: "Cant";   display:block; font-size:10px; color:#6c757d; }
-        #productosTable tbody td:nth-child(4)::before { content: "Precio"; display:block; font-size:10px; color:#6c757d; }
-        #productosTable tbody td:nth-child(5)::before { content: "Total";  display:block; font-size:10px; color:#6c757d; }
-
-        /* Botón eliminar: esquina superior derecha de la tarjeta */
-        #productosTable tbody td:nth-child(6) {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: auto;
-        }
-
-        /* Inputs táctiles más altos */
-        #productosTable input,
-        #productosTable .select2-selection { min-height: 40px !important; }
-
-        /* Total de venta más visible */
+        /* Total venta más visible */
         #totalVenta { font-size: 36px !important; }
 
         /* Botón guardar full width */
         #ventaForm .btn-success { width: 100%; padding: .6rem; font-size: 1.1rem; }
 
-        /* Link agregar producto */
+        /* Agregar producto centrado */
         .add-line-link { font-size: 1rem; display: block; text-align: center; padding: 10px 0; }
     }
 </style>
@@ -215,19 +204,16 @@
                     </div>
 
                     <!-- PRODUCTOS -->
-                    <table class="table table-sm" id="productosTable">
-                        <thead>
-                            <tr>
-                                <th style="width:5%">#</th>
-                                <th style="width:50%">Producto</th>
-                                <th style="width:10%">Cant</th>
-                                <th style="width:15%">Precio</th>
-                                <th style="width:15%">Total</th>
-                                <th style="width:5%"></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="d-none d-md-flex text-muted pb-1 mb-1"
+                        style="font-size:12px;font-weight:600;border-bottom:2px solid #dee2e6;gap:6px;">
+                        <span style="min-width:22px;">#</span>
+                        <span style="flex:1;">Producto</span>
+                        <span style="width:70px;">Cant</span>
+                        <span style="width:110px;">Precio</span>
+                        <span style="width:85px;">Total</span>
+                        <span style="width:36px;"></span>
+                    </div>
+                    <div id="productosTable"></div>
 
                     <a id="addRowBtn" class="add-line-link">
                         <i class="fa fa-plus"></i> Agregar producto
@@ -350,7 +336,7 @@
         $('#cliente_id').append(def).trigger('change');
 
         // 📦 PRODUCTOS
-        const table = document.querySelector('#productosTable tbody');
+        const table = document.getElementById('productosTable');
         const totalVenta = document.getElementById('totalVenta');
         const resumenTotal = document.getElementById('resumenTotal');
         const diferenciaEl = document.getElementById('diferencia');
@@ -377,18 +363,30 @@
 
         function addRow(preData = null) {
 
-            let row = document.createElement('tr');
+            let row = document.createElement('div');
+            row.className = 'producto-row';
 
             row.innerHTML = `
-                <td class="i"></td>
-                <td><select class="producto"></select></td>
-                <td><input type="number" class="cantidad" min="1"></td>
-                <td>
-                    <input type="number" class="precio" step="0.01" min="0" placeholder="Precio">
-                    <div class="ofertas-display"></div>
-                </td>
-                <td><input type="text" class="total" readonly></td>
-                <td><button class="btn btn-danger btn-sm del">X</button></td>
+                <span class="i"></span>
+                <div class="pr-select">
+                    <select class="producto w-100"></select>
+                </div>
+                <div class="pr-subfields">
+                    <div style="flex:1;min-width:0;">
+                        <small class="d-md-none text-muted" style="font-size:10px;">Cant</small>
+                        <input type="number" class="cantidad form-control form-control-sm" min="1">
+                    </div>
+                    <div class="pr-precio-wrap" style="flex:2;min-width:0;">
+                        <small class="d-md-none text-muted" style="font-size:10px;">Precio</small>
+                        <input type="number" class="precio form-control form-control-sm" step="0.01" min="0" placeholder="Precio">
+                        <div class="ofertas-display"></div>
+                    </div>
+                    <div style="flex:1.5;min-width:0;">
+                        <small class="d-md-none text-muted" style="font-size:10px;">Total</small>
+                        <input type="text" class="total form-control form-control-sm" readonly>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm del">×</button>
             `;
 
             table.appendChild(row);
@@ -529,7 +527,7 @@
         }
 
         function index() {
-            document.querySelectorAll('#productosTable tbody tr').forEach((r, i) => {
+            document.querySelectorAll('#productosTable .producto-row').forEach((r, i) => {
                 r.querySelector('.i').innerText = i + 1;
             });
         }
@@ -661,7 +659,7 @@
 
                     // ¿Ya está en la tabla? → incrementar cantidad
                     let existingRow = null;
-                    document.querySelectorAll('#productosTable tbody tr').forEach(r => {
+                    document.querySelectorAll('#productosTable .producto-row').forEach(r => {
                         if (r.dataset.productoId == data.producto_id) existingRow = r;
                     });
 
@@ -680,7 +678,7 @@
 
                     // ¿Hay una fila vacía disponible? → reutilizarla
                     let emptyRow = null;
-                    document.querySelectorAll('#productosTable tbody tr').forEach(r => {
+                    document.querySelectorAll('#productosTable .producto-row').forEach(r => {
                         if (!r.dataset.productoId && !emptyRow) emptyRow = r;
                     });
 
@@ -865,7 +863,7 @@
             // =========================
             // 🔥 VALIDAR PRODUCTOS
             // =========================
-            document.querySelectorAll('#productosTable tbody tr').forEach((row, i) => {
+            document.querySelectorAll('#productosTable .producto-row').forEach((row, i) => {
 
                 let producto = $(row).find('.producto').val();
                 let cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
@@ -919,7 +917,7 @@
             let detalle = [];
             let detalleHtml = '';
 
-            document.querySelectorAll('#productosTable tbody tr').forEach(row => {
+            document.querySelectorAll('#productosTable .producto-row').forEach(row => {
 
                 let producto_id = $(row).find('.producto').val();
                 let nombre = $(row).find('.producto').select2('data')[0]?.text || 'Producto';
