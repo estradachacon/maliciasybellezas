@@ -21,12 +21,7 @@ $logoUrl = setting('logo')
 
     @media (max-width: 768px) {
         .producto-info {
-            padding-right: 10px;
-            /* o 0 */
-        }
-
-        #listaProductos .producto-nombre {
-            text-indent: 0;
+            margin-left: -20px; /* prueba entre -20 y -40 */
         }
     }
 
