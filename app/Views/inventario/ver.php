@@ -162,7 +162,63 @@
             gap: 6px;
         }
     }
+@media (max-width: 767px) {
 
+    /* 🔥 Cada campo ya no apila feo */
+    .precio-row .pv-field {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    /* 🔥 labels más compactos */
+    .precio-row .pv-label {
+        font-size: 9px;
+        line-height: 1;
+        margin-bottom: 2px;
+    }
+
+    /* 🔥 inputs full width */
+    .precio-row .pv-input {
+        width: 100%;
+        min-height: 40px;
+        font-size: 15px;
+    }
+
+    /* 🔥 forzar que ambos campos queden en la misma fila */
+    .precio-row .pv-field:nth-child(1),
+    .precio-row .pv-field:nth-child(3) {
+        flex: 1;
+    }
+
+    /* flecha centrada entre filas */
+    .precio-row .pv-arrow {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        margin: 2px 0;
+    }
+
+    /* 🔥 fila inferior limpia */
+    .precio-row .pv-badge {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .precio-row .pv-actions {
+        position: static;
+        margin: 0;
+        display: flex;
+        gap: 6px;
+    }
+}
     .precio-row:hover {
         border-color: #adb5bd;
     }
