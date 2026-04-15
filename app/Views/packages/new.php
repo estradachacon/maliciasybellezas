@@ -24,12 +24,20 @@ $logoUrl = setting('logo')
             width: calc(100% + 25px);
             margin-right: -27px;
         }
+
+        #barcodeInput {
+            height: 50px;
+            font-size: 14px;
+            font-weight: 500;
+        }
     }
-#barcodeInput {
-    height: 50px;
-    font-size: 18px;
-    font-weight: 600;
-}
+
+    #barcodeInput {
+        height: 50px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
     #overlayPreview {
         position: fixed;
         top: 0;
@@ -1894,9 +1902,9 @@ $logoUrl = setting('logo')
             let data = e.params.data;
 
             let producto_id = data.producto_id || data.id;
-            let branch_id   = data.branch_id;
-            let stock       = data.stock || 0;
-            let precio      = parseFloat(data.precio || 0);
+            let branch_id = data.branch_id;
+            let stock = data.stock || 0;
+            let precio = parseFloat(data.precio || 0);
 
             if (!producto_id) return;
 
