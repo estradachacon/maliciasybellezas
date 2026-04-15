@@ -5,7 +5,57 @@
     .img-header-producto {
         transition: all 0.2s ease;
     }
+/* ── GRID LIMPIO ── */
+.precio-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
+/* fila superior */
+.pv-top {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+/* inputs */
+.pv-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-input {
+    width: 100%;
+}
+
+/* flecha */
+.pv-arrow {
+    text-align: center;
+    font-size: 16px;
+    opacity: 0.7;
+}
+
+/* fila inferior */
+.pv-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* badge */
+.pv-badge {
+    font-size: 12px;
+}
+
+/* botones */
+.pv-actions {
+    display: flex;
+    gap: 6px;
+}
     .img-header-producto:hover {
         transform: scale(1.05);
     }
@@ -106,40 +156,18 @@
         position: relative;
     }
 
-    @media (max-width: 767px) {
+ @media (max-width: 767px) {
 
-        .precio-row {
-            flex-wrap: wrap;
-        }
-
-        .precio-row .pv-field {
-            flex: 1;
-            min-width: 0;
-        }
-
-        /* 🔥 LA CLAVE */
-        .precio-row .pv-arrow {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 16px;
-        }
-
-        /* 🔥 fila inferior */
-        .precio-row .pv-badge {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 6px;
-        }
-
-        .precio-row .pv-actions {
-            position: static;
-            margin: 0;
-        }
+    .pv-top {
+        grid-template-columns: 1fr auto 1fr;
+        gap: 8px;
     }
+
+    .pv-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
 
     .precio-row:hover {
         border-color: #adb5bd;
@@ -862,22 +890,29 @@
             </div>` : '';
 
             row.innerHTML = `
-            <div class="pv-field">
-                <span class="pv-label">Cantidad mín.</span>
-                <input class="pv-input pv-qty" type="number" min="1" step="1"
-                    value="${cantidad_minima}" placeholder="Ej: 6"
-                    inputmode="numeric"
-                    onkeypress="return event.key!='.'&&event.key!=','">
-            </div>
-            <div class="pv-arrow">→</div>
-            <div class="pv-field">
-                <span class="pv-label">Precio unitario</span>
-                <input class="pv-input pv-price" type="number" step="0.01" min="0.01"
-                    value="${precio}" placeholder="$0.00">
-            </div>
-            <div class="pv-badge">${badgeHtml}</div>
-            ${actionsHtml}
-        `;
+                <div class="pv-top">
+                    <div class="pv-field">
+                        <span class="pv-label">Cantidad mín.</span>
+                        <input class="pv-input pv-qty" type="number" min="1" step="1"
+                            value="${cantidad_minima}" placeholder="Ej: 6"
+                            inputmode="numeric"
+                            onkeypress="return event.key!='.'&&event.key!=','">
+                    </div>
+
+                    <div class="pv-arrow">→</div>
+
+                    <div class="pv-field">
+                        <span class="pv-label">Precio unitario</span>
+                        <input class="pv-input pv-price" type="number" step="0.01" min="0.01"
+                            value="${precio}" placeholder="$0.00">
+                    </div>
+                </div>
+
+                <div class="pv-bottom">
+                    <div class="pv-badge">${badgeHtml}</div>
+                    ${actionsHtml}
+                </div>
+            `;
 
             // live preview del badge
             row.querySelector('.pv-qty')?.addEventListener('input', () => actualizarBadge(row));
