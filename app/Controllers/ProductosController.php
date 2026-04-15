@@ -329,13 +329,13 @@ class ProductosController extends BaseController
             ->orderBy('cantidad_minima', 'ASC')
             ->limit(5)
             ->get()
-            ->getResultObject();
+            ->getResultArray();
 
         return $this->response->setJSON([
             'found'       => true,
-            'id'          => $row->producto_id,
+            'id'          => $puedeTodo ? ($row->producto_id . '_' . $row->branch_id) : $row->producto_id,
             'producto_id' => (int)$row->producto_id,
-            'branch_id'   => $branchId,
+            'branch_id'   => (int)$row->branch_id,
             'text'        => $row->nombre,
             'precio'      => $row->precio,
             'stock'       => (int)($row->stock ?? 0),
@@ -360,7 +360,7 @@ class ProductosController extends BaseController
             ->orderBy('cantidad_minima', 'ASC')
             ->limit(5)
             ->get()
-            ->getResultObject();
+            ->getResultArray();
 
         return $this->response->setJSON($ofertas);
     }

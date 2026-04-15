@@ -542,10 +542,34 @@
             actualizarResumen();
         }
 
+        function normalizarOfertas(ofertas) {
+            if (Array.isArray(ofertas)) {
+                return ofertas
+                    .map(o => ({
+                        cantidad_minima: parseInt(o.cantidad_minima || 0),
+                        precio: parseFloat(o.precio || 0)
+                    }))
+                    .filter(o => o.cantidad_minima > 0 && o.precio > 0)
+                    .sort((a, b) => a.cantidad_minima - b.cantidad_minima);
+            }
+
+            if (ofertas && typeof ofertas === 'object') {
+                return normalizarOfertas(Object.values(ofertas));
+            }
+
+            return [];
+        }
+
         // ── Rellenar un row con datos pre-cargados (barcode / addRow) ──
         function fillRow(row, data) {
             let select = $(row).find('.producto');
-            let option = new Option(data.text, data.id, true, true);
+            let productoId = parseInt(data.producto_id || data.id || 0);
+            let optionValue = data.id || productoId;
+            let cantidad = parseFloat(row.querySelector('.cantidad').value) || 1;
+            let ofertas = normalizarOfertas(data.ofertas);
+
+            select.empty();
+            let option = new Option(data.text, optionValue, true, true);
             select.append(option).trigger('change');
 
             let inputPrecio = row.querySelector('.precio');
@@ -554,19 +578,18 @@
             row.dataset.precioSugerido = data.precio || 0;
             row.dataset.stock          = data.stock  || 0;
             row.dataset.branch         = data.branch_id || null;
-            row.dataset.productoId     = data.producto_id;
+            row.dataset.productoId     = productoId;
 
-            row.querySelector('.cantidad').value = 1;
+            row.querySelector('.cantidad').value = cantidad;
             row.querySelector('.total').value    = parseFloat(data.precio || 0).toFixed(2);
             calcTotal();
             aplicarColorPrecio(row);
 
-            if (data.ofertas && data.ofertas.length > 0) {
-                row.dataset.ofertas = JSON.stringify(data.ofertas);
-                showOfertas(row, data.ofertas, 1);
-            } else {
-                fetchOfertas(row, data.producto_id);
-            }
+            row.dataset.ofertas = JSON.stringify(ofertas);
+            showOfertas(row, ofertas, cantidad);
+
+            // Fuerza sincronización desde servidor para los casos de escáner/cámara.
+            fetchOfertas(row, productoId);
         }
 
         // ── Obtener ofertas del servidor ─────────────────────────────
@@ -575,6 +598,7 @@
             fetch(`<?= base_url('productos/ofertasPorProducto') ?>?producto_id=${productoId}`)
                 .then(r => r.json())
                 .then(ofertas => {
+                    ofertas = normalizarOfertas(ofertas);
                     row.dataset.ofertas = JSON.stringify(ofertas);
                     let cantidad = parseFloat(row.querySelector('.cantidad').value) || 1;
                     showOfertas(row, ofertas, cantidad);
@@ -584,6 +608,7 @@
         // ── Renderizar pills de ofertas ──────────────────────────────
         function showOfertas(row, ofertas, cantidad) {
             let div = row.querySelector('.ofertas-display');
+            ofertas = normalizarOfertas(ofertas);
             if (!ofertas || ofertas.length === 0) { div.innerHTML = ''; return; }
 
             // Mejor oferta aplicable = mayor cantidad_minima ≤ cantidad actual
@@ -614,7 +639,7 @@
 
         // ── Auto-aplicar la mejor oferta según cantidad ──────────────
         function applyMejorOferta(row, cantidad) {
-            let ofertas = JSON.parse(row.dataset.ofertas || '[]');
+            let ofertas = normalizarOfertas(JSON.parse(row.dataset.ofertas || '[]'));
             if (!ofertas.length) return;
 
             let mejor = null;
