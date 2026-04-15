@@ -169,7 +169,9 @@
         flex-direction: column;
         gap: 2px;
     }
-
+.precios-panel {
+    overflow-x: hidden;
+}
     .precio-row .pv-label {
         font-size: 10px;
         text-transform: uppercase;
