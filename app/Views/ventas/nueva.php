@@ -43,6 +43,87 @@
         height: 38px !important;
     }
 
+    /* ── PAGO ROW — desktop ─────────────────────────── */
+    .pago-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .pago-row .i {
+        min-width: 22px;
+        padding-top: 9px;
+        font-size: 13px;
+        color: #6c757d;
+    }
+
+    .pago-row .pg-select {
+        flex: 1;
+    }
+
+    .pago-row .pg-subfields {
+        width: 120px;
+    }
+
+    .pago-row .del {
+        flex-shrink: 0;
+    }
+
+    /* ── PAGO ROW — mobile ─────────────────────────── */
+    @media (max-width: 767px) {
+
+        #pagosTable {
+            display: block;
+        }
+
+        #pagosTable thead {
+            display: none;
+        }
+
+        #pagosTable tbody {
+            display: block;
+        }
+
+        .pago-row {
+            flex-wrap: wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .pago-row .i {
+            display: none;
+        }
+
+        .pago-row .pg-select {
+            width: calc(100% - 44px);
+        }
+
+        .pago-row .pg-subfields {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .pago-row .pg-subfields>div {
+            width: 100%;
+        }
+
+        .pago-row .del {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+
+        .pago-row input,
+        .pago-row .select2-selection {
+            min-height: 40px !important;
+        }
+    }
+
     .add-line-link {
         color: #007bff;
         cursor: pointer;
@@ -606,45 +687,40 @@
 
             return row;
         }
-function aplicarColorPrecio(row) {
 
-                let input = row.querySelector('.precio');
+        function aplicarColorPrecio(row) {
 
-                let sugerido = parseFloat(row.dataset.precioSugerido);
-                let actual = parseFloat(input.value);
+            let input = row.querySelector('.precio');
 
-                // reset
-                input.style.background = '';
-                input.style.borderBottom = '2px solid #ccc';
-                input.style.color = '#000';
-                input.style.fontWeight = 'normal';
+            let sugerido = parseFloat(row.dataset.precioSugerido);
+            let actual = parseFloat(input.value);
 
-                if (isNaN(sugerido) || isNaN(actual)) return;
+            // reset
+            input.style.background = '';
+            input.style.borderBottom = '2px solid #ccc';
+            input.style.color = '#000';
+            input.style.fontWeight = 'normal';
 
-                // 🟢 IGUAL
-                if (Math.abs(actual - sugerido) < 0.01) {
-                    input.style.background = '#e9f7ef';
-                    input.style.borderBottom = '2px solid #198754';
-                    input.style.color = '#198754';
-                    input.style.fontWeight = 'bold';
-                }
+            if (isNaN(sugerido) || isNaN(actual)) return;
 
-                // 🟡 MENOR
-                else if (actual < sugerido) {
-                    input.style.background = '#fff3cd';
-                    input.style.borderBottom = '2px solid #ffc107';
-                    input.style.color = '#856404';
-                    input.style.fontWeight = 'bold';
-                }
-
-                // 🔵 MAYOR
-                else {
-                    input.style.background = '#d1ecf1';
-                    input.style.borderBottom = '2px solid #0dcaf0';
-                    input.style.color = '#055160';
-                    input.style.fontWeight = 'bold';
-                }
+            if (Math.abs(actual - sugerido) < 0.01) {
+                input.style.background = '#e9f7ef';
+                input.style.borderBottom = '2px solid #198754';
+                input.style.color = '#198754';
+                input.style.fontWeight = 'bold';
+            } else if (actual < sugerido) {
+                input.style.background = '#fff3cd';
+                input.style.borderBottom = '2px solid #ffc107';
+                input.style.color = '#856404';
+                input.style.fontWeight = 'bold';
+            } else {
+                input.style.background = '#d1ecf1';
+                input.style.borderBottom = '2px solid #0dcaf0';
+                input.style.color = '#055160';
+                input.style.fontWeight = 'bold';
             }
+        }
+
         function index() {
             document.querySelectorAll('#productosTable .producto-row').forEach((r, i) => {
                 r.querySelector('.i').innerText = i + 1;
@@ -934,16 +1010,29 @@ function aplicarColorPrecio(row) {
 
         function addPago() {
 
-            let row = document.createElement('tr');
+            let row = document.createElement('div');
+            row.className = 'pago-row';
 
             row.innerHTML = `
-                <td class="i"></td>
-                <td><select class="cuenta"></select></td>
-                <td><input type="number" class="monto" step="0.01" min="0"></td>
-                <td><button class="btn btn-danger btn-sm del">X</button></td>
+                <span class="i"></span>
+
+                <div class="pg-select">
+                    <small class="d-md-none text-muted" style="font-size:10px;">Cuenta</small>
+                    <select class="cuenta w-100"></select>
+                </div>
+
+                <div class="pg-subfields">
+                    <div>
+                        <small class="d-md-none text-muted" style="font-size:10px;">Monto</small>
+                        <input type="number" class="monto form-control form-control-sm" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <button class="btn btn-danger btn-sm del">×</button>
             `;
 
             pagosTable.appendChild(row);
+            indexPagos();
 
             $(row).find('.cuenta').select2({
                 placeholder: 'Cuenta',
@@ -966,6 +1055,13 @@ function aplicarColorPrecio(row) {
                 row.remove();
                 calcPagos();
             };
+        }
+
+        function indexPagos() {
+            document.querySelectorAll('#pagosTable .pago-row').forEach((r, i) => {
+                let el = r.querySelector('.i');
+                if (el) el.innerText = i + 1;
+            });
         }
 
         function formatProducto(producto) {
