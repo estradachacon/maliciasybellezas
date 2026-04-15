@@ -21,7 +21,7 @@ $logoUrl = setting('logo')
 
     @media (max-width: 768px) {
         .producto-info {
-            margin-left: -20px; /* prueba entre -20 y -40 */
+            margin-left: 20px; /* prueba entre -20 y -40 */
         }
     }
 
