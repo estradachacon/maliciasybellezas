@@ -53,6 +53,7 @@ class Permisos extends BaseConfig
             'actualizar_foto_paquete',
             'ver_traslados_entre_sucursales',
             'crear_traslado',
+            'anular_traslado',
         ],
 
         'Compras' => [

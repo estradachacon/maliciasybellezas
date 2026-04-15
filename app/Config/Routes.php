@@ -288,6 +288,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {    // Grupo del Da
     $routes->get('traslados/crear',            'TrasladosController::crear');
     $routes->post('traslados/guardar',          'TrasladosController::guardar');
     $routes->get('traslados/(:num)',           'TrasladosController::ver/$1');
+    $routes->post('traslados/(:num)/anular',   'TrasladosController::anular/$1');
     $routes->get('traslados/buscar-productos', 'TrasladosController::buscarProductos');
     $routes->get('traslados/searchAjax',      'TrasladosController::searchAjax');
     $routes->get('productos/searchAjaxSelectStockBranch', 'ProductosController::searchAjaxSelectStockBranch');

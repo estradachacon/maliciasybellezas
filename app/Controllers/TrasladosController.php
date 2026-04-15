@@ -10,10 +10,20 @@ class TrasladosController extends BaseController
     // ── LISTADO ───────────────────────────────────────────────────
     public function index()
     {
-        $model    = new TrasladoModel();
-        $traslados = $model->conRelaciones()->get()->getResultObject();
+        $model   = new TrasladoModel();
+        $perPage = 10;
+        $page    = (int)($this->request->getGet('page') ?? 1);
 
-        return view('traslados/index', compact('traslados'));
+        $builder = $model->conRelaciones()->orderBy('t.created_at', 'DESC');
+        $total   = (clone $builder)->countAllResults(false);
+        $offset  = ($page - 1) * $perPage;
+
+        $traslados = $builder->limit($perPage, $offset)->get()->getResultObject();
+
+        $pager = \Config\Services::pager();
+        $pager->makeLinks($page, $perPage, $total, 'default_full', 0, 'traslados');
+
+        return view('traslados/index', compact('traslados', 'pager'));
     }
 
     // ── FORMULARIO CREAR ─────────────────────────────────────────
@@ -207,6 +217,95 @@ if ($stockDisponible < $cantidad) {
         return view('traslados/ver', compact('traslado', 'detalles'));
     }
 
+    // ── ANULAR ────────────────────────────────────────────────────
+    public function anular(int $id)
+    {
+        if (!tienePermiso('anular_traslado')) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Sin permiso']);
+        }
+
+        $db           = \Config\Database::connect();
+        $model        = new TrasladoModel();
+        $detalleModel = new TrasladoDetalleModel();
+        $userId       = session('id');
+
+        $traslado = $model->find($id);
+
+        if (!$traslado) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Traslado no encontrado']);
+        }
+
+        if ($traslado->estado === 'cancelado') {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'El traslado ya está anulado']);
+        }
+
+        $detalles = $detalleModel->where('traslado_id', $id)->findAll();
+
+        $db->transStart();
+
+        $now = date('Y-m-d H:i:s');
+
+        // ── 1. Revertir inventario ────────────────────────────────
+        foreach ($detalles as $d) {
+            // Devolver al origen
+            $db->table('inventario_historico')->insert([
+                'producto_id' => $d->producto_id,
+                'branch_id'   => $traslado->origen_branch_id,
+                'tipo'        => 'entrada',
+                'cantidad'    => $d->cantidad,
+                'origen'      => 'anulacion_traslado',
+                'origen_id'   => $id,
+                'usuario_id'  => $userId,
+                'created_at'  => $now,
+            ]);
+
+            // Retirar del destino
+            $db->table('inventario_historico')->insert([
+                'producto_id' => $d->producto_id,
+                'branch_id'   => $traslado->destino_branch_id,
+                'tipo'        => 'salida',
+                'cantidad'    => $d->cantidad,
+                'origen'      => 'anulacion_traslado',
+                'origen_id'   => $id,
+                'usuario_id'  => $userId,
+                'created_at'  => $now,
+            ]);
+        }
+
+        // ── 2. Revertir gasto si hubo costo ──────────────────────
+        if ($traslado->costo_traslado > 0 && $traslado->cuenta_id) {
+            $transactionModel = new \App\Models\TransactionModel();
+            $transactionModel->addEntrada(
+                $traslado->cuenta_id,
+                $traslado->costo_traslado,
+                'anulacion_traslado',
+                $id
+            );
+        }
+
+        // ── 3. Marcar como cancelado ──────────────────────────────
+        $model->update($id, ['estado' => 'cancelado']);
+
+        // ── 4. Bitácora ───────────────────────────────────────────
+        registrar_bitacora(
+            'Traslado anulado ID ' . $id,
+            'Traslados',
+            'Origen: ' . $traslado->origen_branch_id .
+                ' → Destino: ' . $traslado->destino_branch_id .
+                ' | Productos revertidos: ' . count($detalles) .
+                ' | Costo devuelto: $' . number_format($traslado->costo_traslado, 2),
+            $userId
+        );
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Error al anular el traslado']);
+        }
+
+        return $this->response->setJSON(['status' => 'ok']);
+    }
+
     // ── BUSCAR PRODUCTOS (para el autocomplete del formulario) ────
     public function buscarProductos()
     {
@@ -242,21 +341,19 @@ if ($stockDisponible < $cantidad) {
     public function searchAjax()
     {
         $model    = new TrasladoModel();
-        $q        = $this->request->getGet('q');
         $estado   = $this->request->getGet('estado');
         $desde    = $this->request->getGet('fecha_desde');
         $hasta    = $this->request->getGet('fecha_hasta');
         $order    = $this->request->getGet('order') ?? 'DESC';
         $perPage  = (int)($this->request->getGet('perPage') ?? 10);
 
+        $qOrigen  = $this->request->getGet('q_origen');
+        $qDestino = $this->request->getGet('q_destino');
+
         $builder = $model->conRelaciones();
 
-        if ($q) {
-            $builder->groupStart()
-                ->like('o.branch_name', $q)
-                ->orLike('d.branch_name', $q)
-                ->groupEnd();
-        }
+        if ($qOrigen)  $builder->like('o.branch_name', $qOrigen);
+        if ($qDestino) $builder->like('d.branch_name', $qDestino);
 
         if ($estado)  $builder->where('t.estado', $estado);
         if ($desde)   $builder->where('t.created_at >=', $desde . ' 00:00:00');

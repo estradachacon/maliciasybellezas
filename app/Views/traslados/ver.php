@@ -58,6 +58,13 @@
                     <?= ucfirst($traslado->estado) ?>
                 </span>
 
+                <?php if ($traslado->estado === 'completado' && tienePermiso('anular_traslado')): ?>
+                    <button type="button" class="btn btn-danger btn-sm ml-2"
+                        data-toggle="modal" data-target="#modalAnular">
+                        <i class="fa fa-ban"></i> Anular
+                    </button>
+                <?php endif; ?>
+
                 <a href="<?= base_url('traslados') ?>"
                     class="btn btn-secondary btn-sm ml-2">
                     <i class="fa fa-arrow-left"></i> Volver
@@ -198,5 +205,57 @@
         </div>
     </div>
 </div>
+
+<?php if ($traslado->estado === 'completado' && tienePermiso('anular_traslado')): ?>
+<div class="modal fade" id="modalAnular" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fa fa-ban"></i> Anular traslado #<?= $traslado->id ?>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Esta acción <strong>revertirá</strong> todos los movimientos de inventario y el gasto asociado.</p>
+                <ul class="text-muted small">
+                    <li>Se devolverán los productos al origen: <strong><?= esc($traslado->origen_nombre) ?></strong></li>
+                    <li>Se retirarán del destino: <strong><?= esc($traslado->destino_nombre) ?></strong></li>
+                    <?php if ($traslado->costo_traslado > 0): ?>
+                        <li>Se revertirá el gasto de <strong>$<?= number_format($traslado->costo_traslado, 2) ?></strong> en la cuenta <strong><?= esc($traslado->cuenta_nombre) ?></strong></li>
+                    <?php endif; ?>
+                </ul>
+                <p class="mb-0">¿Confirmas la anulación?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAnular">
+                    <i class="fa fa-ban"></i> Sí, anular
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('btnConfirmarAnular').addEventListener('click', function () {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Anulando...';
+
+    fetch('<?= base_url('traslados/' . $traslado->id . '/anular') ?>', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                window.location.href = '<?= base_url('traslados/' . $traslado->id) ?>';
+            } else {
+                alert('Error: ' + data.msg);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-ban"></i> Sí, anular';
+            }
+        });
+});
+</script>
+<?php endif; ?>
 
 <?= $this->endSection() ?>

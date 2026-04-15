@@ -20,16 +20,27 @@
                 <!-- FILTROS -->
                 <div class="row mb-3 align-items-end">
 
-                    <div class="col-md-4">
-                        <label>Buscar</label>
+                    <div class="col-md-2">
+                        <label>Origen</label>
                         <div class="input-group">
-                            <input type="text" id="searchInput" class="form-control"
-                                placeholder="Sucursal origen o destino">
+                            <input type="text" id="searchOrigen" class="form-control" placeholder="Sucursal origen">
+                            <div class="input-group-append">
+                                <button class="btn btn-secondary" id="clearOrigenBtn" style="display:none;">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Destino</label>
+                        <div class="input-group">
+                            <input type="text" id="searchDestino" class="form-control" placeholder="Sucursal destino">
                             <div class="input-group-append">
                                 <span id="loading-spinner" class="input-group-text" style="display:none;">
                                     <i class="fa fa-spinner fa-spin"></i>
                                 </span>
-                                <button class="btn btn-secondary" id="clearSearchBtn" style="display:none;">
+                                <button class="btn btn-secondary" id="clearDestinoBtn" style="display:none;">
                                     <i class="fa fa-times"></i>
                                 </button>
                             </div>
@@ -88,17 +99,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    const searchInput    = document.getElementById('searchInput');
+    const searchOrigen   = document.getElementById('searchOrigen');
+    const searchDestino  = document.getElementById('searchDestino');
     const tableContainer = document.getElementById('table-container');
     const spinner        = document.getElementById('loading-spinner');
-    const clearBtn       = document.getElementById('clearSearchBtn');
+    const clearOrigenBtn = document.getElementById('clearOrigenBtn');
+    const clearDestinoBtn = document.getElementById('clearDestinoBtn');
     const baseUrl        = '<?= base_url('traslados/searchAjax') ?>';
 
     let searchTimeout;
 
-    function loadResults(query = '', page = 1) {
+    function loadResults(page = 1) {
         const params = new URLSearchParams({
-            q:           query,
+            q_origen:    searchOrigen.value.trim(),
+            q_destino:   searchDestino.value.trim(),
             page:        page,
             estado:      document.getElementById('filtroEstado').value,
             fecha_desde: document.getElementById('fechaDesde').value,
@@ -123,26 +137,29 @@ document.addEventListener('DOMContentLoaded', function() {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const page = new URL(this.href).searchParams.get('page');
-                loadResults(searchInput.value.trim(), page);
+                loadResults(page);
             });
         });
     }
 
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const q = this.value.trim();
-        clearBtn.style.display = q.length > 0 ? 'block' : 'none';
-        searchTimeout = setTimeout(() => loadResults(q), 300);
-    });
+    function bindSearchInput(input, clearBtn) {
+        input.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            clearBtn.style.display = this.value.trim().length > 0 ? 'block' : 'none';
+            searchTimeout = setTimeout(() => loadResults(), 300);
+        });
+        clearBtn.addEventListener('click', function() {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            loadResults();
+        });
+    }
 
-    clearBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        clearBtn.style.display = 'none';
-        loadResults('');
-    });
+    bindSearchInput(searchOrigen, clearOrigenBtn);
+    bindSearchInput(searchDestino, clearDestinoBtn);
 
     document.querySelectorAll('#filtroEstado, #fechaDesde, #fechaHasta, #order, #perPage')
-        .forEach(el => el.addEventListener('change', () => loadResults(searchInput.value.trim())));
+        .forEach(el => el.addEventListener('change', () => loadResults()));
 
     rebindPagination();
     loadResults();

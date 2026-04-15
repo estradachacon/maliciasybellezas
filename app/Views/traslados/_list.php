@@ -107,7 +107,7 @@
 
     <!-- PAGINACIÓN -->
     <div id="pagination-links">
-        <?= $pager->links('traslados', 'default_full') ?>
+        <?= $pager->links('default', 'bitacora_pagination') ?>
     </div>
 
 <?php else: ?>
