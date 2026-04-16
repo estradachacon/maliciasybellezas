@@ -2,177 +2,346 @@
 <?= $this->section('content') ?>
 
 <style>
-    /* ── CARD DE PRODUCTO ───────────────────────────────────── */
-    .producto-card {
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 12px 14px;
-        margin-bottom: 10px;
-        background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
-        position: relative;
+    /* Desktop: inputs minimalistas en tabla de productos */
+    @media (min-width: 768px) {
+
+        #productosTable input,
+        #productosTable .select2-selection {
+            border: none !important;
+            border-bottom: 1px solid #ccc !important;
+            box-shadow: none !important;
+        }
+
+        #productosTable input:not(.precio) {
+            background: transparent !important;
+        }
+
+        #productosTable input {
+            height: 38px !important;
+            line-height: 38px;
+            padding: 0 8px;
+        }
+
+        #productosTable input:focus {
+            border-bottom: 2px solid #007bff !important;
+        }
+
+        .producto-row:hover {
+            background: #f9fafb;
+        }
     }
 
-    .producto-card:hover {
-        border-color: #b0c4de;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, .10);
-    }
-
-    .producto-card .card-num {
-        font-size: 11px;
-        font-weight: 700;
-        color: #adb5bd;
-        margin-bottom: 6px;
-    }
-
-    .producto-card .del {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        border: none;
-        background: transparent;
-        color: #dc3545;
-        font-size: 18px;
-        line-height: 1;
-        padding: 0 4px;
-    }
-
-    .producto-card .del:hover {
-        color: #a71d2a;
-    }
-
-    /* fila de subfields dentro de la card */
-    .producto-card .card-fields {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-    }
-
-    .producto-card .card-fields .f-cant {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .producto-card .card-fields .f-precio {
-        flex: 2;
-        min-width: 0;
-    }
-
-    .producto-card .card-fields .f-total {
-        flex: 1.5;
-        min-width: 0;
-    }
-
-    .producto-card .field-label {
-        font-size: 10px;
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-    }
-
-    /* badge sugerido */
-    .badge-sugerido {
-        font-size: 10px;
-        background: #198754;
-        color: #fff;
-        padding: 1px 6px;
+    .oferta-pill {
+        font-size: 12px;
+        /* antes 10px */
+        padding: 3px 8px;
+        /* más aire */
         border-radius: 6px;
-        margin-left: 4px;
-        vertical-align: middle;
     }
 
-    .precio-sugerido {
-        background-color: #e9f7ef !important;
+    #pagosTable input {
+        height: 38px !important;
+        padding: 0 8px;
     }
 
-    /* ── CARD DE PAGO ────────────────────────────────────────── */
-    .pago-card {
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
-        position: relative;
+    .producto,
+    .cantidad,
+    .precio,
+    .total {
+        height: 38px !important;
+    }
+
+    /* ── PAGO ROW — desktop ─────────────────────────── */
+    .pago-row {
         display: flex;
-        gap: 8px;
-        align-items: flex-end;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .pago-card .card-num {
-        font-size: 11px;
-        font-weight: 700;
-        color: #adb5bd;
-        min-width: 18px;
-        padding-bottom: 8px;
+    .pago-row .i {
+        min-width: 22px;
+        padding-top: 9px;
+        font-size: 13px;
+        color: #6c757d;
     }
 
-    .pago-card .pc-cuenta {
+    .pago-row .pg-select {
         flex: 1;
-        min-width: 0;
     }
 
-    .pago-card .pc-monto {
-        width: 110px;
+    .pago-row .pg-subfields {
+        width: 120px;
+    }
+
+    .pago-row .del {
         flex-shrink: 0;
     }
 
-    .pago-card .del {
-        border: none;
-        background: transparent;
-        color: #dc3545;
-        font-size: 18px;
-        line-height: 1;
-        padding: 0 4px;
-        margin-bottom: 6px;
+    /* ── PAGO ROW — mobile ─────────────────────────── */
+    @media (max-width: 767px) {
+
+        #pagosTable {
+            display: block;
+        }
+
+        #pagosTable thead {
+            display: none;
+        }
+
+        #pagosTable tbody {
+            display: block;
+        }
+
+        .pago-row {
+            flex-wrap: wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .pago-row .i {
+            display: none;
+        }
+
+        .pago-row .pg-select {
+            width: calc(100% - 44px);
+        }
+
+        .pago-row .pg-subfields {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .pago-row .pg-subfields>div {
+            width: 100%;
+        }
+
+        .pago-row .del {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+
+        .pago-row input,
+        .pago-row .select2-selection {
+            min-height: 40px !important;
+        }
     }
 
-    .pago-card .del:hover {
-        color: #a71d2a;
-    }
-
-    .pago-card .field-label {
-        font-size: 10px;
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-    }
-
-    /* ── SHARED ─────────────────────────────────────────────── */
     .add-line-link {
         color: #007bff;
-        font-size: 14px;
-        text-decoration: none;
         cursor: pointer;
-    }
-
-    .add-line-link:hover {
-        text-decoration: underline;
-        color: #0056b3;
-    }
-
-    .ver-img-btn {
-        border: none;
-        background: transparent;
-        color: #007bff;
-        padding: 0 4px;
     }
 
     .select2-container .select2-selection--single {
         height: 38px !important;
+        /* altura estándar Bootstrap */
         border: 1px solid #ced4da;
         border-radius: .375rem;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 36px !important;
+        /* centra texto */
         padding-left: .75rem;
     }
 
-    .select2-selection__arrow {
-        display: none;
+    .ofertas-display {
+        line-height: 1.9;
+        min-height: 0;
+    }
+
+    .oferta-pill {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        border: 1px solid;
+        cursor: pointer;
+        display: inline-block;
+        margin: 1px 2px 0 0;
+        white-space: nowrap;
+        transition: opacity .15s;
+        user-select: none;
+    }
+
+    .oferta-pill:hover {
+        opacity: .75;
+    }
+
+    .oferta-activa {
+        background: #e9f7ef;
+        border-color: #198754 !important;
+        color: #198754;
+        font-weight: 700;
+    }
+
+    .oferta-alcanzable {
+        background: #f8f9fa;
+        border-color: #ced4da !important;
+        color: #495057;
+    }
+
+    .oferta-pendiente {
+        background: #f8f9fa;
+        border-color: #dee2e6 !important;
+        color: #adb5bd;
+    }
+
+    #barcodeInput:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 .2rem rgba(25, 135, 84, .25);
+    }
+
+    #barcodeInput.is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    /* ── PRODUCTO ROW — desktop ─────────────────────────── */
+    .producto-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .producto-row .i {
+        min-width: 22px;
+        padding-top: 9px;
+        font-size: 13px;
+        color: #6c757d;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-select {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .producto-row .pr-select .select2-container {
+        width: 100% !important;
+    }
+
+    .producto-row .pr-subfields {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-subfields>div:first-child {
+        width: 70px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-precio-wrap {
+        width: 110px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .pr-subfields>div:last-child {
+        width: 85px;
+        flex-shrink: 0;
+    }
+
+    .producto-row .del {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    /* ── PRODUCTO ROW — mobile ──────────────────────────── */
+    @media (max-width: 767px) {
+
+        .producto-row {
+            flex-wrap: wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #dee2e6 !important;
+            position: relative;
+        }
+
+        .producto-row .i {
+            display: none;
+        }
+
+        /* Producto ocupa todo menos botón eliminar */
+        .producto-row .pr-select {
+            width: calc(100% - 44px);
+            flex: none;
+        }
+
+        .producto-row .pr-select .select2-container {
+            width: 100% !important;
+        }
+
+        /* Campos debajo del producto, en fila */
+        .producto-row .pr-subfields {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .producto-row .pr-subfields>div:first-child {
+            flex: 1;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        .producto-row .pr-precio-wrap {
+            flex: 2;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        .producto-row .pr-subfields>div:last-child {
+            flex: 1.5;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        /* Botón eliminar: esquina superior derecha */
+        .producto-row .del {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            margin-top: 0;
+        }
+
+        /* Ofertas ocupa fila completa */
+        .producto-row .ofertas-display {
+            width: 100%;
+        }
+
+        /* Inputs táctiles */
+        .producto-row input.form-control,
+        .producto-row .select2-selection {
+            min-height: 40px !important;
+        }
+
+        /* Total venta más visible */
+        #totalVenta {
+            font-size: 36px !important;
+        }
+
+        /* Botón guardar full width */
+        #ventaForm .btn-success {
+            width: 100%;
+            padding: .6rem;
+            font-size: 1.1rem;
+        }
+
+        /* Agregar producto centrado */
+        .add-line-link {
+            font-size: 1rem;
+            display: block;
+            text-align: center;
+            padding: 10px 0;
+        }
     }
 </style>
 
