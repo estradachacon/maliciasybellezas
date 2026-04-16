@@ -20,18 +20,18 @@ class InventarioController extends BaseController
     }
 
     // 🧾 Vista principal de inventario
-public function index()
-{
-    $chk = requerirPermiso('ver_inventario');
-    if ($chk !== true) return $chk;
+    public function index()
+    {
+        $chk = requerirPermiso('ver_inventario');
+        if ($chk !== true) return $chk;
 
-    $db = \Config\Database::connect();
+        $db = \Config\Database::connect();
 
-    $perPage = 10;
-    $page    = 1;
+        $perPage = 10;
+        $page    = 1;
 
-    $builder = $db->table('productos p')
-        ->select("
+        $builder = $db->table('productos p')
+            ->select("
             p.*,
             COALESCE(SUM(
                 CASE 
@@ -40,29 +40,29 @@ public function index()
                 END
             ), 0) as stock
         ")
-        ->join('inventario_historico ih', 'ih.producto_id = p.id', 'left')
-        ->groupBy('p.id')
-        ->orderBy('p.id', 'DESC');
+            ->join('inventario_historico ih', 'ih.producto_id = p.id', 'left')
+            ->groupBy('p.id')
+            ->orderBy('p.id', 'DESC');
 
-    // Count con subquery (igual que searchAjax)
-    $sql   = $builder->getCompiledSelect(false);
-    $total = $db->query("SELECT COUNT(*) as total FROM ({$sql}) as sub")
-                ->getRow()
-                ->total ?? 0;
+        // Count con subquery (igual que searchAjax)
+        $sql   = $builder->getCompiledSelect(false);
+        $total = $db->query("SELECT COUNT(*) as total FROM ({$sql}) as sub")
+            ->getRow()
+            ->total ?? 0;
 
-    $productos = $builder->limit($perPage, 0)->get()->getResult();
+        $productos = $builder->limit($perPage, 0)->get()->getResult();
 
-    $pager = \Config\Services::pager();
-    $pager->makeLinks($page, $perPage, $total, 'default_full');
+        $pager = \Config\Services::pager();
+        $pager->makeLinks($page, $perPage, $total, 'default_full');
 
-    return view('inventario/index', [
-        'productos'   => $productos,
-        'pager'       => $pager,
-        'currentPage' => $page,
-        'totalPages'  => (int) ceil($total / $perPage),
-        'branches'    => $this->branchModel->where('status', 1)->findAll()
-    ]);
-}
+        return view('inventario/index', [
+            'productos'   => $productos,
+            'pager'       => $pager,
+            'currentPage' => $page,
+            'totalPages'  => (int) ceil($total / $perPage),
+            'branches'    => $this->branchModel->where('status', 1)->findAll()
+        ]);
+    }
 
     public function store()
     {
@@ -210,19 +210,19 @@ public function index()
         ]);
     }
 
-public function searchAjax()
-{
-    $db = \Config\Database::connect();
+    public function searchAjax()
+    {
+        $db = \Config\Database::connect();
 
-    $q       = $this->request->getGet('q')       ?? '';
-    $order   = $this->request->getGet('order')   ?? 'recent';
-    $stock   = $this->request->getGet('stock')   ?? '';
-    $perPage = (int) ($this->request->getGet('perPage') ?? 10);
-    $page    = (int) ($this->request->getGet('page')    ?? 1);
+        $q       = $this->request->getGet('q')       ?? '';
+        $order   = $this->request->getGet('order')   ?? 'recent';
+        $stock   = $this->request->getGet('stock')   ?? '';
+        $perPage = (int) ($this->request->getGet('perPage') ?? 10);
+        $page    = (int) ($this->request->getGet('page')    ?? 1);
 
-    // ── Query base ───────────────────────────────────────────
-    $builder = $db->table('productos p')
-        ->select("
+        // ── Query base ───────────────────────────────────────────
+        $builder = $db->table('productos p')
+            ->select("
             p.*,
             COALESCE(SUM(
                 CASE
@@ -231,54 +231,67 @@ public function searchAjax()
                 END
             ), 0) as stock
         ")
-        ->join('inventario_historico ih', 'ih.producto_id = p.id', 'left')
-        ->groupBy('p.id');
+            ->join('inventario_historico ih', 'ih.producto_id = p.id', 'left')
+            ->groupBy('p.id');
 
-    if (!empty($q)) {
-        $builder->groupStart()
-            ->like('p.nombre', $q)
-            ->orLike('p.descripcion', $q)
-            ->groupEnd();
+        if (!empty($q)) {
+            $builder->groupStart()
+                ->like('p.nombre', $q)
+                ->orLike('p.descripcion', $q)
+                ->groupEnd();
+        }
+
+        if ($stock === 'con_stock') {
+            $builder->having('stock >', 0);
+        } elseif ($stock === 'sin_stock') {
+            $builder->having('stock', 0);
+        }
+
+        switch ($order) {
+            case 'precio_asc':
+                $builder->orderBy('p.precio', 'ASC');
+                break;
+            case 'precio_desc':
+                $builder->orderBy('p.precio', 'DESC');
+                break;
+            case 'stock_asc':
+                $builder->orderBy('stock',    'ASC');
+                break;
+            case 'stock_desc':
+                $builder->orderBy('stock',    'DESC');
+                break;
+            case 'alpha_asc':
+                $builder->orderBy('p.nombre', 'ASC');
+                break;
+            case 'alpha_desc':
+                $builder->orderBy('p.nombre', 'DESC');
+                break;
+            default:
+                $builder->orderBy('p.id',     'DESC');
+        }
+
+        // ── Count real usando subquery ────────────────────────────
+        $sql   = $builder->getCompiledSelect(false); // false = no resetea
+        $total = $db->query("SELECT COUNT(*) as total FROM ({$sql}) as sub")
+            ->getRow()
+            ->total ?? 0;
+
+        // ── Datos paginados ───────────────────────────────────────
+        $offset   = ($page - 1) * $perPage;
+        $productos = $builder->limit($perPage, $offset)->get()->getResult();
+
+        // ── Pager con query string preservado ────────────────────
+        $pager = \Config\Services::pager();
+        $pager->makeLinks($page, $perPage, $total, 'default_full');
+
+        return view('inventario/_productos_table', [
+            'productos'    => $productos,
+            'pager'        => $pager,
+            // pasamos los params para que el JS los use
+            'currentPage'  => $page,
+            'totalPages'   => (int) ceil($total / $perPage),
+        ]);
     }
-
-    if ($stock === 'con_stock') {
-        $builder->having('stock >', 0);
-    } elseif ($stock === 'sin_stock') {
-        $builder->having('stock', 0);
-    }
-
-    switch ($order) {
-        case 'precio_asc':   $builder->orderBy('p.precio', 'ASC');  break;
-        case 'precio_desc':  $builder->orderBy('p.precio', 'DESC'); break;
-        case 'stock_asc':    $builder->orderBy('stock',    'ASC');  break;
-        case 'stock_desc':   $builder->orderBy('stock',    'DESC'); break;
-        case 'alpha_asc':    $builder->orderBy('p.nombre', 'ASC');  break;
-        case 'alpha_desc':   $builder->orderBy('p.nombre', 'DESC'); break;
-        default:             $builder->orderBy('p.id',     'DESC');
-    }
-
-    // ── Count real usando subquery ────────────────────────────
-    $sql   = $builder->getCompiledSelect(false); // false = no resetea
-    $total = $db->query("SELECT COUNT(*) as total FROM ({$sql}) as sub")
-                ->getRow()
-                ->total ?? 0;
-
-    // ── Datos paginados ───────────────────────────────────────
-    $offset   = ($page - 1) * $perPage;
-    $productos = $builder->limit($perPage, $offset)->get()->getResult();
-
-    // ── Pager con query string preservado ────────────────────
-    $pager = \Config\Services::pager();
-    $pager->makeLinks($page, $perPage, $total, 'default_full');
-
-    return view('inventario/_productos_table', [
-        'productos'    => $productos,
-        'pager'        => $pager,
-        // pasamos los params para que el JS los use
-        'currentPage'  => $page,
-        'totalPages'   => (int) ceil($total / $perPage),
-    ]);
-}
 
     public function ver($id)
     {
