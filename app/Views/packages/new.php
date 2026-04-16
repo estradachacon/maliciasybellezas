@@ -1610,19 +1610,51 @@ $logoUrl = setting('logo')
 
         function recalcItem(i) {
             let p = productos[i];
+
+            // 🔥 APLICAR MEJOR OFERTA AUTOMÁTICAMENTE
+            if (!p.precio_manual && p.ofertas && p.ofertas.length > 0) {
+
+                let mejor = null;
+
+                p.ofertas.forEach(o => {
+                    if (p.cantidad >= o.cantidad_minima) {
+                        if (!mejor || o.cantidad_minima > mejor.cantidad_minima) {
+                            mejor = o;
+                        }
+                    }
+                });
+
+                if (mejor) {
+                    p.precio = mejor.precio;
+                } else {
+                    p.precio = p.precio_base || p.precio;
+                }
+
+                // 🔥 actualizar input visual
+                let precioInput = document.querySelector(`.item-precio[data-index="${i}"]`);
+                if (precioInput) precioInput.value = formatearMoneda(p.precio);
+            }
+
+            // 💰 SUBTOTAL
             let subtotal = p.cantidad * p.precio;
 
             let subInput = document.querySelector(`.item-sub[data-index="${i}"]`);
             if (subInput) subInput.value = '$' + formatearMoneda(subtotal);
 
-            // Actualizar colores de badges según cantidad y precio actuales
+            // 🎨 actualizar estados visuales de ofertas
             document.querySelectorAll(`.oferta-pill[data-index="${i}"]`).forEach(function(pill) {
                 let min = parseInt(pill.dataset.min);
                 let pillPrecio = parseFloat(pill.dataset.precio);
+
                 pill.className = 'oferta-pill';
-                if (Math.abs(pillPrecio - p.precio) < 0.01) pill.className += ' oferta-activa';
-                else if (p.cantidad >= min) pill.className += ' oferta-alcanzable';
-                else pill.className += ' oferta-pendiente';
+
+                if (Math.abs(pillPrecio - p.precio) < 0.01) {
+                    pill.className += ' oferta-activa';
+                } else if (p.cantidad >= min) {
+                    pill.className += ' oferta-alcanzable';
+                } else {
+                    pill.className += ' oferta-pendiente';
+                }
             });
 
             calcularTotalProductos();
