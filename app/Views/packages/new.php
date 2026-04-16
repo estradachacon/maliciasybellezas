@@ -1906,6 +1906,7 @@ $logoUrl = setting('logo')
         });
 
         $('#producto_id').on('select2:select', function(e) {
+
             let data = e.params.data;
 
             let producto_id = data.producto_id || data.id;
@@ -1915,38 +1916,74 @@ $logoUrl = setting('logo')
 
             if (!producto_id) return;
 
-            // 🔥 buscar si ya existe
-            let existente = productos.find(p =>
-                p.producto_id == producto_id &&
-                p.branch_id == branch_id
-            );
+            // 🔥 traer ofertas desde backend
+            fetch(`<?= base_url('productos/ofertasPorProducto') ?>?producto_id=${producto_id}`)
+                .then(r => r.json())
+                .then(ofertas => {
 
-            if (existente) {
-                let nuevaCant = existente.cantidad + 1;
+                    let ofertasNormalizadas = normalizarOfertas(ofertas || []);
 
-                if (nuevaCant > existente.stock) {
-                    Swal.fire('Stock insuficiente', `Solo hay ${existente.stock}`, 'warning');
-                    return;
-                }
+                    // 🔥 buscar si ya existe
+                    let existente = productos.find(p =>
+                        p.producto_id == producto_id &&
+                        p.branch_id == branch_id
+                    );
 
-                existente.cantidad = nuevaCant;
-            } else {
-                productos.push({
-                    producto_id: producto_id,
-                    branch_id: branch_id,
-                    nombre: data.text,
-                    cantidad: 1,
-                    precio: precio,
-                    imagen: data.imagen || null,
-                    stock: stock,
-                    ofertas: normalizarOfertas(data.ofertas || [])
+                    if (existente) {
+
+                        let nuevaCant = existente.cantidad + 1;
+
+                        if (nuevaCant > existente.stock) {
+                            Swal.fire('Stock insuficiente', `Solo hay ${existente.stock}`, 'warning');
+                            return;
+                        }
+
+                        existente.cantidad = nuevaCant;
+
+                        // 🔥 actualizar ofertas por si no las tenía
+                        existente.ofertas = ofertasNormalizadas;
+
+                    } else {
+
+                        productos.push({
+                            producto_id: producto_id,
+                            branch_id: branch_id,
+                            nombre: data.text,
+                            cantidad: 1,
+                            precio: precio,
+                            precio_base: precio, // 🔥 importante para promociones
+                            precio_manual: false, // 🔥 para control futuro
+                            imagen: data.imagen || null,
+                            stock: stock,
+                            ofertas: ofertasNormalizadas
+                        });
+                    }
+
+                    renderTabla();
+                    calcularTotalProductos();
+                })
+                .catch(err => {
+                    console.error('Error cargando ofertas:', err);
+
+                    // 🔥 fallback sin ofertas (no rompe flujo)
+                    productos.push({
+                        producto_id: producto_id,
+                        branch_id: branch_id,
+                        nombre: data.text,
+                        cantidad: 1,
+                        precio: precio,
+                        precio_base: precio,
+                        precio_manual: false,
+                        imagen: data.imagen || null,
+                        stock: stock,
+                        ofertas: []
+                    });
+
+                    renderTabla();
+                    calcularTotalProductos();
                 });
-            }
 
-            renderTabla();
-            calcularTotalProductos();
-
-            // 🔥 limpiar select
+            // 🔥 limpiar select (esto sí va afuera)
             $('#producto_id').val(null).trigger('change');
         });
 
