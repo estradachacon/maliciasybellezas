@@ -43,7 +43,13 @@
                     </div>
                 </div>
                 <div id="table-container">
-                    <?= $this->include('encomendistas/_encom_table') ?>
+                    <div class="d-none d-md-block">
+                        <?= $this->include('encomendistas/_encom_table') ?>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        <?= $this->include('encomendistas/_encom_cards') ?>
+                    </div>
                 </div>
 
             </div>
