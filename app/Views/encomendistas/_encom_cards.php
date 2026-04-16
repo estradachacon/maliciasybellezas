@@ -58,7 +58,7 @@
     </div>
 
     <!-- Paginación -->
-    <div class="mt-2" id="pagination-links">
+    <div class="mt-2 pagination-links">
         <?= $pager->links('default', 'bitacora_pagination') ?>
     </div>
 

@@ -95,7 +95,7 @@
 
         // Re-adjuntar eventos (paginación y delete)
         function rebindEvents() {
-            document.querySelectorAll('#pagination-links a').forEach(link => {
+            document.querySelectorAll('.pagination-links a').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const url = new URL(this.href);
