@@ -62,7 +62,7 @@
         const tableContainer = document.getElementById('table-container');
         const loadingSpinner = document.getElementById('loading-spinner');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
-        const baseUrl = '<?= base_url('sellers/searchAjax') ?>';
+        const baseUrl = '<?= base_url('encomendistas/searchAjax') ?>';
         let searchTimeout;
 
         // Función para cargar los resultados (tabla)
