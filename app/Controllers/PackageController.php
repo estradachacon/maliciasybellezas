@@ -822,7 +822,7 @@ class PackageController extends BaseController
         }
 
         // autosize todo
-        foreach (range('A', 'G') as $col) {
+        foreach (range('A', 'L') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
             $detalleSheet->getColumnDimension($col)->setAutoSize(true);
         }
