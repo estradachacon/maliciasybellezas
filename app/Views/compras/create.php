@@ -1207,60 +1207,70 @@
 <script>
     let webpFile = null;
 
-    document.getElementById('imagenInput').addEventListener('change', function() {
+    $('#productoModal').on('shown.bs.modal', function() {
 
-        const file = this.files[0];
-        if (!file) return;
+        const input = document.getElementById('imagenInput');
 
-        if (!file.type.startsWith('image/')) {
-            Swal.fire('Error', 'El archivo debe ser imagen', 'warning');
-            this.value = '';
-            return;
-        }
+        if (!input) return;
 
-        const reader = new FileReader();
+        // evitar duplicar eventos
+        input.onchange = null;
 
-        reader.onload = function(e) {
+        input.onchange = function() {
 
-            const img = new Image();
+            const file = this.files[0];
+            if (!file) return;
 
-            img.onload = function() {
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'El archivo debe ser imagen', 'warning');
+                this.value = '';
+                return;
+            }
 
-                const canvas = document.createElement('canvas');
+            const reader = new FileReader();
 
-                const maxWidth = 800;
-                let width = img.width;
-                let height = img.height;
+            reader.onload = function(e) {
 
-                if (width > maxWidth) {
-                    height *= maxWidth / width;
-                    width = maxWidth;
-                }
+                const img = new Image();
 
-                canvas.width = width;
-                canvas.height = height;
+                img.onload = function() {
 
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
+                    const canvas = document.createElement('canvas');
 
-                canvas.toBlob(function(blob) {
+                    const maxWidth = 800;
+                    let width = img.width;
+                    let height = img.height;
 
-                    webpFile = new File([blob], 'producto.webp', {
-                        type: 'image/webp'
-                    });
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
 
-                    const preview = document.getElementById('previewImg');
-                    preview.src = URL.createObjectURL(blob);
-                    preview.style.display = 'block';
+                    canvas.width = width;
+                    canvas.height = height;
 
-                }, 'image/webp', 0.8);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
 
+                    canvas.toBlob(function(blob) {
+
+                        webpFile = new File([blob], 'producto.webp', {
+                            type: 'image/webp'
+                        });
+
+                        const preview = document.getElementById('previewImg');
+                        preview.src = URL.createObjectURL(blob);
+                        preview.style.display = 'block';
+
+                    }, 'image/webp', 0.8);
+
+                };
+
+                img.src = e.target.result;
             };
 
-            img.src = e.target.result;
+            reader.readAsDataURL(file);
         };
-
-        reader.readAsDataURL(file);
     });
     document.getElementById('productoForm').addEventListener('submit', function(e) {
         e.preventDefault();
