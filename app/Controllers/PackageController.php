@@ -707,16 +707,12 @@ class PackageController extends BaseController
             'D1' => 'Destino',
             'E1' => 'Encomendista',
             'F1' => 'Envío (Pagado a Encom)',
-            'G1' => 'Fecha depósito',
-            'H1' => 'Entrega',
-            'I1' => 'Total real (venta sin envío)',
-            'J1' => 'Envío (cliente)',
-            'K1' => 'Descuento',
-            'L1' => 'Total venta (ya con envío)',
-            'M1' => 'Cancelado',
-            'N1' => 'Total remunerar',
-            'O1' => 'Estado 1',
-            'P1' => 'Estado 2',
+            'G1' => 'Entrega',
+            'H1' => 'Envío (cliente)',
+            'I1' => 'Cancelado',
+            'J1' => 'Total remunerar',
+            'K1' => 'Estado 1',
+            'L1' => 'Estado 2',
         ];
 
         foreach ($headers as $cell => $text) {
@@ -744,18 +740,14 @@ class PackageController extends BaseController
             $sheet->setCellValue('D' . $row, $p->destino);
             $sheet->setCellValue('E' . $row, $p->encomendista_name);
             $sheet->setCellValue('F' . $row, $p->flete_asignado);
-            $sheet->setCellValue('G' . $row, $fechaDeposito);
-            $sheet->setCellValue('H' . $row, $p->dia_entrega);
-            $sheet->setCellValue('I' . $row, $totalVenta - $flete);
-            $sheet->setCellValue('J' . $row, $flete);
-            $sheet->setCellValue('K' . $row, $descuento);
-            $sheet->setCellValue('L' . $row, $totalVenta);
-            $sheet->setCellValue('M' . $row, $pagado);
-            $sheet->setCellValue('N' . $row, $total);
-            $sheet->setCellValue('O' . $row, $p->estado1);
-            $sheet->setCellValue('P' . $row, $p->estado2);
+            $sheet->setCellValue('G' . $row, $p->dia_entrega);
+            $sheet->setCellValue('H' . $row, $flete);
+            $sheet->setCellValue('I' . $row, $pagado);
+            $sheet->setCellValue('J' . $row, $total);
+            $sheet->setCellValue('K' . $row, $p->estado1);
+            $sheet->setCellValue('L' . $row, $p->estado2);
 
-            foreach (['F', 'I', 'J', 'K', 'L', 'N'] as $col) {
+            foreach (['F', 'H', 'J'] as $col) {
                 $sheet->getStyle($col . $row)
                     ->getNumberFormat()
                     ->setFormatCode('"$"#,##0.00');
@@ -830,7 +822,7 @@ class PackageController extends BaseController
         }
 
         // autosize todo
-        foreach (range('A', 'O') as $col) {
+        foreach (range('A', 'G') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
             $detalleSheet->getColumnDimension($col)->setAutoSize(true);
         }
