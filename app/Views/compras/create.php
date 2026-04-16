@@ -353,16 +353,36 @@
                         <!-- Imagen -->
                         <div class="col-md-12 mt-3">
                             <label>Imagen del producto</label>
-                            <div id="cameraContainer" style="display:none;" class="mt-2 text-center">
-                                <video id="cameraPreview" autoplay playsinline style="width:100%; max-width:400px; border-radius:10px;"></video>
 
+                            <div class="d-flex gap-2 mb-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="abrirSelectorArchivo()">
+                                    <i class="fa fa-upload"></i> Subir imagen
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="abrirCamara()">
+                                    <i class="fa fa-camera"></i> Usar cámara
+                                </button>
+                            </div>
+
+                            <!-- Input file oculto -->
+                            <input type="file" id="imagenInput" accept="image/*" style="display:none;">
+
+                            <!-- Preview cámara -->
+                            <div id="cameraContainer" style="display:none;" class="mt-2 text-center">
+                                <video id="cameraPreview" autoplay playsinline
+                                    style="width:100%; max-width:400px; border-radius:10px;"></video>
                                 <div class="mt-2">
-                                    <button type="button" class="btn btn-success btn-sm" onclick="capturarFoto()">📸 Tomar foto</button>
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="cerrarCamara()">Cancelar</button>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="capturarFoto()">
+                                        📸 Tomar foto
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="cerrarCamara()">
+                                        Cancelar
+                                    </button>
                                 </div>
                             </div>
 
-                            <img id="previewImg" style="max-width:200px; margin-top:10px; display:none; border-radius:8px;">
+                            <!-- Preview resultado -->
+                            <img id="previewImg"
+                                style="max-width:200px; margin-top:10px; display:none; border-radius:8px;">
                         </div>
 
                     </div>
@@ -1236,95 +1256,144 @@
 </script>
 <script>
     let webpFile = null;
+    let stream = null;
 
-    $('#productoModal').on('shown.bs.modal', function() {
+    /* ─── helpers de imagen ─────────────────────────────── */
 
-        const input = document.getElementById('imagenInput');
+    function abrirSelectorArchivo() {
+        document.getElementById('imagenInput').click();
+    }
 
-        if (!input) return;
+    document.getElementById('imagenInput').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            Swal.fire('Error', 'El archivo debe ser una imagen', 'warning');
+            this.value = '';
+            return;
+        }
+        convertirAWebp(file);
+    });
 
-        // evitar duplicar eventos
-        input.onchange = null;
+    function convertirAWebp(file) {
+        const reader = new FileReader();
 
-        input.onchange = function() {
+        reader.onload = function(e) {
+            const img = new Image();
 
-            const file = this.files[0];
-            if (!file) return;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 800;
+                let w = img.width,
+                    h = img.height;
 
-            if (!file.type.startsWith('image/')) {
-                Swal.fire('Error', 'El archivo debe ser imagen', 'warning');
-                this.value = '';
-                return;
-            }
+                if (w > maxWidth) {
+                    h *= maxWidth / w;
+                    w = maxWidth;
+                }
 
-            const reader = new FileReader();
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
 
-            reader.onload = function(e) {
+                canvas.toBlob(function(blob) {
+                    webpFile = new File([blob], 'producto.webp', {
+                        type: 'image/webp'
+                    });
 
-                const img = new Image();
-
-                img.onload = function() {
-
-                    const canvas = document.createElement('canvas');
-
-                    const maxWidth = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    canvas.toBlob(function(blob) {
-
-                        webpFile = new File([blob], 'producto.webp', {
-                            type: 'image/webp'
-                        });
-
-                        const preview = document.getElementById('previewImg');
-                        preview.src = URL.createObjectURL(blob);
-                        preview.style.display = 'block';
-
-                    }, 'image/webp', 0.8);
-
-                };
-
-                img.src = e.target.result;
+                    const preview = document.getElementById('previewImg');
+                    preview.src = URL.createObjectURL(blob);
+                    preview.style.display = 'block';
+                }, 'image/webp', 0.8);
             };
 
-            reader.readAsDataURL(file);
+            img.src = e.target.result;
         };
+
+        reader.readAsDataURL(file);
+    }
+
+    /* ─── cámara ────────────────────────────────────────── */
+
+    function abrirCamara() {
+        const container = document.getElementById('cameraContainer');
+        const video = document.getElementById('cameraPreview');
+
+        navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment'
+                }
+            })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = stream;
+                container.style.display = 'block';
+            })
+            .catch(function() {
+                Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
+            });
+    }
+
+    function cerrarCamara() {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        document.getElementById('cameraContainer').style.display = 'none';
+    }
+
+    function capturarFoto() {
+        const video = document.getElementById('cameraPreview');
+        const canvas = document.createElement('canvas');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        canvas.toBlob(function(blob) {
+            webpFile = new File([blob], 'producto.webp', {
+                type: 'image/webp'
+            });
+
+            const preview = document.getElementById('previewImg');
+            preview.src = URL.createObjectURL(blob);
+            preview.style.display = 'block';
+
+            cerrarCamara(); // apagar cámara tras captura
+        }, 'image/webp', 0.8);
+    }
+
+    /* ─── limpiar al cerrar modal ───────────────────────── */
+
+    $('#productoModal').on('hidden.bs.modal', function() {
+        cerrarCamara();
+        webpFile = null;
+        const preview = document.getElementById('previewImg');
+        preview.src = '';
+        preview.style.display = 'none';
+        document.getElementById('imagenInput').value = '';
     });
+
+    // ─── Submit producto ─────────────────────────────────
     document.getElementById('productoForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
         const form = this;
         const btn = form.querySelector('button[type="submit"]');
 
+        if (!form.nombre.value.trim()) {
+            Swal.fire('Error', 'El nombre es obligatorio', 'warning');
+            return;
+        }
+
+        if (!form.precio.value || form.precio.value <= 0) {
+            Swal.fire('Error', 'Precio inválido', 'warning');
+            return;
+        }
+
         btn.disabled = true;
         btn.innerText = 'Guardando...';
 
         const formData = new FormData(form);
 
-        // 🔥 VALIDACIONES
-        if (!form.nombre.value.trim()) {
-            Swal.fire('Error', 'El nombre es obligatorio', 'warning');
-            return reset();
-        }
-
-        if (!form.precio.value || form.precio.value <= 0) {
-            Swal.fire('Error', 'Precio inválido', 'warning');
-            return reset();
-        }
-
-        // 🔥 reemplazar imagen por webp optimizado
         if (webpFile) {
             formData.set('imagen', webpFile);
         }
@@ -1334,52 +1403,30 @@
                 body: formData
             })
             .then(async res => {
-
-                let text = await res.text();
-
+                const text = await res.text();
                 try {
                     return JSON.parse(text);
                 } catch (e) {
-
-                    console.error("RESPUESTA CRUDA:", text);
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error del servidor',
-                        text: 'Respuesta inválida del backend'
-                    });
-
-                    throw new Error("JSON inválido");
+                    console.error('Respuesta cruda:', text);
+                    throw new Error('JSON inválido');
                 }
             })
             .then(data => {
-
                 if (data.status === 'success') {
+                    const producto = data.producto;
 
-                    let producto = data.producto;
-
-                    // 🔥 insertar en la fila actual
                     if (currentRow) {
-
-                        let select = $(currentRow).find('.producto-select');
-
-                        let newOption = new Option(
-                            producto.nombre,
-                            producto.id,
-                            true,
-                            true
-                        );
+                        const select = $(currentRow).find('.producto-select');
+                        const newOption = new Option(producto.nombre, producto.id, true, true);
 
                         select.append(newOption).trigger('change');
 
-                        // 🔥 setear precio automáticamente
                         $(currentRow).find('.precio')
                             .val(producto.precio || 0)
                             .trigger('input');
                     }
 
                     $('#productoModal').modal('hide');
-
                     form.reset();
 
                     Swal.fire({
@@ -1392,22 +1439,14 @@
                 } else {
                     Swal.fire('Error', data.message, 'error');
                 }
-
-                reset();
             })
-            .catch(err => {
-
-                console.error("ERROR:", err);
-
+            .catch(() => {
                 Swal.fire('Error', 'Fallo inesperado', 'error');
-
-                reset();
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = 'Guardar';
             });
-
-        function reset() {
-            btn.disabled = false;
-            btn.innerText = 'Guardar';
-        }
     });
 </script>
 <?= $this->endSection() ?>
