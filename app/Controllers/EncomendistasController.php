@@ -51,8 +51,6 @@ class EncomendistasController extends BaseController
         return view('encomendistas/index', $data);
     }
 
-
-
     public function new()
     {
         $chk = requerirPermiso('crear_encomendista');
@@ -258,7 +256,7 @@ class EncomendistasController extends BaseController
             'pager' => $builder->pager,
         ];
 
-        return view('encomendistas/_table', $data);
+        return view('encomendistas/_results_wrapper', $data);
     }
     public function searchAjaxAssign()
     {
