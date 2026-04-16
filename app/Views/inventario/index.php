@@ -612,24 +612,49 @@
         let searchTimeout;
 
         function loadResults(query = '', page = 1) {
+    const perPage = document.getElementById('perPageSelect').value;
+    const order   = document.getElementById('orderSelect').value;
+    const stock   = document.getElementById('stockFilter').value;
 
-            const perPage = document.getElementById('perPageSelect').value;
-            const order = document.getElementById('orderSelect').value;
-            const stock = document.getElementById('stockFilter').value;
-            const url = `${baseUrl}?q=${encodeURIComponent(query)}&page=${page}&perPage=${perPage}&order=${order}&stock=${stock}`;
+    const params  = new URLSearchParams({
+        q:       query,
+        page:    page,
+        perPage: perPage,
+        order:   order,
+        stock:   stock,
+    });
 
-            loadingSpinner.style.display = 'block';
+    const url = `${baseUrl}?${params.toString()}`;
 
-            fetch(url)
-                .then(res => res.text())
-                .then(html => {
-                    tableContainer.innerHTML = html;
-                    loadingSpinner.style.display = 'none';
-                    updateClearButton(query);
-                    rebindEvents();
-                    searchInput.focus();
-                });
-        }
+    loadingSpinner.style.display = 'block';
+
+    fetch(url)
+        .then(res => res.text())
+        .then(html => {
+            tableContainer.innerHTML = html;
+            loadingSpinner.style.display = 'none';
+            updateClearButton(query);
+            rebindEvents();
+            searchInput.focus();
+        });
+}
+
+function rebindEvents() {
+    // Interceptar TODOS los links de paginación
+    // y extraer solo el número de página, re-lanzando loadResults
+    // con los filtros actuales del DOM (no del href)
+    document.querySelectorAll('#pagination-links a').forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // El href puede ser ?page=2 o /ruta?page=2
+            const url  = new URL(this.href, window.location.origin);
+            const page = url.searchParams.get('page') ?? 1;
+
+            loadResults(searchInput.value.trim(), page);
+        });
+    });
+}
 
         // 🔄 cambios
         document.getElementById('perPageSelect').addEventListener('change', () => loadResults(searchInput.value));
