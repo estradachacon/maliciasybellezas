@@ -1194,71 +1194,106 @@
 </script>
 <script>
     document.getElementById('productoForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        const form = this;
-        const btn = form.querySelector('button[type="submit"]');
+    const form = this;
+    const btn = form.querySelector('button[type="submit"]');
 
-        btn.disabled = true;
-        btn.innerText = 'Guardando...';
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
 
-        const formData = new FormData(form);
+    const formData = new FormData(form);
 
-        // 🔥 VALIDACIONES
-        if (!form.nombre.value.trim()) {
-            Swal.fire('Error', 'El nombre es obligatorio', 'warning');
-            return reset();
-        }
+    // 🔥 VALIDACIONES
+    if (!form.nombre.value.trim()) {
+        Swal.fire('Error', 'El nombre es obligatorio', 'warning');
+        return reset();
+    }
 
-        if (!form.precio.value || form.precio.value <= 0) {
-            Swal.fire('Error', 'Precio inválido', 'warning');
-            return reset();
-        }
+    if (!form.precio.value || form.precio.value <= 0) {
+        Swal.fire('Error', 'Precio inválido', 'warning');
+        return reset();
+    }
 
-        fetch("<?= base_url('productos/storeAjax') ?>", {
-                method: 'POST',
-                body: formData
-            })
-            .then(async res => {
+    fetch("<?= base_url('productos/storeAjax') ?>", {
+        method: 'POST',
+        body: formData
+    })
+    .then(async res => {
 
-                let text = await res.text();
+        let text = await res.text();
 
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
 
-                    // 🔥 AQUÍ ESTÁ LA MAGIA
-                    console.error("RESPUESTA REAL:", text);
+            console.error("RESPUESTA CRUDA:", text);
 
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error del servidor',
-                        text: 'Respuesta inválida'
-                    });
-
-                    throw new Error("JSON inválido");
-                }
-            })
-            .then(data => {
-
-                if (data.status === 'success') {
-                    // tu lógica normal
-                } else {
-                    Swal.fire('Error', data.message, 'error');
-                }
-
-            })
-            .catch(err => {
-
-                console.error(err);
-
-                Swal.fire('Error', 'Fallo inesperado', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error del servidor',
+                text: 'Respuesta inválida del backend'
             });
 
-        function reset() {
-            btn.disabled = false;
-            btn.innerText = 'Guardar';
+            throw new Error("JSON inválido");
         }
+    })
+    .then(data => {
+
+        if (data.status === 'success') {
+
+            let producto = data.producto;
+
+            // 🔥 insertar en la fila actual
+            if (currentRow) {
+
+                let select = $(currentRow).find('.producto-select');
+
+                let newOption = new Option(
+                    producto.nombre,
+                    producto.id,
+                    true,
+                    true
+                );
+
+                select.append(newOption).trigger('change');
+
+                // 🔥 setear precio automáticamente
+                $(currentRow).find('.precio')
+                    .val(producto.precio || 0)
+                    .trigger('input');
+            }
+
+            $('#productoModal').modal('hide');
+
+            form.reset();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Producto creado',
+                timer: 1200,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+
+        reset();
+    })
+    .catch(err => {
+
+        console.error("ERROR:", err);
+
+        Swal.fire('Error', 'Fallo inesperado', 'error');
+
+        reset();
     });
+
+    function reset() {
+        btn.disabled = false;
+        btn.innerText = 'Guardar';
+    }
+});
 </script>
 <?= $this->endSection() ?>
