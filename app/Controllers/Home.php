@@ -21,6 +21,10 @@ class Home extends BaseController
         }
 
         return view('welcome_message', [
+            'logoUrl' => setting('logo')
+                ? base_url('upload/settings/' . setting('logo'))
+                : null,
+            'companyName' => setting('company_name') ?? 'Empresa',
         ]);
     }
 }
