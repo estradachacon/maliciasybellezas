@@ -308,16 +308,55 @@
                             <input type="number" step="0.01" name="precio" class="form-control" required>
                         </div>
 
+                        <!-- 🔥 CÓDIGO DE BARRAS -->
+                        <div class="col-md-6 mt-2">
+                            <label>Código de barras</label>
+
+                            <div class="input-group">
+                                <input type="text" name="codigo_barras" id="codigo_barras" class="form-control">
+
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleScanner()">
+                                        <i class="fa fa-camera"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-success" onclick="generarCodigo()">
+                                        <i class="fa fa-barcode"></i>
+                                    </button>
+                                </div>
+
+                                <div class="input-group-append">
+                                    <span id="scanCheck" class="input-group-text text-success" style="display:none;">
+                                        ✔
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 🔥 SCANNER -->
+                        <div class="col-md-12 mt-2" id="scannerContainer" style="display:none;">
+                            <div class="border rounded p-2 text-center bg-light">
+                                <div id="reader" style="width:100%; max-width:400px; margin:auto;"></div>
+
+                                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="cerrarScanner()">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Descripción -->
                         <div class="col-md-12 mt-2">
                             <label>Descripción</label>
                             <textarea name="descripcion" class="form-control"></textarea>
                         </div>
+
+                        <!-- Imagen -->
                         <div class="col-md-12 mt-3">
                             <label>Imagen del producto</label>
                             <input type="file" name="imagen" class="form-control" accept="image/*">
                             <img id="previewImg" style="max-width:200px; margin-top:10px; display:none;">
                         </div>
+
                     </div>
 
                 </div>
@@ -351,7 +390,71 @@
 <script>
     let currentRow = null;
 </script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+    let html5QrCode = null;
+    let scannerActivo = false;
+
+    function toggleScanner() {
+        const container = document.getElementById('scannerContainer');
+
+        if (scannerActivo) {
+            cerrarScanner();
+            return;
+        }
+
+        container.style.display = 'block';
+
+        html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start({
+                facingMode: "environment"
+            }, {
+                fps: 10,
+                qrbox: 250
+            },
+            (decodedText) => {
+                document.getElementById('codigo_barras').value = decodedText;
+                mostrarCheck();
+                cerrarScanner();
+            }
+        ).catch(err => console.error(err));
+
+        scannerActivo = true;
+    }
+
+    function cerrarScanner() {
+        const container = document.getElementById('scannerContainer');
+
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+        }
+
+        container.style.display = 'none';
+        scannerActivo = false;
+    }
+
+    function mostrarCheck() {
+        const check = document.getElementById('scanCheck');
+        check.style.display = 'inline';
+
+        setTimeout(() => check.style.display = 'none', 2000);
+    }
+
+    function generarCodigo() {
+        const input = document.getElementById('codigo_barras');
+
+        const codigo = 'P' + Date.now();
+        input.value = codigo;
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Código generado',
+            text: codigo,
+            timer: 1200,
+            showConfirmButton: false
+        });
+    }
     document.addEventListener('DOMContentLoaded', function() {
         const pagosTable = document.querySelector('#pagosTable tbody');
         const totalPagadoEl = document.getElementById('totalPagado');
@@ -360,22 +463,22 @@
             const row = document.createElement('tr');
 
             row.innerHTML = `
-        <td class="row-index text-center"></td>
+                <td class="row-index text-center"></td>
 
-        <td>
-            <select class="form-control cuenta-select"></select>
-        </td>
+                <td>
+                    <select class="form-control cuenta-select"></select>
+                </td>
 
-        <td>
-            <input type="number" class="form-control monto" step="0.01">
-        </td>
+                <td>
+                    <input type="number" class="form-control monto" step="0.01">
+                </td>
 
-        <td>
-            <button class="btn btn-danger btn-sm removePago">
-                <i class="fa fa-trash"></i>
-            </button>
-        </td>
-    `;
+                <td>
+                    <button class="btn btn-danger btn-sm removePago">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            `;
 
             pagosTable.appendChild(row);
             actualizarIndicesPagos();
@@ -563,7 +666,7 @@
                 if (cant > 0) {
                     let nuevoPrecio = tot / cant;
 
-                    precio.value = nuevoPrecio.toFixed(4); 
+                    precio.value = nuevoPrecio.toFixed(4);
                     precio.dispatchEvent(new Event('input'));
                 }
 
@@ -894,26 +997,26 @@
 
             // 🧾 PREVIEW ANTES DE GUARDAR
             let resumenHTML = `
-    <div style="text-align:left; font-size:14px">
+                <div style="text-align:left; font-size:14px">
 
-        <div><b>Proveedor:</b> ${proveedor_text}</div>
-        <div><b>Sucursal:</b> ${branch_text}</div>
-        <div><b>Fecha:</b> ${fecha_compra}</div>
-        <div><b># Productos:</b> ${productosData.length}</div>
+                    <div><b>Proveedor:</b> ${proveedor_text}</div>
+                    <div><b>Sucursal:</b> ${branch_text}</div>
+                    <div><b>Fecha:</b> ${fecha_compra}</div>
+                    <div><b># Productos:</b> ${productosData.length}</div>
 
-        <hr>
+                    <hr>
 
-        <div><b>Total compra:</b> $${totalCompra.toFixed(2)}</div>
-        <div><b>Total pagado:</b> $${totalPagado.toFixed(2)}</div>
+                    <div><b>Total compra:</b> $${totalCompra.toFixed(2)}</div>
+                    <div><b>Total pagado:</b> $${totalPagado.toFixed(2)}</div>
 
-        <hr>
+                    <hr>
 
-        <div style="color:${Math.abs(totalPagado - totalCompra) <= 0.01 ? 'green' : 'red'}">
-            <b>${Math.abs(totalPagado - totalCompra) <= 0.01 ? '✔ Cuadrado' : '✖ Diferencia detectada'}</b>
-        </div>
+                    <div style="color:${Math.abs(totalPagado - totalCompra) <= 0.01 ? 'green' : 'red'}">
+                        <b>${Math.abs(totalPagado - totalCompra) <= 0.01 ? '✔ Cuadrado' : '✖ Diferencia detectada'}</b>
+                    </div>
 
-    </div>
-`;
+                </div>
+            `;
 
             Swal.fire({
                 title: 'Confirmar compra',
@@ -1101,6 +1204,17 @@
 
         const formData = new FormData(form);
 
+        // 🔥 VALIDACIONES
+        if (!form.nombre.value.trim()) {
+            Swal.fire('Error', 'El nombre es obligatorio', 'warning');
+            return reset();
+        }
+
+        if (!form.precio.value || form.precio.value <= 0) {
+            Swal.fire('Error', 'Precio inválido', 'warning');
+            return reset();
+        }
+
         fetch("<?= base_url('productos/storeAjax') ?>", {
                 method: 'POST',
                 body: formData
@@ -1108,8 +1222,7 @@
             .then(res => res.json())
             .then(data => {
 
-                btn.disabled = false;
-                btn.innerText = 'Guardar';
+                reset();
 
                 if (data.status === 'success') {
 
@@ -1131,11 +1244,13 @@
 
                     select.append(newOption).trigger('change');
 
-                    // 🔥 setear precio automáticamente
-                    $(currentRow).find('.precio').val(producto.precio || 0).trigger('input');
+                    $(currentRow).find('.precio')
+                        .val(producto.precio || 0)
+                        .trigger('input');
 
                     $('#productoModal').modal('hide');
                     form.reset();
+                    cerrarScanner();
 
                     Swal.fire({
                         icon: 'success',
@@ -1150,11 +1265,14 @@
 
             })
             .catch(() => {
-                btn.disabled = false;
-                btn.innerText = 'Guardar';
-
+                reset();
                 Swal.fire('Error', 'Error de conexión', 'error');
             });
+
+        function reset() {
+            btn.disabled = false;
+            btn.innerText = 'Guardar';
+        }
     });
 </script>
 <?= $this->endSection() ?>

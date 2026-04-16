@@ -212,55 +212,99 @@ class ProductosController extends BaseController
     }
     public function storeAjax()
     {
-        $model = new ProductoModel();
+        try {
 
-        $nombre = trim($this->request->getPost('nombre'));
+            $model = new ProductoModel();
 
-        if (!$nombre) {
+            $nombre = trim($this->request->getPost('nombre'));
+            $precio = $this->request->getPost('precio');
+            $codigo = trim($this->request->getPost('codigo_barras'));
+
+            // 🔥 VALIDACIONES
+            if (!$nombre) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'El nombre es obligatorio'
+                ]);
+            }
+
+            if (!$precio || $precio <= 0) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Precio inválido'
+                ]);
+            }
+
+            // 🔥 GENERAR CÓDIGO SI NO VIENE
+            if (!$codigo) {
+                $codigo = 'P' . time();
+            }
+
+            // 🔥 VALIDAR DUPLICADO
+            $existe = $model->where('codigo_barras', $codigo)->first();
+
+            if ($existe) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'El código de barras ya existe'
+                ]);
+            }
+
+            // 🖼️ IMAGEN
+            $imagen = $this->request->getFile('imagen');
+            $nombreImagen = null;
+
+            if ($imagen && $imagen->isValid() && !$imagen->hasMoved()) {
+
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+                if (!in_array($imagen->getMimeType(), $allowedTypes)) {
+                    return $this->response->setJSON([
+                        'status' => 'error',
+                        'message' => 'Formato de imagen no permitido'
+                    ]);
+                }
+
+                $nombreImagen = uniqid() . '.webp';
+
+                $tempPath = WRITEPATH . 'uploads/' . $imagen->getName();
+                $imagen->move(WRITEPATH . 'uploads');
+
+                $source = imagecreatefromstring(file_get_contents($tempPath));
+                imagewebp($source, FCPATH . 'upload/productos/' . $nombreImagen, 80);
+
+                imagedestroy($source);
+                unlink($tempPath);
+            }
+
+            // 💾 INSERT
+            $id = $model->insert([
+                'nombre'         => $nombre,
+                'marca'          => $this->request->getPost('marca'),
+                'presentacion'   => $this->request->getPost('presentacion'),
+                'precio'         => $precio,
+                'descripcion'    => $this->request->getPost('descripcion'),
+                'codigo_barras'  => $codigo,
+                'imagen'         => $nombreImagen
+            ]);
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'producto' => [
+                    'id' => $id,
+                    'nombre' => $nombre,
+                    'precio' => $precio,
+                    'imagen' => $nombreImagen,
+                    'codigo_barras' => $codigo
+                ]
+            ]);
+        } catch (\Throwable $e) {
+
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'El nombre es obligatorio'
+                'message' => 'Error: ' . $e->getMessage()
             ]);
         }
-
-        $imagen = $this->request->getFile('imagen');
-        $nombreImagen = null;
-
-        if ($imagen && $imagen->isValid() && !$imagen->hasMoved()) {
-
-            // 🔥 nombre único
-            $nombreImagen = uniqid() . '.webp';
-
-            // mover temporal
-            $tempPath = WRITEPATH . 'uploads/' . $imagen->getName();
-            $imagen->move(WRITEPATH . 'uploads');
-
-            // 🔥 convertir a webp
-            $source = imagecreatefromstring(file_get_contents($tempPath));
-            imagewebp($source, FCPATH . 'upload/productos/' . $nombreImagen, 80);
-
-            imagedestroy($source);
-            unlink($tempPath);
-        }
-
-        $id = $model->insert([
-            'nombre' => $nombre,
-            'marca' => $this->request->getPost('marca'),
-            'presentacion' => $this->request->getPost('presentacion'),
-            'precio' => $this->request->getPost('precio') ?? 0,
-            'descripcion' => $this->request->getPost('descripcion'),
-            'imagen' => $nombreImagen
-        ]);
-
-        return $this->response->setJSON([
-            'status' => 'success',
-            'producto' => [
-                'id' => $id,
-                'nombre' => $nombre,
-                'precio' => $this->request->getPost('precio') ?? 0,
-                'imagen' => $nombreImagen
-            ]
-        ]);
     }
 
     // ── BUSCAR POR CÓDIGO DE BARRAS (para escáner en venta) ──────
