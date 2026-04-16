@@ -2261,12 +2261,6 @@ $logoUrl = setting('logo')
             calcularTotalProductos();
         });
 
-        if (this.checked) {
-            $('#total_real').addClass('text-danger');
-        } else {
-            $('#total_real').removeClass('text-danger');
-        }
-
         $('#cuenta_id').select2({
             placeholder: 'Buscar cuenta...',
             width: '100%',
