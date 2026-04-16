@@ -256,44 +256,25 @@ class ProductosController extends BaseController
 
             if ($imagen && $imagen->isValid() && !$imagen->hasMoved()) {
 
-                try {
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
-                    $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-
-                    if (!in_array($imagen->getMimeType(), $allowedTypes)) {
-                        throw new \Exception('Formato de imagen no permitido');
-                    }
-
-                    $nombreImagen = uniqid() . '.webp';
-
-                    $tempPath = WRITEPATH . 'uploads/' . $imagen->getName();
-                    $imagen->move(WRITEPATH . 'uploads');
-
-                    $contenido = file_get_contents($tempPath);
-
-                    if (!$contenido) {
-                        throw new \Exception('No se pudo leer la imagen');
-                    }
-
-                    $source = @imagecreatefromstring($contenido);
-
-                    if (!$source) {
-                        throw new \Exception('Error al procesar imagen');
-                    }
-
-                    if (!imagewebp($source, FCPATH . 'upload/productos/' . $nombreImagen, 80)) {
-                        throw new \Exception('Error al guardar imagen');
-                    }
-
-                    imagedestroy($source);
-                    unlink($tempPath);
-                } catch (\Throwable $e) {
-
-                    log_message('error', 'IMG ERROR: ' . $e->getMessage());
-
-                    // 🔥 NO ROMPER EL FLUJO
-                    $nombreImagen = null;
+                if (!in_array($imagen->getMimeType(), $allowedTypes)) {
+                    return $this->response->setJSON([
+                        'status' => 'error',
+                        'message' => 'Formato de imagen no permitido'
+                    ]);
                 }
+
+                $nombreImagen = uniqid() . '.webp';
+
+                $tempPath = WRITEPATH . 'uploads/' . $imagen->getName();
+                $imagen->move(WRITEPATH . 'uploads');
+
+                $source = imagecreatefromstring(file_get_contents($tempPath));
+                imagewebp($source, FCPATH . 'upload/productos/' . $nombreImagen, 80);
+
+                imagedestroy($source);
+                unlink($tempPath);
             }
 
             // 💾 INSERT

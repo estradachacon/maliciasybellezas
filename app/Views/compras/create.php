@@ -1219,57 +1219,40 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.text())
-            .then(data => {
-                console.log("RESPUESTA CRUDA:", data);
+            .then(async res => {
+
+                let text = await res.text();
+
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+
+                    // 🔥 AQUÍ ESTÁ LA MAGIA
+                    console.error("RESPUESTA REAL:", text);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error del servidor',
+                        text: 'Respuesta inválida'
+                    });
+
+                    throw new Error("JSON inválido");
+                }
             })
             .then(data => {
 
-                reset();
-
                 if (data.status === 'success') {
-
-                    let producto = data.producto;
-
-                    let newOption = new Option(
-                        producto.nombre,
-                        producto.id,
-                        true,
-                        true
-                    );
-
-                    if (!currentRow) {
-                        Swal.fire('Error', 'No se encontró la fila', 'error');
-                        return;
-                    }
-
-                    let select = $(currentRow).find('.producto-select');
-
-                    select.append(newOption).trigger('change');
-
-                    $(currentRow).find('.precio')
-                        .val(producto.precio || 0)
-                        .trigger('input');
-
-                    $('#productoModal').modal('hide');
-                    form.reset();
-                    cerrarScanner();
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Producto creado',
-                        timer: 1200,
-                        showConfirmButton: false
-                    });
-
+                    // tu lógica normal
                 } else {
                     Swal.fire('Error', data.message, 'error');
                 }
 
             })
-            .catch(() => {
-                reset();
-                Swal.fire('Error', 'Error de conexión', 'error');
+            .catch(err => {
+
+                console.error(err);
+
+                Swal.fire('Error', 'Fallo inesperado', 'error');
             });
 
         function reset() {
