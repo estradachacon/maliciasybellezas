@@ -497,8 +497,8 @@ class PackageController extends BaseController
                         'producto_id' => (int)$p['producto_id'],
                         'cantidad'   => $p['cantidad'],
                         'precio'     => $p['precio'],
-                        'descuento'  => $p['descuento'],
-                        'subtotal'   => ($p['cantidad'] * $p['precio']) - $p['descuento']
+                        'descuento'  => 0, // 🔥 ya no usas descuento por producto
+                        'subtotal'   => ($p['cantidad'] * $p['precio'])
                     ]);
 
                     $db->table('inventario_historico')->insert([
