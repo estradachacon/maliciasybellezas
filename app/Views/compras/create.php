@@ -1219,7 +1219,10 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => res.text())
+            .then(data => {
+                console.log("RESPUESTA CRUDA:", data);
+            })
             .then(data => {
 
                 reset();
