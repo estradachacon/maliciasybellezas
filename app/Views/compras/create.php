@@ -353,13 +353,12 @@
                         <!-- Imagen -->
                         <div class="col-md-12 mt-3">
                             <label>Imagen del producto</label>
-                            <div class="input-group">
-                                <input type="file" name="imagen" id="imagenInput" class="form-control" accept="image/*" capture="environment">
+                            <div id="cameraContainer" style="display:none;" class="mt-2 text-center">
+                                <video id="cameraPreview" autoplay playsinline style="width:100%; max-width:400px; border-radius:10px;"></video>
 
-                                <div class="input-group-append">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="abrirCamara()">
-                                        <i class="fa fa-camera"></i>
-                                    </button>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="capturarFoto()">📸 Tomar foto</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="cerrarCamara()">Cancelar</button>
                                 </div>
                             </div>
 
@@ -1133,8 +1132,39 @@
             }
         });
 
+        let stream = null;
+
         function abrirCamara() {
-            document.getElementById('imagenInput').click();
+
+            const container = document.getElementById('cameraContainer');
+            const video = document.getElementById('cameraPreview');
+
+            container.style.display = 'block';
+
+            navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment"
+                    }
+                })
+                .then(s => {
+                    stream = s;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire('Error', 'No se pudo acceder a la cámara', 'error');
+                });
+        }
+
+        function cerrarCamara() {
+
+            const container = document.getElementById('cameraContainer');
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+            container.style.display = 'none';
         }
         $('#guardarProveedor').click(function() {
 
