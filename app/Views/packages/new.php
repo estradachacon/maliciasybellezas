@@ -1361,7 +1361,7 @@ $logoUrl = setting('logo')
                 contentType: false,
                 processData: false,
                 success: function(res) {
-                    console.log(res); // 🔥 AGREGA ESTO
+                    
                     if (res.status === 'ok') {
 
                         Swal.fire({
