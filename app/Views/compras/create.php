@@ -353,8 +353,17 @@
                         <!-- Imagen -->
                         <div class="col-md-12 mt-3">
                             <label>Imagen del producto</label>
-                            <input type="file" name="imagen" class="form-control" accept="image/*">
-                            <img id="previewImg" style="max-width:200px; margin-top:10px; display:none;">
+                            <div class="input-group">
+                                <input type="file" name="imagen" id="imagenInput" class="form-control" accept="image/*" capture="environment">
+
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="abrirCamara()">
+                                        <i class="fa fa-camera"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <img id="previewImg" style="max-width:200px; margin-top:10px; display:none; border-radius:8px;">
                         </div>
 
                     </div>
@@ -1124,6 +1133,9 @@
             }
         });
 
+        function abrirCamara() {
+            document.getElementById('imagenInput').click();
+        }
         $('#guardarProveedor').click(function() {
 
             let nombre = $('#edit_nombre').val().trim();
@@ -1193,107 +1205,169 @@
     });
 </script>
 <script>
-    document.getElementById('productoForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    let webpFile = null;
 
-    const form = this;
-    const btn = form.querySelector('button[type="submit"]');
+    document.getElementById('imagenInput').addEventListener('change', function() {
 
-    btn.disabled = true;
-    btn.innerText = 'Guardando...';
+        const file = this.files[0];
+        if (!file) return;
 
-    const formData = new FormData(form);
-
-    // 🔥 VALIDACIONES
-    if (!form.nombre.value.trim()) {
-        Swal.fire('Error', 'El nombre es obligatorio', 'warning');
-        return reset();
-    }
-
-    if (!form.precio.value || form.precio.value <= 0) {
-        Swal.fire('Error', 'Precio inválido', 'warning');
-        return reset();
-    }
-
-    fetch("<?= base_url('productos/storeAjax') ?>", {
-        method: 'POST',
-        body: formData
-    })
-    .then(async res => {
-
-        let text = await res.text();
-
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-
-            console.error("RESPUESTA CRUDA:", text);
-
-            Swal.fire({
-                icon: 'error',
-                title: 'Error del servidor',
-                text: 'Respuesta inválida del backend'
-            });
-
-            throw new Error("JSON inválido");
-        }
-    })
-    .then(data => {
-
-        if (data.status === 'success') {
-
-            let producto = data.producto;
-
-            // 🔥 insertar en la fila actual
-            if (currentRow) {
-
-                let select = $(currentRow).find('.producto-select');
-
-                let newOption = new Option(
-                    producto.nombre,
-                    producto.id,
-                    true,
-                    true
-                );
-
-                select.append(newOption).trigger('change');
-
-                // 🔥 setear precio automáticamente
-                $(currentRow).find('.precio')
-                    .val(producto.precio || 0)
-                    .trigger('input');
-            }
-
-            $('#productoModal').modal('hide');
-
-            form.reset();
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Producto creado',
-                timer: 1200,
-                showConfirmButton: false
-            });
-
-        } else {
-            Swal.fire('Error', data.message, 'error');
+        if (!file.type.startsWith('image/')) {
+            Swal.fire('Error', 'El archivo debe ser imagen', 'warning');
+            this.value = '';
+            return;
         }
 
-        reset();
-    })
-    .catch(err => {
+        const reader = new FileReader();
 
-        console.error("ERROR:", err);
+        reader.onload = function(e) {
 
-        Swal.fire('Error', 'Fallo inesperado', 'error');
+            const img = new Image();
 
-        reset();
+            img.onload = function() {
+
+                const canvas = document.createElement('canvas');
+
+                const maxWidth = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(function(blob) {
+
+                    webpFile = new File([blob], 'producto.webp', {
+                        type: 'image/webp'
+                    });
+
+                    const preview = document.getElementById('previewImg');
+                    preview.src = URL.createObjectURL(blob);
+                    preview.style.display = 'block';
+
+                }, 'image/webp', 0.8);
+
+            };
+
+            img.src = e.target.result;
+        };
+
+        reader.readAsDataURL(file);
     });
+    document.getElementById('productoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    function reset() {
-        btn.disabled = false;
-        btn.innerText = 'Guardar';
-    }
-});
+        const form = this;
+        const btn = form.querySelector('button[type="submit"]');
+
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+
+        const formData = new FormData(form);
+
+        // 🔥 VALIDACIONES
+        if (!form.nombre.value.trim()) {
+            Swal.fire('Error', 'El nombre es obligatorio', 'warning');
+            return reset();
+        }
+
+        if (!form.precio.value || form.precio.value <= 0) {
+            Swal.fire('Error', 'Precio inválido', 'warning');
+            return reset();
+        }
+
+        // 🔥 reemplazar imagen por webp optimizado
+        if (webpFile) {
+            formData.set('imagen', webpFile);
+        }
+
+        fetch("<?= base_url('productos/storeAjax') ?>", {
+                method: 'POST',
+                body: formData
+            })
+            .then(async res => {
+
+                let text = await res.text();
+
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+
+                    console.error("RESPUESTA CRUDA:", text);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error del servidor',
+                        text: 'Respuesta inválida del backend'
+                    });
+
+                    throw new Error("JSON inválido");
+                }
+            })
+            .then(data => {
+
+                if (data.status === 'success') {
+
+                    let producto = data.producto;
+
+                    // 🔥 insertar en la fila actual
+                    if (currentRow) {
+
+                        let select = $(currentRow).find('.producto-select');
+
+                        let newOption = new Option(
+                            producto.nombre,
+                            producto.id,
+                            true,
+                            true
+                        );
+
+                        select.append(newOption).trigger('change');
+
+                        // 🔥 setear precio automáticamente
+                        $(currentRow).find('.precio')
+                            .val(producto.precio || 0)
+                            .trigger('input');
+                    }
+
+                    $('#productoModal').modal('hide');
+
+                    form.reset();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Producto creado',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+
+                reset();
+            })
+            .catch(err => {
+
+                console.error("ERROR:", err);
+
+                Swal.fire('Error', 'Fallo inesperado', 'error');
+
+                reset();
+            });
+
+        function reset() {
+            btn.disabled = false;
+            btn.innerText = 'Guardar';
+        }
+    });
 </script>
 <?= $this->endSection() ?>
