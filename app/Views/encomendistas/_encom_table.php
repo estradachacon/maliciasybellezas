@@ -32,6 +32,6 @@
         <?php endif; ?>
     </tbody>
 </table>
-<div class="mt-3" id="pagination-links">
+<div class="mt-2 pagination-links">
     <?= $pager->links('default', 'bitacora_pagination') ?>
 </div>

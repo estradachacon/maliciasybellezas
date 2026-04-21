@@ -43,7 +43,13 @@
                     </div>
                 </div>
                 <div id="table-container">
-                    <?= $this->include('encomendistas/_encom_table') ?>
+                    <div class="d-none d-md-block">
+                        <?= $this->include('encomendistas/_encom_table') ?>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        <?= $this->include('encomendistas/_encom_cards') ?>
+                    </div>
                 </div>
 
             </div>
@@ -56,7 +62,7 @@
         const tableContainer = document.getElementById('table-container');
         const loadingSpinner = document.getElementById('loading-spinner');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
-        const baseUrl = '<?= base_url('sellers/searchAjax') ?>';
+        const baseUrl = '<?= base_url('encomendistas/searchAjax') ?>';
         let searchTimeout;
 
         // Función para cargar los resultados (tabla)
@@ -89,7 +95,7 @@
 
         // Re-adjuntar eventos (paginación y delete)
         function rebindEvents() {
-            document.querySelectorAll('#pagination-links a').forEach(link => {
+            document.querySelectorAll('.pagination-links a').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const url = new URL(this.href);
