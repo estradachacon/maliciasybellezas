@@ -280,6 +280,7 @@ class PackagesAssign extends Controller
 
         $detalles = $db->table('package_deposit_details pdd')
             ->select("
+                pdd.id AS detalle_id,
                 p.id,
                 p.cliente_nombre,
                 p.destino,
@@ -288,6 +289,7 @@ class PackagesAssign extends Controller
                 pdd.valor_paquete,
                 pdd.nuevo_estado,
                 pdd.porcentaje,
+                pdd.flete_asignado,
 
                 e.encomendista_name
             ")
@@ -302,6 +304,129 @@ class PackagesAssign extends Controller
             'detalles' => $detalles
         ]);
     }
+    public function actualizarFlete($id)
+    {
+        if (!tienePermiso('editar_flete_asignacion')) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Sin permiso para editar el flete']);
+        }
+
+        $data = $this->request->getJSON(true);
+        $modo = $data['modo'] ?? 'total';
+
+        $deposito = $this->depositModel->find($id);
+        if (!$deposito) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Depósito no encontrado']);
+        }
+
+        $this->db->transStart();
+
+        if ($modo === 'individual') {
+            $detallesInput = $data['detalles'] ?? [];
+
+            if (empty($detallesInput)) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'No se enviaron detalles']);
+            }
+
+            $nuevoTotal = 0;
+            foreach ($detallesInput as $d) {
+                $nuevoTotal += floatval($d['flete'] ?? 0);
+            }
+
+            $this->depositModel->update($id, ['flete_total' => round($nuevoTotal, 2)]);
+
+            $this->db->table('transactions')
+                ->where('origen', 'deposito_paquetes')
+                ->where('origen_id', (int) $id)
+                ->update(['monto' => round($nuevoTotal, 2)]);
+
+            foreach ($detallesInput as $d) {
+                $detalleId   = (int) ($d['id'] ?? 0);
+                $fleteAsignado = round(floatval($d['flete'] ?? 0), 2);
+                $porcentaje    = $nuevoTotal > 0 ? round(($fleteAsignado / $nuevoTotal) * 100, 2) : 0;
+
+                $this->detailModel->update($detalleId, [
+                    'flete_asignado' => $fleteAsignado,
+                    'porcentaje'     => $porcentaje,
+                ]);
+
+                $det = $this->detailModel->find($detalleId);
+                if ($det) {
+                    addPackLog($det->package_id, 'Flete editado individualmente: $' . number_format($fleteAsignado, 2) . ' (total asignación: $' . number_format($nuevoTotal, 2) . ')');
+                }
+            }
+        } else {
+            // modo === 'total': recalcula proporcionalmente
+            $nuevoFlete = floatval($data['flete_total'] ?? 0);
+
+            if ($nuevoFlete <= 0) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'El monto debe ser mayor a 0']);
+            }
+
+            $detalles = $this->detailModel->where('deposit_id', $id)->findAll();
+            if (empty($detalles)) {
+                return $this->response->setJSON(['status' => 'error', 'msg' => 'No hay paquetes en este depósito']);
+            }
+
+            $conValor      = array_filter($detalles, fn($d) => floatval($d->valor_paquete) > 0);
+            $sinValor      = array_filter($detalles, fn($d) => floatval($d->valor_paquete) <= 0);
+            $todosSinValor = count($conValor) === 0;
+            $costoFijo     = 3;
+
+            $this->depositModel->update($id, ['flete_total' => $nuevoFlete]);
+
+            $this->db->table('transactions')
+                ->where('origen', 'deposito_paquetes')
+                ->where('origen_id', (int) $id)
+                ->update(['monto' => $nuevoFlete]);
+
+            if ($todosSinValor) {
+                $cantidad      = count($detalles);
+                $fleteUnitario = $cantidad > 0 ? $nuevoFlete / $cantidad : 0;
+
+                foreach ($detalles as $d) {
+                    $this->detailModel->update($d->id, [
+                        'flete_asignado' => round($fleteUnitario, 2),
+                        'porcentaje'     => 0,
+                    ]);
+                    addPackLog($d->package_id, 'Flete recalculado por total: $' . number_format($fleteUnitario, 2) . ' (nuevo total: $' . number_format($nuevoFlete, 2) . ')');
+                }
+            } else {
+                $totalSinValor = count($sinValor) * $costoFijo;
+                $fleteRestante = max(0, $nuevoFlete - $totalSinValor);
+                $totalValor    = 0;
+
+                foreach ($conValor as $d) {
+                    $totalValor += floatval($d->valor_paquete);
+                }
+
+                foreach ($detalles as $d) {
+                    $valor = floatval($d->valor_paquete);
+                    if ($valor <= 0) {
+                        $fleteAsignado = $costoFijo;
+                        $porcentaje    = 0;
+                    } else {
+                        $porcentaje    = $totalValor > 0 ? ($valor / $totalValor) : 0;
+                        $fleteAsignado = $porcentaje * $fleteRestante;
+                    }
+
+                    $this->detailModel->update($d->id, [
+                        'flete_asignado' => round($fleteAsignado, 2),
+                        'porcentaje'     => round($porcentaje * 100, 2),
+                    ]);
+                    addPackLog($d->package_id, 'Flete recalculado por total: $' . number_format($fleteAsignado, 2) . ' (nuevo total: $' . number_format($nuevoFlete, 2) . ')');
+                }
+            }
+        }
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            return $this->response->setJSON(['status' => 'error', 'msg' => 'Error al actualizar el flete']);
+        }
+
+        return $this->response->setJSON(['status' => 'ok', 'msg' => 'Flete actualizado correctamente']);
+    }
+
     public function table()
     {
         $model = new PackageDepositModel();
