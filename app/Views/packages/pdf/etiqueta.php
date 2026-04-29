@@ -198,8 +198,9 @@ word-break: normal;
                                 <span class="label">Fecha:</span>
                                 <?php
                                 Locale::setDefault('es_SV');
-                                $fmt = new IntlDateFormatter('es_SV', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
-                                $fmt->setPattern('EEE d');
+                                $fmt = new IntlDateFormatter('es_SV', IntlDateFormatter::NONE, IntlDateFormatter::NONE);
+                                $fmt->setPattern('EEE d MMM');
+
                                 echo ucfirst($fmt->format(new DateTime($fecha)));
                                 ?>
                             </td>
