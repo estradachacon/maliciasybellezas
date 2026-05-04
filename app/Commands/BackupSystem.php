@@ -57,13 +57,7 @@ class BackupSystem extends BaseCommand
 
         if (file_exists($filePath) && filesize($filePath) > 1000) {
             CLI::write('Backup guardado: ' . $fileName, 'green');
-        } else {
-            CLI::error('Error al generar el backup');
-        }
-
-        // Verificar si se creó
-        if (file_exists($filePath)) {
-            CLI::write('Backup guardado: ' . $fileName, 'green');
+            $this->enviarARemoto($filePath, $fileName);
         } else {
             CLI::error('Error al generar el backup');
         }
@@ -132,5 +126,66 @@ class BackupSystem extends BaseCommand
         }
 
         rmdir($folder);
+    }
+
+    private function enviarARemoto(string $filePath, string $fileName): void
+    {
+        $apiKey = env('CARYTEL_API_KEY');
+
+        if (!$apiKey || $apiKey === 'TU_API_KEY_AQUI') {
+            CLI::write('[Remoto] CARYTEL_API_KEY no configurada, omitiendo envío.', 'yellow');
+            return;
+        }
+
+        if (!function_exists('curl_init')) {
+            log_message('error', '[BackupRemoto] cURL no está disponible en este servidor.');
+            return;
+        }
+
+        $url  = 'https://carytel.com/api/frameworks/backup';
+        $meta = json_encode([
+            'sistema'   => env('CARYTEL_SISTEMA', 'Maliciasybellezas'),
+            'db_nombre' => env('database.default.database', 'maliciasdb'),
+            'notas'     => 'Backup automático ' . date('Y-m-d H:i:s'),
+        ]);
+
+        try {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST           => true,
+                CURLOPT_HTTPHEADER     => ['X-Api-Key: ' . $apiKey],
+                CURLOPT_POSTFIELDS     => [
+                    'archivo' => new \CURLFile($filePath, 'application/sql', $fileName),
+                    'meta'    => $meta,
+                ],
+                CURLOPT_TIMEOUT        => 120,
+                CURLOPT_SSL_VERIFYPEER => true,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErr  = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlErr) {
+                CLI::write('[Remoto] Error cURL: ' . $curlErr, 'red');
+                log_message('error', '[BackupRemoto] cURL: ' . $curlErr);
+                return;
+            }
+
+            $data = json_decode($response, true);
+
+            if ($httpCode === 200 && ($data['ok'] ?? false)) {
+                CLI::write('[Remoto] Backup enviado a carytel.com (ID: ' . ($data['id'] ?? '?') . ')', 'green');
+                log_message('info', '[BackupRemoto] OK. ID remoto: ' . ($data['id'] ?? '?'));
+            } else {
+                CLI::write('[Remoto] Respuesta inesperada (HTTP ' . $httpCode . '): ' . $response, 'red');
+                log_message('error', '[BackupRemoto] HTTP ' . $httpCode . ' — ' . $response);
+            }
+        } catch (\Throwable $e) {
+            CLI::write('[Remoto] Excepción: ' . $e->getMessage(), 'red');
+            log_message('error', '[BackupRemoto] Excepción: ' . $e->getMessage());
+        }
     }
 }
